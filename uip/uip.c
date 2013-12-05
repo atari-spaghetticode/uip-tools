@@ -1201,6 +1201,7 @@ uip_process(u8_t flag)
      destined for a connection in LISTEN. If the SYN flag isn't set,
      it is an old packet and we send a RST. */
   if((BUF->flags & TCP_CTL) != TCP_SYN) {
+    printf("reset 1\r\n");
     goto reset;
   }
   
@@ -1542,6 +1543,8 @@ uip_process(u8_t flag)
     UIP_APPCALL();
     /* The connection is closed after we send the RST */
     uip_conn->tcpstateflags = UIP_CLOSED;
+        printf("reset 2\r\n");
+
     goto reset;
 #endif /* UIP_ACTIVE_OPEN */
     

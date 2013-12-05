@@ -143,7 +143,6 @@ typedef int uip_udp_appstate_t;
  */
 #define UIP_CONF_STATISTICS      1
 
-#define UIP_CONF_RECEIVE_WINDOW (UIP_CONF_BUFFER_SIZE*2)
 
 /* Here we include the header file for the application(s) we use in
    our project. */

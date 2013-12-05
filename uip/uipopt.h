@@ -325,7 +325,7 @@
  * This configiration option has no real implication, and it should be
  * left untouched.
  */
-#define UIP_TIME_WAIT_TIMEOUT (120*2)
+#define UIP_TIME_WAIT_TIMEOUT (60)
 
 
 /** @} */

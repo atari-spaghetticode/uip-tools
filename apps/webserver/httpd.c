@@ -260,13 +260,13 @@ PT_THREAD(handle_input(struct httpd_state *s))
 {
   PSOCK_BEGIN(&s->sin);
 
-  PSOCK_READTO(&s->sin, ISO_space);
-
   if ( post == 2) {
       PSOCK_READBUF(&s->sin);
   }
   else 
   {
+    PSOCK_READTO(&s->sin, ISO_space);
+  
     if(strncmp(s->inputbuf, http_post, 4) == 0) {
       post = 1;
     }else if(strncmp(s->inputbuf, http_get, 4) != 0) {
@@ -317,6 +317,7 @@ httpd_appcall(void)
   } else if(uip_closed() || uip_aborted() ) {
     printf("closed or aborted\r\n");
   } else if(uip_connected()) {
+    post = 1;
     PSOCK_INIT(&s->sin, s->inputbuf, sizeof(s->inputbuf) - 1);
     PSOCK_INIT(&s->sout, s->inputbuf, sizeof(s->inputbuf) - 1);
     PT_INIT(&s->outputpt);
