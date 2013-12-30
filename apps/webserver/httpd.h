@@ -37,18 +37,30 @@
 
 #include "psock.h"
 #include "httpd-fs.h"
+#include "stdio.h"
+
+#define INPUTBUF_SIZE 1500
+
+typedef enum {
+  HttpReqNone = 0,
+  HttpReqGet,
+  HttpReqPost
+} RequestType;
 
 struct httpd_state {
   unsigned char timer;
-  struct psock sin, sout;
-  struct pt outputpt, scriptpt;
-  char inputbuf[1500];
+  struct psock sin;
+  char inputbuf[INPUTBUF_SIZE];
+  uint32_t inputbuf_size;
   char filename[4096];
+  FILE* file;
+  uint32_t expected_file_length;
+  uint32_t expected_100_continue;
+  RequestType req_type;
   char state;
-  struct httpd_fs_file file;
+
+//  struct httpd_fs_file file;
   int len;
-  char *scriptptr;
-  int scriptlen;
   
   unsigned short count;
 };

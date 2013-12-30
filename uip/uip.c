@@ -730,6 +730,7 @@ uip_process(u8_t flag)
        uip_connr->tcpstateflags == UIP_FIN_WAIT_2) {
       ++(uip_connr->timer);
       if(uip_connr->timer == UIP_TIME_WAIT_TIMEOUT) {
+    //    printf("#timeout 1 %u\r\n", uip_connr->tcpstateflags);
         uip_connr->tcpstateflags = UIP_CLOSED;
       }
     } else if(uip_connr->tcpstateflags != UIP_CLOSED) {
@@ -743,6 +744,7 @@ uip_process(u8_t flag)
                uip_connr->tcpstateflags == UIP_SYN_RCVD) &&
               uip_connr->nrtx == UIP_MAXSYNRTX)) {
             uip_connr->tcpstateflags = UIP_CLOSED;
+      //  printf("#timeout 2\r\n");
 
             /* We call UIP_APPCALL() with uip_flags set to
                UIP_TIMEDOUT to inform the application that the
@@ -1201,7 +1203,31 @@ uip_process(u8_t flag)
      destined for a connection in LISTEN. If the SYN flag isn't set,
      it is an old packet and we send a RST. */
   if((BUF->flags & TCP_CTL) != TCP_SYN) {
-    printf("reset 1\r\n");
+    // printf("reset 1\r\n");
+    // printf("packet:\r\n\tsrc: %u.%u.%u.%u:%u\r\n\tdst: %u.%u.%u.%u:%u\r\n\tseqno: %u\r\n",
+    //       BUF->srcipaddr[0]>>8,BUF->srcipaddr[0]&0xff,BUF->srcipaddr[1]>>8,BUF->srcipaddr[1]&0xff, 
+    //       BUF->srcport,
+    //       BUF->destipaddr[0]>>8,BUF->destipaddr[0]&0xff,BUF->destipaddr[1]>>8,BUF->destipaddr[1]&0xff,
+    //       BUF->destport,
+    //       ((uint32_t)BUF->seqno[0]<<24)|((uint32_t)BUF->seqno[1]<<16)|((uint32_t)BUF->seqno[2]<<8)|((uint32_t)BUF->seqno[3])
+    //   );
+
+    // for(uip_connr = &uip_conns[0]; uip_connr <= &uip_conns[UIP_CONNS - 1]; ++uip_connr) {
+    //   printf ("remote ip: %u.%u.%u.%u:%u local port: %u\r\n\tseq_exp: %u, seq_sent: %u, flags: %u\r\n",
+    //                htons(uip_connr->ripaddr[0]) >> 8,
+    //                htons(uip_connr->ripaddr[0]) & 0xff,
+    //                htons(uip_connr->ripaddr[1]) >> 8,
+    //                htons(uip_connr->ripaddr[1]) & 0xff,
+    //                htons(uip_connr->rport),
+    //                htons(uip_connr->lport),
+
+    //                (uip_connr->rcv_nxt[0] << 24) | (uip_connr->rcv_nxt[0] << 16) | (uip_connr->rcv_nxt[1] << 8) | (uip_connr->rcv_nxt[1] ),
+    //                (uip_connr->snd_nxt[0] << 24) | (uip_connr->snd_nxt[0] << 16) | (uip_connr->snd_nxt[1] << 8) | (uip_connr->snd_nxt[1] ),
+
+    //                uip_connr->tcpstateflags
+    //                );
+    // }
+
     goto reset;
   }
   
@@ -1543,7 +1569,7 @@ uip_process(u8_t flag)
     UIP_APPCALL();
     /* The connection is closed after we send the RST */
     uip_conn->tcpstateflags = UIP_CLOSED;
-        printf("reset 2\r\n");
+    //    printf("reset 2\r\n");
 
     goto reset;
 #endif /* UIP_ACTIVE_OPEN */

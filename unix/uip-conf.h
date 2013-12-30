@@ -92,7 +92,7 @@ typedef int uip_udp_appstate_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_MAX_CONNECTIONS 40
+#define UIP_CONF_MAX_CONNECTIONS 8
 
 /**
  * Maximum number of listening TCP ports.
