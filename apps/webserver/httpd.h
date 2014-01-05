@@ -41,24 +41,23 @@
 
 #define INPUTBUF_SIZE 1500
 
-typedef enum {
-  HttpReqNone = 0,
-  HttpReqGet,
-  HttpReqPost
-} RequestType;
-
 struct httpd_state {
   unsigned char timer;
   struct psock sin;
   char inputbuf[INPUTBUF_SIZE];
   uint32_t inputbuf_size;
-  char filename[4096];
+  char filename[256];
   FILE* file;
-  uint32_t expected_file_length;
+  size_t expected_file_length;
   uint32_t expected_100_continue;
-  RequestType req_type;
   char state;
 
+  struct pt worker;
+  
+  struct pt worker2;
+  size_t temp_file_length;
+  
+  char(*handler_func)(struct httpd_state *s);
 //  struct httpd_fs_file file;
   int len;
   

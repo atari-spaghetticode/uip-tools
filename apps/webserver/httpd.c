@@ -66,6 +66,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include <osbind.h>
+
 #define STATE_WAITING 0
 #define STATE_OUTPUT  1
 
@@ -77,192 +79,205 @@
 #define ISO_slash   0x2f
 #define ISO_colon   0x3a
 
-
 /*---------------------------------------------------------------------------*/
-// static unsigned short
-// generate_part_of_file(void *state)
-// {
-//   struct httpd_state *s = (struct httpd_state *)state;
+void mkdir_for_file( const char* path )
+{
+  char temp_path[256];
+  size_t len = strlen( path );
+  strncpy( temp_path, path, sizeof(temp_path));
 
-//   if(s->file.len > uip_mss()) {
-//     s->len = uip_mss();
-//   } else {
-//     s->len = s->file.len;
-//   }
-//   memcpy(uip_appdata, s->file.data, s->len);
+  // remove file name from the path file path base 
+  for(size_t i = len; i != 0; --i) {
+    if ( temp_path[i] == '\\' ) {
+      temp_path[i] = '\0';
+      break;
+    }
+  }
   
-//   return s->len;
-// }
+  // skip the drive letter in the path
+  for ( size_t i = 4; i < len; ++i ) {
+    if ( temp_path[i] == '\\' ) {
+      temp_path[i] = '\0';
+      Dcreate ( temp_path );
+      temp_path[i] = '\\';
+    }
+  }
+  Dcreate ( temp_path );
+
+}
+
 /*---------------------------------------------------------------------------*/
-// static
-// PT_THREAD(send_file(struct httpd_state *s))
-// {
-//   PSOCK_BEGIN(&s->sout);
+
+static
+PT_THREAD(receive_file(struct httpd_state *s, const char* filename, const size_t filelen))
+{
+  PT_BEGIN(&s->worker2);
+
+  Cconws("recv: ");
+  Cconws(filename);
+
+  // make sure folder exists
+  mkdir_for_file ( filename );
+
+  s->file = fopen( filename,"wb" );
+
+  if ( !s->file ) {
+    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
+    Cconws(" -> failed to open!\r\n");
+    PT_END(&s->worker);
+  }
+
+  s->temp_file_len = filelen;
+
+  while ( s->temp_file_len > 0) {
+
+    PSOCK_READBUF_LEN2(&s->worker, &s->sin, 
+      s->temp_file_len > s->inputbuf_size ? 
+        s->inputbuf_size : s->temp_file_len );
+
+    fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
+    s->temp_file_len-=PSOCK_DATALEN(&s->sin);
+  }
+
+  Cconws(" -> OK.\r\n");
+  fclose( s->file )
+
+  PT_END(&s->worker2);
+}
+/*---------------------------------------------------------------------------*/
+
+static
+PT_THREAD(handle_post(struct httpd_state *s))
+{
+  PT_BEGIN(&s->worker);
+
+  if ( s->expected_file_length == -1 ) {
+    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n");        
+    PT_END(&s->worker);
+  }
+
+  Cconws("recv: ");
+  Cconws(s->filename);
+
+  // make sure folder exists
+  mkdir_for_file ( s->filename );
+
+  s->file = fopen( s->filename,"wb" );
+
+  if ( !s->file ) {
+    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
+    Cconws(" -> failed to open!\r\n");
+    PT_END(&s->worker);
+  } 
+
+  while ( s->expected_file_length > 0) {
+
+    PSOCK_READBUF_LEN2(&s->worker, &s->sin, 
+      s->expected_file_length > s->inputbuf_size ? 
+        s->inputbuf_size : s->expected_file_length );
+
+    fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
+    s->expected_file_length-=PSOCK_DATALEN(&s->sin);
+  }
+
+  Cconws(" -> OK.\r\n");
+  fclose( s->file );
   
-//   do {
-//     PSOCK_GENERATOR_SEND(&s->sout, generate_part_of_file, s);
-//     s->file.len -= s->len;
-//     s->file.data += s->len;
-//   } while(s->file.len > 0);
-      
-//   PSOCK_END(&s->sout);
-// }
-/*---------------------------------------------------------------------------*/
-// static
-// PT_THREAD(send_part_of_file(struct httpd_state *s))
-// {
-//   PSOCK_BEGIN(&s->sout);
+  PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 201 Created\r\nConnection: close\r\n");    
 
-//   PSOCK_SEND(&s->sout, s->file.data, s->len);
+  PT_END(&s->worker);
+}
+
+static
+PT_THREAD(handle_run(struct httpd_state *s))
+{
+  PT_BEGIN(&s->worker);
+  PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 200 OK\r\nConnection: close\r\n");
+  Dsetpath(s->path);
+  Pexec(0,s->filename,"","");
+  PT_END(&s->worker);
+}
+
+void parse_file_path ( struct httpd_state *s )
+{
+  char* fn_end = s->inputbuf;
+  char* fn;
+
+  while (*fn_end++ != '/' );
   
-//   PSOCK_END(&s->sout);
-// }
-/*---------------------------------------------------------------------------*/
-// static void
-// next_scriptstate(struct httpd_state *s)
-// {
-//   char *p;
-//   p = strchr(s->scriptptr, ISO_nl) + 1;
-//   s->scriptlen -= (unsigned short)(p - s->scriptptr);
-//   s->scriptptr = p;
-// }
-/*---------------------------------------------------------------------------*/
-// static
-// PT_THREAD(handle_script(struct httpd_state *s))
-// {
-//   char *ptr;
+  fn = fn_end;
   
-//   PT_BEGIN(&s->scriptpt);
+  while (*fn_end != ' ' ) 
+    fn_end++;
 
+  *fn_end = 0;
 
-//   while(s->file.len > 0) {
+  while ( fn != fn_end-- ) {
+    if ( *fn_end == '/' ) {
+      *fn_end = '\\';
+    }
+  }
 
-//     /* Check if we should start executing a script. */
-//     if(*s->file.data == ISO_percent &&
-//        *(s->file.data + 1) == ISO_bang) {
-//       s->scriptptr = s->file.data + 3;
-//       s->scriptlen = s->file.len - 3;
-//       if(*(s->scriptptr - 1) == ISO_colon) {
-// 	httpd_fs_open(s->scriptptr + 1, &s->file);
-// 	PT_WAIT_THREAD(&s->scriptpt, send_file(s));
-//       } else {
-// 	PT_WAIT_THREAD(&s->scriptpt,
-// 		       httpd_cgi(s->scriptptr)(s, s->scriptptr));
-//       }
-//       next_scriptstate(s);
-      
-//       /* The script is over, so we reset the pointers and continue
-// 	 sending the rest of the file. */
-//       s->file.data = s->scriptptr;
-//       s->file.len = s->scriptlen;
-//     } else {
-//       /* See if we find the start of script marker in the block of HTML
-// 	 to be sent. */
+  s->filename[0] = fn[0]&0x7f;
+  s->filename[1] = ':';
+  strncpy( &s->filename[2],++fn, sizeof(s->filename));
+}
 
-//       if(s->file.len > uip_mss()) {
-// 	s->len = uip_mss();
-//       } else {
-// 	s->len = s->file.len;
-//       }
+void parse_post( struct httpd_state *s )
+{
+  parse_file_path(s);
+  s->handler_func = handle_post;
+}
 
-//       if(*s->file.data == ISO_percent) {
-// 	ptr = strchr(s->file.data + 1, ISO_percent);
-//       } else {
-// 	ptr = strchr(s->file.data, ISO_percent);
-//       }
-//       if(ptr != NULL &&
-// 	 ptr != s->file.data) {
-// 	s->len = (int)(ptr - s->file.data);
-// 	if(s->len >= uip_mss()) {
-// 	  s->len = uip_mss();
-// 	}
-//       }
-//       PT_WAIT_THREAD(&s->scriptpt, send_part_of_file(s));
-//       s->file.data += s->len;
-//       s->file.len -= s->len;
-      
-//     }
-//   }
-  
-//   PT_END(&s->scriptpt);
-// }
-/*---------------------------------------------------------------------------*/
-// static
-// PT_THREAD(send_headers(struct httpd_state *s, const char *statushdr))
-// {
-//   char *ptr;
+void parse_run( struct httpd_state *s )
+{
+  parse_file_path(s);
+  s->handler_func = handle_run;
+}
 
-//   PSOCK_BEGIN(&s->sout);
+void parse_content_len( struct httpd_state *s )
+{
+  s->expected_file_length = atoi( &s->inputbuf[15] );
+}
 
-//   PSOCK_SEND_STR(&s->sout, statushdr);
+void parse_expect( struct httpd_state *s )
+{
+  s->expected_100_continue = 1;
+}
 
-//   ptr = strrchr(s->filename, ISO_period);
-//   if(ptr == NULL) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_binary);
-//   } else if(strncmp(http_html, ptr, 5) == 0 ||
-// 	    strncmp(http_shtml, ptr, 6) == 0) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_html);
-//   } else if(strncmp(http_css, ptr, 4) == 0) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_css);
-//   } else if(strncmp(http_png, ptr, 4) == 0) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_png);
-//   } else if(strncmp(http_gif, ptr, 4) == 0) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_gif);
-//   } else if(strncmp(http_jpg, ptr, 4) == 0) {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_jpg);
-//   } else {
-//     PSOCK_SEND_STR(&s->sout, http_content_type_plain);
-//   }
-//   PSOCK_END(&s->sout);
-// }
-/*---------------------------------------------------------------------------*/
+void parse_multipart( struct httpd_state *s )
+{
+}
 
-// static
-// PT_THREAD(handle_output(struct httpd_state *s))
-// {
-//   char *ptr;
-  
-//   PT_BEGIN(&s->outputpt);
+void parse_urlencoded( struct httpd_state *s )
+{
+}
 
-//   if ( post == 1)
-//   {
-//     PT_WAIT_THREAD(&s->outputpt, send_headers(s, http_continue));
-//     post = 2;
-//     s->state = STATE_WAITING;
-//     //PSOCK_CLOSE_EXIT(&s->sout);
-//   } //else 
- 
-//   // if(!httpd_fs_open(s->filename, &s->file)) {
-//   //   httpd_fs_open(http_404_html, &s->file);
-//   //   strcpy(s->filename, http_404_html);
-//   //   PT_WAIT_THREAD(&s->outputpt,
-// 		//    send_headers(s,
-// 		//    http_header_404));
-//   //   PT_WAIT_THREAD(&s->outputpt,
-// 		//    send_file(s));
-//   // } else {
-//   //   PT_WAIT_THREAD(&s->outputpt,
-// 		//    send_headers(s,
-// 		//    http_header_200));
-//   //   ptr = strchr(s->filename, ISO_period);
-//   //   if(ptr != NULL && strncmp(ptr, http_shtml, 6) == 0) {
-//   //     PT_INIT(&s->scriptpt);
-//   //     PT_WAIT_THREAD(&s->outputpt, handle_script(s));
-//   //   } else {
-//   //     PT_WAIT_THREAD(&s->outputpt,
-// 		//      send_file(s));
-//   //   }
-//   // }
-//   //PSOCK_CLOSE(&s->sout);
-//   PT_END(&s->outputpt);
-// }
-/*---------------------------------------------------------------------------*/
+#define HeaderEntry(str,func) {str, sizeof(str), func}
+
+struct {
+  const char* entry;
+  size_t entry_len;
+  char(*parse_func)(struct httpd_state *s);
+} commands[] = {
+  HeaderEntry ( "POST", parse_post ),
+  HeaderEntry ( "GET", parse_post ),
+  HeaderEntry ( "RUN", parse_run ),
+  HeaderEntry ( "DELETE", parse_run ),
+  HeaderEntry ( "Content-Length:", parse_content_len ),
+  HeaderEntry ( "Expect: 100-continue", parse_expect ),
+  HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart ),
+  HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded ),
+};
+
 static
 PT_THREAD(handle_input(struct httpd_state *s))
 {
   PSOCK_BEGIN(&s->sin);
   s->expected_100_continue = 0;
-  s->req_type = HttpReqNone;
+  s->expected_file_length = -1;
+  s->handler_func = NULL;
+  s->filename[0] = '\0';
 
   while(1) {
     // eat away the header
@@ -273,78 +288,23 @@ PT_THREAD(handle_input(struct httpd_state *s))
       break;
     }
 
-    if(strncmp(s->inputbuf, http_get, 4) == 0) {
-      s->req_type = HttpReqGet;
-    }  else if(strncmp(s->inputbuf, http_post, 4) == 0) {
-      char* fn_end = s->inputbuf;
-      char* fn;
-
-
-      while (*fn_end++ != '/' );
-      
-      fn = fn_end;
-      
-      while (*fn_end != ' ' ) 
-        fn_end++;
-
-      *fn_end = 0;
-
-      while ( fn != fn_end-- ) {
-        if ( *fn_end == '/' ) {
-          *fn_end = '\\';
-        }
+    for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
+      if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
+        commands[i].parse_func(s);
+        break;
       }
-
-      s->filename[0] = fn[0]&0x7f;
-      s->filename[1] = ':';
-      strncpy( &s->filename[2],++fn, sizeof(s->filename));
-
-      
-      s->req_type = HttpReqPost;
-    }
-
-    if(strncmp(s->inputbuf, "Content-Length:",15) == 0) {
-      s->expected_file_length = atoi( &s->inputbuf[15] );
-      //fprintf(stdout, "expected_file_length: %u\r\n", s->expected_file_length );
-    }
-
-    if(strncmp(s->inputbuf, "Expect: 100-continue",20) == 0) {
-      s->expected_100_continue = 1;
-     // fprintf(stdout, "expected_100_continue:\r\n");
     }
   }
 
-  if ( s->req_type == HttpReqPost ) {
-    printf( "post file: %s", s->filename );
-    // check if expected?
-    if ( s->expected_100_continue ) {
-      PSOCK_SEND_STR(&s->sin, http_continue);
-    }
+  if ( s->expected_100_continue ) {
+    PSOCK_SEND_STR2(&s->worker, &s->sin, http_continue);
+  }
 
-    // make sure folder exists
-    mkdir ( "d:\\test.1", S_IRWXU );
+  if ( s->handler_func ) {
+    PT_INIT(&s->worker);
+    PSOCK_WAIT_THREAD(&s->sin, s->handler_func(s) );
+  }
 
-    s->file = fopen( s->filename,"wb" );
-
-    if ( !s->file ) {
-      fprintf(stderr, " -> failed to open!");
-    } else {
-      while ( s->expected_file_length > 0) {
-        PSOCK_READBUF_LEN(&s->sin, 
-          s->expected_file_length > s->inputbuf_size ? 
-            s->inputbuf_size : s->expected_file_length );
-
-        fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
-        s->expected_file_length-=PSOCK_DATALEN(&s->sin);
-      }
-
-      printf(" -> done.\r\n");
-      fclose( s->file );      
-    }
-  } else if ( s->req_type == HttpReqGet ) {
-    // do something
-  } 
-  
   PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
 }
@@ -366,6 +326,7 @@ httpd_appcall(void)
   } else if(uip_closed()  ) {
   //  printf("closed\r\n");
   } else if(uip_connected()) {
+//    printf("ptr %p\r\n", s);
     s->inputbuf_size = INPUTBUF_SIZE;
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;

@@ -114,6 +114,8 @@ main(void)
     resolv_conf(ipaddr);
     resolv_query("www.sics.se");*/
 
+  while( -1 == Cconis() ) Cconin ();
+
   while( -1 != Cconis() ) {
     uip_len = RTL8019dev_poll();
     if(uip_len > 0) {

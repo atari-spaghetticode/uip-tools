@@ -188,8 +188,11 @@ PT_THREAD(psock_send(struct psock *psock, const char *buf, unsigned int len));
  *
  * \hideinitializer
  */
-#define PSOCK_SEND_STR(psock, str)      		\
+#define PSOCK_SEND_STR(psock, str)          \
     PT_WAIT_THREAD(&((psock)->pt), psock_send(psock, str, strlen(str)))
+
+#define PSOCK_SEND_STR2(pt,psock, str)      		\
+    PT_WAIT_THREAD((pt), psock_send(psock, str, strlen(str)))
 
 PT_THREAD(psock_generator_send(struct psock *psock,
 				unsigned short (*f)(void *), void *arg));
@@ -266,6 +269,9 @@ PT_THREAD(psock_readbuf_len(struct psock *psock, uint16_t len));
  */
 #define PSOCK_READBUF_LEN(psock, len)     \
   PT_WAIT_THREAD(&((psock)->pt), psock_readbuf_len(psock, len))
+
+#define PSOCK_READBUF_LEN2(pt,psock, len)     \
+  PT_WAIT_THREAD(pt, psock_readbuf_len(psock, len))
  
 
 PT_THREAD(psock_readto(struct psock *psock, unsigned char c));

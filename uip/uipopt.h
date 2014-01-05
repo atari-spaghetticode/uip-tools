@@ -313,6 +313,7 @@
  *
  * \hideinitializer
  */
+
 #ifndef UIP_CONF_RECEIVE_WINDOW
 #define UIP_RECEIVE_WINDOW UIP_TCP_MSS
 #else

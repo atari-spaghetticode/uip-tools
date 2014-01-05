@@ -36,7 +36,7 @@ CC     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 LD     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 AR     = /opt/cross-mint/bin/m68k-atari-mint-ar
 APPS   = webserver
-CFLAGS = -Wall -O3 -fomit-frame-pointer -m68030 \
+CFLAGS = -std=gnu99 -Wall -O2 -fomit-frame-pointer -m68030 \
 		-I$(abspath ../uip) \
 		-I$(abspath .) \
 		-I$(abspath ../apps/webserver) \
