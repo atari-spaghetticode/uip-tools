@@ -68,9 +68,6 @@
 
 #include <osbind.h>
 
-#define STATE_WAITING 0
-#define STATE_OUTPUT  1
-
 #define ISO_nl      0x0a
 #define ISO_space   0x20
 #define ISO_bang    0x21
@@ -98,23 +95,22 @@ void mkdir_for_file( const char* path )
   for ( size_t i = 4; i < len; ++i ) {
     if ( temp_path[i] == '\\' ) {
       temp_path[i] = '\0';
-      Dcreate ( temp_path );
+      (void)Dcreate ( temp_path );
       temp_path[i] = '\\';
     }
   }
-  Dcreate ( temp_path );
-
+  (void)Dcreate ( temp_path );
 }
 
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(receive_file(struct httpd_state *s, const char* filename, const size_t filelen))
+PT_THREAD(receive_file(struct pt* worker,struct httpd_state *s,const char* filename,const size_t filelen))
 {
-  PT_BEGIN(&s->worker2);
+  PT_BEGIN(worker);
 
-  Cconws("recv: ");
-  Cconws(filename);
+  (void)Cconws("recv: ");
+  (void)Cconws(filename);
 
   // make sure folder exists
   mkdir_for_file ( filename );
@@ -122,80 +118,83 @@ PT_THREAD(receive_file(struct httpd_state *s, const char* filename, const size_t
   s->file = fopen( filename,"wb" );
 
   if ( !s->file ) {
-    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
-    Cconws(" -> failed to open!\r\n");
-    PT_END(&s->worker);
+    PSOCK_SEND_STR2(worker,&s->sin,"HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
+    (void)Cconws(" -> failed to open!\r\n");
+    PT_EXIT(worker);
   }
 
-  s->temp_file_len = filelen;
+  s->temp_file_length = filelen;
 
-  while ( s->temp_file_len > 0) {
+  while ( s->temp_file_length > 0) {
 
-    PSOCK_READBUF_LEN2(&s->worker, &s->sin, 
-      s->temp_file_len > s->inputbuf_size ? 
-        s->inputbuf_size : s->temp_file_len );
+    PSOCK_READBUF_LEN2(worker, &s->sin, 
+      s->temp_file_length > s->inputbuf_size ? 
+        s->inputbuf_size : s->temp_file_length );
 
     fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
-    s->temp_file_len-=PSOCK_DATALEN(&s->sin);
-  }
-
-  Cconws(" -> OK.\r\n");
-  fclose( s->file )
-
-  PT_END(&s->worker2);
-}
-/*---------------------------------------------------------------------------*/
-
-static
-PT_THREAD(handle_post(struct httpd_state *s))
-{
-  PT_BEGIN(&s->worker);
-
-  if ( s->expected_file_length == -1 ) {
-    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n");        
-    PT_END(&s->worker);
-  }
-
-  Cconws("recv: ");
-  Cconws(s->filename);
-
-  // make sure folder exists
-  mkdir_for_file ( s->filename );
-
-  s->file = fopen( s->filename,"wb" );
-
-  if ( !s->file ) {
-    PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
-    Cconws(" -> failed to open!\r\n");
-    PT_END(&s->worker);
-  } 
-
-  while ( s->expected_file_length > 0) {
-
-    PSOCK_READBUF_LEN2(&s->worker, &s->sin, 
-      s->expected_file_length > s->inputbuf_size ? 
-        s->inputbuf_size : s->expected_file_length );
-
-    fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
-    s->expected_file_length-=PSOCK_DATALEN(&s->sin);
+    s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
   Cconws(" -> OK.\r\n");
   fclose( s->file );
-  
-  PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 201 Created\r\nConnection: close\r\n");    
 
-  PT_END(&s->worker);
+  PT_END(worker);
 }
 
 static
-PT_THREAD(handle_run(struct httpd_state *s))
+PT_THREAD(receive_multipart(struct pt* worker,struct httpd_state *s,const char* filename,const size_t filelen))
 {
-  PT_BEGIN(&s->worker);
-  PSOCK_SEND_STR2(&s->worker, &s->sin, "HTTP/1.1 200 OK\r\nConnection: close\r\n");
-  Dsetpath(s->path);
+  PT_BEGIN(worker);
+  
+  PT_END(worker);
+}
+/*---------------------------------------------------------------------------*/
+
+static
+PT_THREAD(handle_post(struct pt* worker,struct httpd_state *s))
+{
+  PT_BEGIN(worker);
+
+  if ( s->expected_file_length == -1 ) {
+    PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n");        
+    PT_EXIT(worker);
+  }
+
+  if ( s->multipart_encoded == 1 ) {
+    PT_INIT(&worker[1]);
+    PT_WAIT_THREAD(worker, receive_multipart(&worker[1],s,s->filename,s->expected_file_length) );
+  } else {
+    PT_INIT(&worker[1]);
+    PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length) );
+  }
+  
+  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 201 Created\r\nConnection: close\r\n");    
+
+  PT_END(worker);
+}
+
+static
+PT_THREAD(handle_run(struct pt* worker,struct httpd_state *s))
+{
+  char temp_path[256];
+  size_t len;
+
+  PT_BEGIN(worker);
+  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 200 OK\r\nConnection: close\r\n");
+
+  len = strlen( s->filename );
+  strncpy( temp_path, s->filename, sizeof(temp_path));
+  // remove file name from the path file path base 
+  for(size_t i = len; i != 0; --i) {
+    if ( temp_path[i] == '\\' ) {
+      temp_path[i] = '\0';
+      break;
+    }
+  }
+  // set cwd
+  Dsetpath(temp_path);
   Pexec(0,s->filename,"","");
-  PT_END(&s->worker);
+  PT_END(worker);
 }
 
 void parse_file_path ( struct httpd_state *s )
@@ -247,10 +246,12 @@ void parse_expect( struct httpd_state *s )
 
 void parse_multipart( struct httpd_state *s )
 {
+  s->multipart_encoded = 1;
 }
 
 void parse_urlencoded( struct httpd_state *s )
 {
+  s->multipart_encoded = 0;
 }
 
 #define HeaderEntry(str,func) {str, sizeof(str), func}
@@ -278,6 +279,7 @@ PT_THREAD(handle_input(struct httpd_state *s))
   s->expected_file_length = -1;
   s->handler_func = NULL;
   s->filename[0] = '\0';
+  s->multipart_encoded = 0;
 
   while(1) {
     // eat away the header
@@ -297,17 +299,24 @@ PT_THREAD(handle_input(struct httpd_state *s))
   }
 
   if ( s->expected_100_continue ) {
-    PSOCK_SEND_STR2(&s->worker, &s->sin, http_continue);
+    PSOCK_SEND_STR( &s->sin, http_continue);
   }
 
   if ( s->handler_func ) {
-    PT_INIT(&s->worker);
-    PSOCK_WAIT_THREAD(&s->sin, s->handler_func(s) );
+    PT_INIT(&s->worker[0]);
+    PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
   }
 
   PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
 }
+/*---------------------------------------------------------------------------*/
+static void 
+handle_cleanup(struct httpd_state *s)
+{
+
+}
+
 /*---------------------------------------------------------------------------*/
 static void
 handle_connection(struct httpd_state *s)
@@ -320,11 +329,11 @@ httpd_appcall(void)
 {
   struct httpd_state *s = (struct httpd_state *)&(uip_conn->appstate);
   if ( uip_timedout() ) {
-    printf("timedout\r\n");
+    handle_cleanup(s);
   } else if( uip_aborted() ) {
-    printf("aborted\r\n");
+    handle_cleanup(s);
   } else if(uip_closed()  ) {
-  //  printf("closed\r\n");
+    handle_cleanup(s);
   } else if(uip_connected()) {
 //    printf("ptr %p\r\n", s);
     s->inputbuf_size = INPUTBUF_SIZE;

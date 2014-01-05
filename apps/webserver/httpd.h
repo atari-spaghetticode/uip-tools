@@ -50,18 +50,12 @@ struct httpd_state {
   FILE* file;
   size_t expected_file_length;
   uint32_t expected_100_continue;
-  char state;
+  char multipart_encoded;
 
-  struct pt worker;
-  
-  struct pt worker2;
+  struct pt worker[4];
   size_t temp_file_length;
   
-  char(*handler_func)(struct httpd_state *s);
-//  struct httpd_fs_file file;
-  int len;
-  
-  unsigned short count;
+  char(*handler_func)(struct pt* worker,struct httpd_state *s);
 };
 
 void httpd_init(void);
