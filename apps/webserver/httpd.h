@@ -40,17 +40,25 @@
 #include "stdio.h"
 
 #define INPUTBUF_SIZE 1500
+// add 4 to maxumum boundary size to catter for mandatory
+// dashes at the begining and end
+#define MULTIPART_BOUNDARY_SIZE (70+4)
 
 struct httpd_state {
   unsigned char timer;
   struct psock sin;
-  char inputbuf[INPUTBUF_SIZE];
+  char* inputbuf;
+  char inputbuf_data[INPUTBUF_SIZE+MULTIPART_BOUNDARY_SIZE];
   uint32_t inputbuf_size;
   char filename[256];
   FILE* file;
   size_t expected_file_length;
   uint32_t expected_100_continue;
+  
   char multipart_encoded;
+  char boundary[70];
+  size_t boundary_len;
+  char part_header[1024];
 
   struct pt worker[4];
   size_t temp_file_length;

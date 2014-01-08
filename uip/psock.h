@@ -289,8 +289,11 @@ PT_THREAD(psock_readto(struct psock *psock, unsigned char c));
  *
  * \hideinitializer
  */
-#define PSOCK_READTO(psock, c)				\
+#define PSOCK_READTO(psock, c)        \
   PT_WAIT_THREAD(&((psock)->pt), psock_readto(psock, c))
+
+#define PSOCK_READTO2(pt,psock, c)				\
+  PT_WAIT_THREAD((pt), psock_readto(psock, c))
 
 /**
  * The length of the data that was previously read.

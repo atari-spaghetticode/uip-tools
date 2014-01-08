@@ -46,7 +46,7 @@
 
 static struct dhcpc_state s;
 
-struct dhcp_msg {
+struct __attribute__ ((__packed__)) dhcp_msg {
   u8_t op, htype, hlen, hops;
   u8_t xid[4];
   u16_t secs, flags;
@@ -202,6 +202,7 @@ parse_options(u8_t *optptr, int len)
   u8_t type = 0;
 
   while(optptr < end) {
+    printf("dhcp_parse: %u\r\n",(unsigned int)*optptr);
     switch(*optptr) {
     case DHCP_OPTION_SUBNET_MASK:
       memcpy(s.netmask, optptr + 2, 4);
@@ -222,6 +223,7 @@ parse_options(u8_t *optptr, int len)
       memcpy(s.lease_time, optptr + 2, 4);
       break;
     case DHCP_OPTION_END:
+      printf("dhcp type: %u\r\n", type);
       return type;
     }
 
@@ -253,12 +255,15 @@ PT_THREAD(handle_dhcp(void))
   s.state = STATE_SENDING;
   s.ticks = CLOCK_SECOND;
 
+  printf("restart 1\r\n");
   do {
+    printf("send_discover\r\n");
     send_discover();
     timer_set(&s.timer, s.ticks);
     PT_WAIT_UNTIL(&s.pt, uip_newdata() || timer_expired(&s.timer));
 
     if(uip_newdata() && parse_msg() == DHCPOFFER) {
+      printf("DHCPOFFER\r\n");
       s.state = STATE_OFFER_RECEIVED;
       break;
     }
@@ -269,13 +274,18 @@ PT_THREAD(handle_dhcp(void))
   } while(s.state != STATE_OFFER_RECEIVED);
   
   s.ticks = CLOCK_SECOND;
-
+  PT_YIELD(&s.pt);
   do {
+    PT_YIELD(&s.pt);
+    printf("send_request\r\n");
     send_request();
     timer_set(&s.timer, s.ticks);
+    PT_YIELD(&s.pt);
     PT_WAIT_UNTIL(&s.pt, uip_newdata() || timer_expired(&s.timer));
 
+//    printf("DHCPACK 1 %u\r\n", (int)uip_newdata());
     if(uip_newdata() && parse_msg() == DHCPACK) {
+      printf("DHCPACK\r\n");
       s.state = STATE_CONFIG_RECEIVED;
       break;
     }
@@ -283,11 +293,12 @@ PT_THREAD(handle_dhcp(void))
     if(s.ticks <= CLOCK_SECOND * 10) {
       s.ticks += CLOCK_SECOND;
     } else {
-      PT_RESTART(&s.pt);
+   //   printf("doing restart\r\n");
+  //    PT_RESTART(&s.pt);
     }
   } while(s.state != STATE_CONFIG_RECEIVED);
   
-#if 0
+#if 1
   printf("Got IP address %d.%d.%d.%d\n",
 	 uip_ipaddr1(s.ipaddr), uip_ipaddr2(s.ipaddr),
 	 uip_ipaddr3(s.ipaddr), uip_ipaddr4(s.ipaddr));

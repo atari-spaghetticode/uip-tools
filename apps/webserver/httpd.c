@@ -145,7 +145,92 @@ static
 PT_THREAD(receive_multipart(struct pt* worker,struct httpd_state *s,const char* filename,const size_t filelen))
 {
   PT_BEGIN(worker);
+  s->temp_file_length = filelen;
+  memset( s->inputbuf_data,0,MULTIPART_BOUNDARY_SIZE);
+
+  size_t data_to_store;
+  size_t new_header;
   
+  while (1) {
+    size_t data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
+    PSOCK_READBUF_LEN2(worker, &s->sin, data_len);
+    data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
+    s->temp_file_length-=PSOCK_DATALEN(&s->sin);
+
+    //Cconws( s->inputbuf);
+    
+    data_to_store = 0;
+    new_header = 0;
+
+    for( size_t i = 0; i < (data_len + MULTIPART_BOUNDARY_SIZE - 1); ++i ) {
+      if ( s->inputbuf_data[i] == '-' && s->inputbuf_data[i+1] == '-' ) {
+        // there's a chance we've encountered a boundary
+        if ( 0 == memcmp(s->boundary,&s->inputbuf_data[i+2],s->boundary_len ) ) {
+
+          // figure out if this is last boundary
+          if ( s->inputbuf_data[i+2+s->boundary_len] == '-' && 
+              s->inputbuf_data[i+3+s->boundary_len] == '-') {
+            // final boundary
+            new_header = 0;
+            Cconws("final\r\n");
+            break;
+          } else {
+            // intermediate boundary
+            // parse header
+            data_to_store = i - 2;          //save up to the boundary minus "\r\n"
+            i += s->boundary_len;
+            new_header = i+2;
+            printf("boundary %u %u\r\n", new_header, data_len);
+            break;
+          }
+        }
+      }
+    }
+
+    if ( data_to_store ) {
+      // store before the boundary
+    }
+
+    if ( new_header ) {
+      size_t i = new_header;
+      size_t header_end = data_len;
+      while ( i++ < data_len ) {
+        if ( s->inputbuf_data[i] == '\r' && s->inputbuf_data[i+1] == '\n' 
+          && s->inputbuf_data[i+2] == '\r' && s->inputbuf_data[i+3] == '\n' ) {
+          header_end = i + 4;
+          break;
+        }
+      }
+
+      memcpy ( s->part_header, &s->inputbuf_data[new_header], header_end - new_header );
+      s->part_header[ header_end - new_header ] = 0;
+
+      if ( header_end == 0 ) {
+        // we need more data
+        while(1) {
+          size_t len;
+          PSOCK_READTO2(worker,&s->sin, ISO_nl);
+          len = PSOCK_DATALEN(&s->sin);
+          strncat( s->part_header, s->inputbuf, len );
+          if ( len == 2 ) {
+            header_end = len;
+            break;
+          }
+        }
+      }
+      Cconws ("header:\r\n");
+      Cconws ( s->part_header );
+      // parse header
+    }
+
+    if ( data_len == s->inputbuf_size ) {
+      memcpy( s->inputbuf_data, 
+        s->inputbuf[ data_len - MULTIPART_BOUNDARY_SIZE ], 
+        MULTIPART_BOUNDARY_SIZE);
+    }
+
+  }
+
   PT_END(worker);
 }
 /*---------------------------------------------------------------------------*/
@@ -247,6 +332,19 @@ void parse_expect( struct httpd_state *s )
 void parse_multipart( struct httpd_state *s )
 {
   s->multipart_encoded = 1;
+
+  char* boundary_start = s->inputbuf;
+  char* boundary_end;
+
+  while ( *boundary_start++ != '=' );
+  boundary_end = boundary_start;
+  while ( *boundary_end != '\r' ) boundary_end++;
+  *boundary_end = '\0';
+  Cconws("Boundary: ");
+  Cconws(boundary_start);
+  Cconws("\r\n");
+  strncpy(s->boundary,boundary_start,sizeof(s->boundary) );
+  s->boundary_len = strlen(s->boundary);
 }
 
 void parse_urlencoded( struct httpd_state *s )
@@ -337,6 +435,7 @@ httpd_appcall(void)
   } else if(uip_connected()) {
 //    printf("ptr %p\r\n", s);
     s->inputbuf_size = INPUTBUF_SIZE;
+    s->inputbuf = &s->inputbuf_data[MULTIPART_BOUNDARY_SIZE];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
     handle_connection(s);

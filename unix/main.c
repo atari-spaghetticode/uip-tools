@@ -42,6 +42,7 @@
 #include "rtl8019dev.h"
 
 #include "timer.h"
+#include "dhcpc.h"
 
 #include <osbind.h>
 #include <stdio.h>
@@ -82,12 +83,17 @@ main(void)
   uip_init();
   printf("done\r\n");
 
-  uip_ipaddr(ipaddr, 192,168,1,34);
-  uip_sethostaddr(ipaddr);
-  uip_ipaddr(ipaddr, 192,168,1,254);
-  uip_setdraddr(ipaddr);
-  uip_ipaddr(ipaddr, 255,255,255,0);
-  uip_setnetmask(ipaddr);
+  // uip_ipaddr(ipaddr, 192,168,1,34);
+  // uip_sethostaddr(ipaddr);
+  // uip_ipaddr(ipaddr, 192,168,1,254);
+  // uip_setdraddr(ipaddr);
+  // uip_ipaddr(ipaddr, 255,255,255,0);
+  // uip_setnetmask(ipaddr);
+
+  {
+    u8_t mac[6] = {0,0x6,0x98,0x1,0x2,0x29};
+    dhcpc_init(&mac, 6);
+  }
 
   httpd_init();
   printf("httpd_init done\r\n");
@@ -96,10 +102,6 @@ main(void)
   
   /*  hello_world_init();*/
 
-  /*  {
-      u8_t mac[6] = {1,2,3,4,5,6};
-      dhcpc_init(&mac, 6);
-      }*/
   
   /*uip_ipaddr(ipaddr, 127,0,0,1);
   smtp_configure("localhost", ipaddr);
@@ -184,22 +186,6 @@ uip_log(char *m)
 {
   printf("uIP log message: %s\n", m);
 }
-void
-resolv_found(char *name, u16_t *ipaddr)
-{
-  u16_t *ipaddr2;
-  
-  if(ipaddr == NULL) {
-    printf("Host '%s' not found.\n", name);
-  } else {
-    printf("Found name '%s' = %d.%d.%d.%d\n", name,
-	   htons(ipaddr[0]) >> 8,
-	   htons(ipaddr[0]) & 0xff,
-	   htons(ipaddr[1]) >> 8,
-	   htons(ipaddr[1]) & 0xff);
-    /*    webclient_get("www.sics.se", 80, "/~adam/uip");*/
-  }
-}
 #ifdef __DHCPC_H__
 void
 dhcpc_configured(const struct dhcpc_state *s)
@@ -207,37 +193,8 @@ dhcpc_configured(const struct dhcpc_state *s)
   uip_sethostaddr(s->ipaddr);
   uip_setnetmask(s->netmask);
   uip_setdraddr(s->default_router);
-  resolv_conf(s->dnsaddr);
+//  resolv_conf(s->dnsaddr);
 }
 #endif /* __DHCPC_H__ */
-void
-smtp_done(unsigned char code)
-{
-  printf("SMTP done with code %d\n", code);
-}
-void
-webclient_closed(void)
-{
-  printf("Webclient: connection closed\n");
-}
-void
-webclient_aborted(void)
-{
-  printf("Webclient: connection aborted\n");
-}
-void
-webclient_timedout(void)
-{
-  printf("Webclient: connection timed out\n");
-}
-void
-webclient_connected(void)
-{
-  printf("Webclient: connected, waiting for data...\n");
-}
-void
-webclient_datahandler(char *data, u16_t len)
-{
-  printf("Webclient: got %d bytes of data.\n", len);
-}
+
 /*---------------------------------------------------------------------------*/
