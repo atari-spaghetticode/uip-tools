@@ -70,51 +70,21 @@ main(void)
   int i;
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
-  printf("UIP starting\r\n");
+  
+  printf("uIP tool\r\n");
   Super(0);
 
   timer_set(&periodic_timer, CLOCK_SECOND / 2);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  printf("8019 init .. ");
-  RTL8019dev_init();
-
-  printf("done\r\n");
-  printf("UIP init .. ");
-  uip_init();
-  printf("done\r\n");
-
-  // uip_ipaddr(ipaddr, 192,168,1,34);
-  // uip_sethostaddr(ipaddr);
-  // uip_ipaddr(ipaddr, 192,168,1,254);
-  // uip_setdraddr(ipaddr);
-  // uip_ipaddr(ipaddr, 255,255,255,0);
-  // uip_setnetmask(ipaddr);
-
-  {
-    u8_t mac[6] = {0,0x6,0x98,0x1,0x2,0x29};
-    dhcpc_init(&mac, 6);
+  printf("RTL8019 init .. ");
+  if ( !RTL8019dev_init(uip_ethaddr.addr) ) {
+    printf("failed!\r\n");
+    return 1;
   }
 
+  uip_init();
+  dhcpc_init(uip_ethaddr.addr, 6);
   httpd_init();
-  printf("httpd_init done\r\n");
-  
-  /*  telnetd_init();*/
-  
-  /*  hello_world_init();*/
-
-  
-  /*uip_ipaddr(ipaddr, 127,0,0,1);
-  smtp_configure("localhost", ipaddr);
-  SMTP_SEND("adam@sics.se", NULL, "uip-testing@example.com",
-	    "Testing SMTP from uIP",
-	    "Test message sent by uIP\r\n");*/
-
-  /*
-    webclient_init();
-    resolv_init();
-    uip_ipaddr(ipaddr, 195,54,122,204);
-    resolv_conf(ipaddr);
-    resolv_query("www.sics.se");*/
 
   while( -1 == Cconis() ) Cconin ();
 
@@ -184,7 +154,7 @@ main(void)
 void
 uip_log(char *m)
 {
-  printf("uIP log message: %s\n", m);
+//  printf("uIP log message: %s\n", m);
 }
 #ifdef __DHCPC_H__
 void

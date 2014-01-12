@@ -39,6 +39,8 @@
 #include "timer.h"
 #include "pt.h"
 
+#include <osbind.h>
+
 #define STATE_INITIAL         0
 #define STATE_SENDING         1
 #define STATE_OFFER_RECEIVED  2
@@ -202,7 +204,7 @@ parse_options(u8_t *optptr, int len)
   u8_t type = 0;
 
   while(optptr < end) {
-    printf("dhcp_parse: %u\r\n",(unsigned int)*optptr);
+//    printf("dhcp_parse: %u\r\n",(unsigned int)*optptr);
     switch(*optptr) {
     case DHCP_OPTION_SUBNET_MASK:
       memcpy(s.netmask, optptr + 2, 4);
@@ -223,7 +225,7 @@ parse_options(u8_t *optptr, int len)
       memcpy(s.lease_time, optptr + 2, 4);
       break;
     case DHCP_OPTION_END:
-      printf("dhcp type: %u\r\n", type);
+   //   printf("dhcp type: %u\r\n", type);
       return type;
     }
 
@@ -255,15 +257,15 @@ PT_THREAD(handle_dhcp(void))
   s.state = STATE_SENDING;
   s.ticks = CLOCK_SECOND;
 
-  printf("restart 1\r\n");
+  //printf("restart 1\r\n");
   do {
-    printf("send_discover\r\n");
+    //printf("send_discover\r\n");
     send_discover();
     timer_set(&s.timer, s.ticks);
     PT_WAIT_UNTIL(&s.pt, uip_newdata() || timer_expired(&s.timer));
 
     if(uip_newdata() && parse_msg() == DHCPOFFER) {
-      printf("DHCPOFFER\r\n");
+  //    printf("DHCPOFFER\r\n");
       s.state = STATE_OFFER_RECEIVED;
       break;
     }
@@ -277,7 +279,7 @@ PT_THREAD(handle_dhcp(void))
   PT_YIELD(&s.pt);
   do {
     PT_YIELD(&s.pt);
-    printf("send_request\r\n");
+    //printf("send_request\r\n");
     send_request();
     timer_set(&s.timer, s.ticks);
     PT_YIELD(&s.pt);
@@ -285,7 +287,7 @@ PT_THREAD(handle_dhcp(void))
 
 //    printf("DHCPACK 1 %u\r\n", (int)uip_newdata());
     if(uip_newdata() && parse_msg() == DHCPACK) {
-      printf("DHCPACK\r\n");
+      ///printf("DHCPACK\r\n");
       s.state = STATE_CONFIG_RECEIVED;
       break;
     }
@@ -294,25 +296,25 @@ PT_THREAD(handle_dhcp(void))
       s.ticks += CLOCK_SECOND;
     } else {
    //   printf("doing restart\r\n");
-  //    PT_RESTART(&s.pt);
+      PT_RESTART(&s.pt);
     }
   } while(s.state != STATE_CONFIG_RECEIVED);
   
 #if 1
-  printf("Got IP address %d.%d.%d.%d\n",
+  printf("IP %d.%d.%d.%d\n",
 	 uip_ipaddr1(s.ipaddr), uip_ipaddr2(s.ipaddr),
 	 uip_ipaddr3(s.ipaddr), uip_ipaddr4(s.ipaddr));
-  printf("Got netmask %d.%d.%d.%d\n",
-	 uip_ipaddr1(s.netmask), uip_ipaddr2(s.netmask),
-	 uip_ipaddr3(s.netmask), uip_ipaddr4(s.netmask));
-  printf("Got DNS server %d.%d.%d.%d\n",
-	 uip_ipaddr1(s.dnsaddr), uip_ipaddr2(s.dnsaddr),
-	 uip_ipaddr3(s.dnsaddr), uip_ipaddr4(s.dnsaddr));
-  printf("Got default router %d.%d.%d.%d\n",
-	 uip_ipaddr1(s.default_router), uip_ipaddr2(s.default_router),
-	 uip_ipaddr3(s.default_router), uip_ipaddr4(s.default_router));
-  printf("Lease expires in %ld seconds\n",
-	 ntohs(s.lease_time[0])*65536ul + ntohs(s.lease_time[1]));
+  // printf("Got netmask %d.%d.%d.%d\n",
+	 // uip_ipaddr1(s.netmask), uip_ipaddr2(s.netmask),
+	 // uip_ipaddr3(s.netmask), uip_ipaddr4(s.netmask));
+  // printf("Got DNS server %d.%d.%d.%d\n",
+	 // uip_ipaddr1(s.dnsaddr), uip_ipaddr2(s.dnsaddr),
+	 // uip_ipaddr3(s.dnsaddr), uip_ipaddr4(s.dnsaddr));
+  // printf("Got default router %d.%d.%d.%d\n",
+	 // uip_ipaddr1(s.default_router), uip_ipaddr2(s.default_router),
+	 // uip_ipaddr3(s.default_router), uip_ipaddr4(s.default_router));
+  // printf("Lease expires in %ld seconds\n",
+	 // ntohs(s.lease_time[0])*65536ul + ntohs(s.lease_time[1]));
 #endif
 
   dhcpc_configured(&s);
@@ -333,6 +335,8 @@ PT_THREAD(handle_dhcp(void))
 void
 dhcpc_init(const void *mac_addr, int mac_len)
 {
+  Cconws("DHCP: ");
+
   uip_ipaddr_t addr;
   
   s.mac_addr = mac_addr;

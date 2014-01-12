@@ -24,6 +24,7 @@
 
 #include "uip.h"
 #include "rtl8019.h"
+#include <stdbool.h>
 
 /*****************************************************************************
 *  RTL8019dev_init()
@@ -31,7 +32,7 @@
 *  Date:        September 21, 2002
 *  Description: Power-up initialization of the RTL8019
 *****************************************************************************/
-void RTL8019dev_init(void);
+bool RTL8019dev_init(uint8_t* macaddr);
 
 
 /*****************************************************************************

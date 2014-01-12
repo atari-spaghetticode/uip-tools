@@ -4,6 +4,7 @@
 //#include "avr/pgmspace.h"
 #include "rtlregs.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 /*****************************************************************************
 *  Module Name:       Realtek 8019AS Driver
@@ -523,7 +524,7 @@ void Delay(long nops)
 #endif
 }
 
-static int NicReset(void)
+static bool NicReset(void)
 {
 //volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned char i;
@@ -544,7 +545,7 @@ static int NicReset(void)
                readRTL(NIC_PG0_RBCR0) == 0x50 && 
                readRTL(NIC_PG0_RBCR1) == 0x70) {
                 debug_print(("OK\r\n"));
-                return 0;
+                return true;
             }
         }
         debug_print(("failed\r\n\x07"));
@@ -563,15 +564,107 @@ static int NicReset(void)
         //     Delay(250000);
         // }
     }
-    return -1;
+    return false;
 }
 
-void initRTL8019(void)
+/* The EEPROM commands include the alway-set leading bit. */
+enum EEPROM_Cmds { EE_WriteCmd=5, EE_ReadCmd=6, EE_EraseCmd=7, };
+/* The description of EEPROM access. */
+struct ee_ctrl_bits {
+    int offset;
+    unsigned char shift_clk,    /* Bit that drives SK (shift clock) pin */
+        read_bit,               /* Mask bit for DO pin value */
+        write_0, write_1,       /* Enable chip and drive DI pin with 0 / 1 */
+        disable;                /* Disable chip. */
+};
+struct ee_ctrl_bits rtl_ee_tbl = {0x01,  0x04, 0x01, 0x88, 0x8A, 0x00 };
+
+/* This executes a generic EEPROM command, typically a write or write enable.
+   It returns the data output from the EEPROM, and thus may also be used for
+   reads and EEPROM sizing. */
+
+int debug = 0;
+
+static int do_eeprom_cmd(struct ee_ctrl_bits *ee, int cmd,
+                         int cmd_len)
+{
+    long ee_addr = ee->offset;
+    unsigned retval = 0;
+
+    if (debug > 1)
+        printf(" EEPROM op 0x%x: ", cmd);
+
+    /* Shift the command bits out. */
+    do {
+        short dataval = (cmd & (1 << cmd_len)) ? ee->write_1 : ee->write_0;
+        writeRTL(ee_addr, dataval);
+        if (debug > 2)
+            printf("%X", readRTL(ee_addr) & 15);
+        writeRTL(ee_addr, dataval |ee->shift_clk);
+        retval = (retval << 1) | ((readRTL(ee_addr) & ee->read_bit) ? 1 : 0);
+    } while (--cmd_len >= 0);
+    writeRTL(ee_addr, ee->write_0);
+
+    /* Terminate the EEPROM access. */
+    writeRTL(ee_addr, ee->disable);
+    if (debug > 1)
+        printf(" EEPROM result is 0x%5.5x.\n", retval);
+    return retval;
+}
+
+/* Wait for the EEPROM to finish what it is doing. */
+static int eeprom_busy_poll(struct ee_ctrl_bits *ee)
+{
+    int ee_addr = ee->offset;
+    int i;
+
+    writeRTL(ee_addr, ee->write_0);
+    for (i = 0; i < 10000; i++)         /* Typical 2000 ticks */
+        if (readRTL(ee_addr) & ee->read_bit)
+            break;
+    return i;
+}
+/* The abstracted functions for EEPROM access. */
+static int read_eeprom(struct ee_ctrl_bits *ee, int location)
+{
+    int addr_len = 6;
+    return do_eeprom_cmd(ee, ((EE_ReadCmd << addr_len) | location) << 16,
+                         3 + addr_len + 16) & 0xffff;
+}
+
+
+void RTL8019getMac(uint8_t* macaddr)
+{
+    uint8_t tempCR;
+    // switch register pages
+    //tempCR = readRTL(NIC_CR);
+    //writeRTL(CR,tempCR|NIC_CR_PS0);
+
+    //writeRTL(NIC_CR, E8390_NODMA+E8390_PAGE3);
+    writeRTL(NIC_CR,  NIC_CR_RD2 | NIC_CR_PS0 | NIC_CR_PS1);
+    // read MAC address registers
+    for ( int i = 0 ; i < 3; ++i ) {
+        uint16_t val = read_eeprom(&rtl_ee_tbl, 2 + i );
+        macaddr[i*2] = val&0xff;
+        macaddr[i*2+1] = val>>8;
+    }
+    // switch register pages back
+    writeRTL(CR,tempCR);
+}
+
+bool initRTL8019(uint8_t* macaddr)
 {
     unsigned char i, rb;
     volatile unsigned char *base = (unsigned char *)0x8300;
 
-    NicReset();
+    if ( !NicReset() ) {
+        return false;
+    }
+
+    RTL8019getMac( macaddr );
+
+    printf("MAC: %x:%x:%x:%x:%x:%x\r\n", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+
 
     debug_print(("Init controller..."));
     writeRTL(NIC_PG0_IMR, 0);
@@ -596,7 +689,7 @@ void initRTL8019(void)
     writeRTL(NIC_PG0_ISR, 0xff);
     writeRTL(NIC_CR, NIC_CR_STP | NIC_CR_RD2 | NIC_CR_PS0);
     for(i = 0; i < 6; i++)
-        writeRTL(NIC_PG1_PAR0 + i, mac[i]);
+         writeRTL(NIC_PG1_PAR0 + i, macaddr[i]);
     for(i = 0; i < 8; i++)
         writeRTL(NIC_PG1_MAR0 + i, 0);
     writeRTL(NIC_PG1_CURR, NIC_START_PAGE + TX_PAGES);
@@ -608,8 +701,6 @@ void initRTL8019(void)
     writeRTL(NIC_PG0_TCR, 0);
     /*    Delay(1000000)*/
     Delay_10ms(200);
-
-
 
 
     writeRTL(NIC_CR, NIC_CR_STA | NIC_CR_RD2 | NIC_CR_PS0 | NIC_CR_PS1);
@@ -663,45 +754,7 @@ void initRTL8019(void)
         break;
     }
 
-
-    return;
-    
-  /*  HARD_RESET_RTL8019();*/
-
-  // do soft reset
-  writeRTL( ISR, readRTL(ISR) ) ;
-  Delay_10ms(5);
-  
-  writeRTL(CR,0x21);       // stop the NIC, abort DMA, page 0
-  Delay_1ms(2);               // make sure nothing is coming in or going out
-  writeRTL(DCR, DCR_INIT);    // 0x58
-  writeRTL(RBCR0,0x00);
-  writeRTL(RBCR1,0x00);
-  writeRTL(RCR,0x04);
-  writeRTL(TPSR, TXSTART_INIT);
-  writeRTL(TCR,0x02);
-  writeRTL(PSTART, RXSTART_INIT);
-  writeRTL(BNRY, RXSTART_INIT);
-  writeRTL(PSTOP, RXSTOP_INIT);
-  writeRTL(CR, 0x61);
-  Delay_1ms(2);
-  writeRTL(CURR, RXSTART_INIT);
-  
-  writeRTL(PAR0+0, MYMAC_0);
-  writeRTL(PAR0+1, MYMAC_1);
-  writeRTL(PAR0+2, MYMAC_2);
-  writeRTL(PAR0+3, MYMAC_3);
-  writeRTL(PAR0+4, MYMAC_4);
-  writeRTL(PAR0+5, MYMAC_5);
-          
-  writeRTL(CR,0x21);
-  writeRTL(DCR, DCR_INIT);
-  writeRTL(CR,0x22);
-  writeRTL(ISR,0xFF);
-  writeRTL(IMR, IMR_INIT);
-  writeRTL(TCR, TCR_INIT);
-    
-  writeRTL(CR, 0x22);   // start the NIC
+    return true;
 }
 
 

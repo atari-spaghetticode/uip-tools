@@ -26,7 +26,8 @@
 /*#include "delay.h"*/
 
 #include "compiler.h"
-
+#include <stdint.h>
+#include <stdbool.h>
 
 /*****************************************************************************
 *  RTL8019beginPacketSend(unsigned int packetLength)
@@ -77,7 +78,7 @@ void RTL8019endPacketSend(void);
 *  Description: Sets up the RTL8019 NIC hardware interface, and initializes
 *                 the buffers and configuration of the NIC
 *****************************************************************************/
-void initRTL8019(void);
+bool initRTL8019(uint8_t* macaddr);
 
 
 /*****************************************************************************

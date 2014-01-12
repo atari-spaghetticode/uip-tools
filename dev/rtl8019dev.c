@@ -28,9 +28,9 @@
 
 
 
-void RTL8019dev_init(void)
+bool RTL8019dev_init(uint8_t* macaddr)
 {
-	initRTL8019();
+	return initRTL8019(macaddr);
 }
 
 

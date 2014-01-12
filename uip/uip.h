@@ -1536,6 +1536,11 @@ struct __attribute__ ((__packed__)) uip_eth_addr {
   u8_t addr[6];
 };
 
+#ifndef UIP_FIXEDETHADDR
+extern struct uip_eth_addr uip_ethaddr;
+#endif
+
+
 /**
  * Calculate the Internet checksum over a buffer.
  *

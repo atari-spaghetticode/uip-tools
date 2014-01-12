@@ -141,94 +141,86 @@ PT_THREAD(receive_file(struct pt* worker,struct httpd_state *s,const char* filen
   PT_END(worker);
 }
 
+struct MultipartState {
+  uint8_t* buf_ptr;
+  uint8_t* buf_end_ptr;
+  size_t data_len;
+};
+
 static
 PT_THREAD(receive_multipart(struct pt* worker,struct httpd_state *s,const char* filename,const size_t filelen))
 {
+  struct MultipartState* this = (struct MultipartState*)s->heap;
   PT_BEGIN(worker);
+
   s->temp_file_length = filelen;
   memset( s->inputbuf_data,0,MULTIPART_BOUNDARY_SIZE);
 
-  size_t data_to_store;
-  size_t new_header;
-  
   while (1) {
-    size_t data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
-    PSOCK_READBUF_LEN2(worker, &s->sin, data_len);
-    data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
+    this->data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
+    PSOCK_READBUF_LEN2(worker, &s->sin, this->data_len);
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
 
-    //Cconws( s->inputbuf);
-    
-    data_to_store = 0;
-    new_header = 0;
+    this->buf_ptr = s->inputbuf_data;
+    this->buf_end_ptr = &s->inputbuf_data[this->data_len + 1 + MULTIPART_BOUNDARY_SIZE];
 
-    for( size_t i = 0; i < (data_len + MULTIPART_BOUNDARY_SIZE - 1); ++i ) {
-      if ( s->inputbuf_data[i] == '-' && s->inputbuf_data[i+1] == '-' ) {
-        // there's a chance we've encountered a boundary
-        if ( 0 == memcmp(s->boundary,&s->inputbuf_data[i+2],s->boundary_len ) ) {
+    while( this->buf_ptr < this->buf_end_ptr ) {
+      //Cconws("1\r\n");
+      // there's a chance we've encountered a boundary
+      if ( this->buf_ptr[0] == '-' && this->buf_ptr[1] == '-' 
+          && 0 == memcmp(s->boundary,&this->buf_ptr[2],s->boundary_len )) {
+        // figure out if this is last boundary
+        if ( this->buf_ptr[2+s->boundary_len] == '-' && 
+            this->buf_ptr[3+s->boundary_len] == '-') {
+          // final boundary
+          //new_header = 0;
+          Cconws("final\r\n");
+          PT_EXIT(worker);
+        } else {
+          this->buf_ptr+= s->boundary_len + 2;
+          uint8_t* new_header = this->buf_ptr;
+          uint8_t* header_end = this->buf_end_ptr;
 
-          // figure out if this is last boundary
-          if ( s->inputbuf_data[i+2+s->boundary_len] == '-' && 
-              s->inputbuf_data[i+3+s->boundary_len] == '-') {
-            // final boundary
-            new_header = 0;
-            Cconws("final\r\n");
-            break;
-          } else {
-            // intermediate boundary
-            // parse header
-            data_to_store = i - 2;          //save up to the boundary minus "\r\n"
-            i += s->boundary_len;
-            new_header = i+2;
-            printf("boundary %u %u\r\n", new_header, data_len);
-            break;
+          printf("boundary \r\n");
+
+          while ( this->buf_ptr < this->buf_end_ptr ) {
+            if ( this->buf_ptr[0] == '\r' && this->buf_ptr[1] == '\n' 
+              && this->buf_ptr[2] == '\r' && this->buf_ptr[3] == '\n' ) {
+              this->buf_ptr+=4;
+              header_end = this->buf_ptr;
+              break;
+            }
+            this->buf_ptr++;
           }
-        }
-      }
-    }
+          //*header_end = 0;
+          memcpy ( s->part_header, new_header, header_end - new_header );
+          s->part_header[header_end - new_header] = 0;
 
-    if ( data_to_store ) {
-      // store before the boundary
-    }
-
-    if ( new_header ) {
-      size_t i = new_header;
-      size_t header_end = data_len;
-      while ( i++ < data_len ) {
-        if ( s->inputbuf_data[i] == '\r' && s->inputbuf_data[i+1] == '\n' 
-          && s->inputbuf_data[i+2] == '\r' && s->inputbuf_data[i+3] == '\n' ) {
-          header_end = i + 4;
-          break;
-        }
-      }
-
-      memcpy ( s->part_header, &s->inputbuf_data[new_header], header_end - new_header );
-      s->part_header[ header_end - new_header ] = 0;
-
-      if ( header_end == 0 ) {
-        // we need more data
-        while(1) {
-          size_t len;
-          PSOCK_READTO2(worker,&s->sin, ISO_nl);
-          len = PSOCK_DATALEN(&s->sin);
-          strncat( s->part_header, s->inputbuf, len );
-          if ( len == 2 ) {
-            header_end = len;
-            break;
+          if ( header_end == this->buf_end_ptr ) {
+            // we need more data
+            while(1) {
+              size_t len;
+              PSOCK_READTO2(worker,&s->sin, ISO_nl);
+              len = PSOCK_DATALEN(&s->sin);
+              strncat( s->part_header, s->inputbuf, len );
+              if ( len == 2 ) {
+                break;
+              }
+            }
           }
+          Cconws ("header:\r\n");
+          Cconws ( s->part_header );
         }
+      } else {
+        ++this->buf_ptr;
       }
-      Cconws ("header:\r\n");
-      Cconws ( s->part_header );
-      // parse header
     }
 
-    if ( data_len == s->inputbuf_size ) {
+    if ( this->data_len == s->inputbuf_size ) {
       memcpy( s->inputbuf_data, 
-        s->inputbuf[ data_len - MULTIPART_BOUNDARY_SIZE ], 
+        &s->inputbuf[ this->data_len - MULTIPART_BOUNDARY_SIZE ], 
         MULTIPART_BOUNDARY_SIZE);
     }
-
   }
 
   PT_END(worker);

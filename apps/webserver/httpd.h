@@ -38,7 +38,7 @@
 #include "psock.h"
 #include "httpd-fs.h"
 #include "stdio.h"
-
+#define HEAP_SIZE 1024
 #define INPUTBUF_SIZE 1500
 // add 4 to maxumum boundary size to catter for mandatory
 // dashes at the begining and end
@@ -64,6 +64,8 @@ struct httpd_state {
   size_t temp_file_length;
   
   char(*handler_func)(struct pt* worker,struct httpd_state *s);
+
+  uint8_t heap[HEAP_SIZE];
 };
 
 void httpd_init(void);
