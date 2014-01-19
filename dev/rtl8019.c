@@ -400,8 +400,24 @@ void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
     writeRTL(RSAR0, (unsigned char)currentRetreiveAddress);
     writeRTL(RSAR1, (unsigned char)(currentRetreiveAddress>>8));
     writeRTL(CR, 0x0A);
-    for(i=0;i<length;i++)
-        localBuffer[i] = readRTL(RDMAPORT);
+//    for(i=0;i<length;i++)
+//        localBuffer[i] = readRTL(RDMAPORT);
+
+    asm volatile
+    (   
+        "   move.l  %0,a0               \n"             // stack pointer
+        "   move.l  #0xfa2000,a1               \n"             // stack pointer
+        "   move.l  %1,d0               \n"             // push Run func argument
+        "   subq.l  #1,d0               \n"             // push Run func argument
+        "1: move.b  (a1),(a0)+          \n"             // push Run func argument
+        "   dbf     d0,1b              \n"             // push Run func argument
+        
+       :    
+       :    "g"( localBuffer ),
+            "g"( length )
+       :    "a0","a1","d0"
+    );
+
 
     // end the DMA operation
     writeRTL(CR, 0x22);

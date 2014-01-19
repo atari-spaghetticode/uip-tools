@@ -53,10 +53,63 @@
 #define NULL (void *)0
 #endif /* NULL */
 
+struct ProfileProbe {
+  uint64_t last;
+  uint64_t all;
+
+};
+
+uint64_t getMicroseconds( )
+{
+  uint64_t timer200hz;
+  uint32_t data;
+resync:
+  timer200hz = *((volatile uint32_t*)0x4BA) ;
+  data = *((volatile uint8_t*)0xFFFFFA23);
+  
+  if ( *((volatile uint32_t*)0x4BA) != timer200hz )
+  {
+    goto resync;
+  }
+  
+  timer200hz*=5000;       // convert to microseconds
+  timer200hz+=(uint64_t)(((192-data)*6666)>>8); //26;     // convert data to microseconds
+  return timer200hz;
+}
+
+void initProbe ( struct ProfileProbe* p ) 
+{
+  p->last = 0;
+  p->all = 0;
+}
+
+void probeBegin ( struct ProfileProbe* p ) 
+{
+  p->last = getMicroseconds( );
+}
+
+void probeEnd ( struct ProfileProbe* p ) 
+{
+  p->all +=  getMicroseconds( ) - p->last;
+}
+
+void probePrint ( struct ProfileProbe* p  )
+{
+  printf("%llu\r\n",p->all );
+}
+
+struct ProfileProbe netSend;
+struct ProfileProbe netRecv;
+struct ProfileProbe netAll;
+struct ProfileProbe netInput;
+struct ProfileProbe netOther;
+
 void net_send()
 {
     //uip_split_output();
+    probeBegin(&netSend);
     RTL8019dev_send();
+    probeEnd(&netSend);
 }
 
 void tcpip_output()
@@ -74,7 +127,7 @@ main(void)
   printf("uIP tool\r\n");
   Super(0);
 
-  timer_set(&periodic_timer, CLOCK_SECOND / 2);
+  timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
   printf("RTL8019 init .. ");
   if ( !RTL8019dev_init(uip_ethaddr.addr) ) {
@@ -84,21 +137,33 @@ main(void)
 
   uip_init();
   dhcpc_init(uip_ethaddr.addr, 6);
-  httpd_init();
+  atarid_init();
+
+  initProbe( &netSend);
+  initProbe( &netRecv);
+  initProbe( &netAll);
+  initProbe( &netInput);
+  initProbe( &netOther);
 
   while( -1 == Cconis() ) Cconin ();
 
   while( -1 != Cconis() ) {
+    probeBegin(&netRecv);
     uip_len = RTL8019dev_poll();
+    probeEnd(&netRecv);
+    
+    probeBegin(&netAll);
+
     if(uip_len > 0) {
+        probeBegin(&netInput);
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
         //printf("got data.. %d: 0x%x\r\n",uip_len, (int)BUF->type);
-      	uip_arp_ipin();
-      	uip_input();
-      	/* If the above function invocation resulted in data that
-      	   should be sent out on the network, the global variable
-      	   uip_len is set to a value > 0. */
-      	if(uip_len > 0) {
+        uip_arp_ipin();
+        uip_input();
+        /* If the above function invocation resulted in data that
+           should be sent out on the network, the global variable
+           uip_len is set to a value > 0. */
+        if(uip_len > 0) {
        //   printf("sending data.. %d\r\n",uip_len);
           uip_arp_out();
           net_send();
@@ -111,43 +176,55 @@ main(void)
            uip_len is set to a value > 0. */
         if(uip_len > 0) {
        //   printf("sending arp.. %d\r\n",uip_len);
-      	  net_send();
-      	}
+          net_send();
+        }
     }
+      probeEnd(&netInput);
 
   } else if(timer_expired(&periodic_timer)) {
+      probeBegin(&netOther);
       timer_reset(&periodic_timer);
       for(i = 0; i < UIP_CONNS; i++) {
-      	uip_periodic(i);
-      	/* If the above function invocation resulted in data that
-      	   should be sent out on the network, the global variable
-      	   uip_len is set to a value > 0. */
-      	if(uip_len > 0) {
-      	  uip_arp_out();
-      	  net_send();
-      	}
+        uip_periodic(i);
+        /* If the above function invocation resulted in data that
+           should be sent out on the network, the global variable
+           uip_len is set to a value > 0. */
+        if(uip_len > 0) {
+          uip_arp_out();
+          net_send();
+        }
       }
 
 #if UIP_UDP
       for(i = 0; i < UIP_UDP_CONNS; i++) {
-      	uip_udp_periodic(i);
-      	/* If the above function invocation resulted in data that
-      	   should be sent out on the network, the global variable
-      	   uip_len is set to a value > 0. */
-      	if(uip_len > 0) {
-      	  uip_arp_out();
-      	  net_send();
-      	}
+        uip_udp_periodic(i);
+        /* If the above function invocation resulted in data that
+           should be sent out on the network, the global variable
+           uip_len is set to a value > 0. */
+        if(uip_len > 0) {
+          uip_arp_out();
+          net_send();
+        }
       }
 #endif /* UIP_UDP */
       
       /* Call the ARP timer function every 10 seconds. */
       if(timer_expired(&arp_timer)) {
-      	timer_reset(&arp_timer);
-      	uip_arp_timer();
+        timer_reset(&arp_timer);
+        uip_arp_timer();
       }
+      probeEnd(&netOther);
     }
+    probeEnd(&netAll);
   }
+
+  printf("\r\n\r\n");
+  printf("All:     "); probePrint(&netAll);
+  printf("Input:   "); probePrint(&netInput);
+  printf("Other:   "); probePrint(&netOther);
+  printf("DevSend: "); probePrint(&netSend);
+  printf("DevRecv: "); probePrint(&netRecv);
+
   return 0;
 }
 /*---------------------------------------------------------------------------*/

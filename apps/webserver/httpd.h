@@ -39,7 +39,7 @@
 #include "httpd-fs.h"
 #include "stdio.h"
 #define HEAP_SIZE 1024
-#define INPUTBUF_SIZE 1500
+#define INPUTBUF_SIZE (1500*100)
 // add 4 to maxumum boundary size to catter for mandatory
 // dashes at the begining and end
 #define MULTIPART_BOUNDARY_SIZE (70+4)

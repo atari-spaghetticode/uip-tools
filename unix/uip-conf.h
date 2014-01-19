@@ -134,14 +134,16 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_UDP_CHECKSUMS   0
+#define UIP_CONF_UDP_CHECKSUMS   1
 
 /**
  * uIP statistics on or off
  *
  * \hideinitializer
  */
-#define UIP_CONF_STATISTICS      1
+#define UIP_CONF_STATISTICS      0
+
+#define CLOCK_CONF_SECOND      200
 
 
 /* Here we include the header file for the application(s) we use in
@@ -149,7 +151,7 @@ typedef unsigned short uip_stats_t;
 /*#include "smtp.h"*/
 /*#include "hello-world.h"*/
 /*#include "telnetd.h"*/
-#include "webserver.h"
+#include "atariserv.h"
 #include "dhcpc.h"
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/

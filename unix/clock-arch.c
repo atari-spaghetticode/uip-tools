@@ -40,15 +40,12 @@
 
 #include "clock-arch.h"
 #include <sys/time.h>
+#include <stdint.h>
 
 /*---------------------------------------------------------------------------*/
 clock_time_t
 clock_time(void)
 {
-  struct timeval tv;
-
-  gettimeofday(&tv, NULL);
-
-  return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+  return (*((volatile uint32_t*)0x4BA)) ;
 }
 /*---------------------------------------------------------------------------*/

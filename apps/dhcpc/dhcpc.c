@@ -251,21 +251,24 @@ parse_msg(void)
 static
 PT_THREAD(handle_dhcp(void))
 {
+//  printf("fuk: %u\r\n", (unsigned int)s.pt.lc );
+
   PT_BEGIN(&s.pt);
   
   /* try_again:*/
   s.state = STATE_SENDING;
-  s.ticks = CLOCK_SECOND;
+  s.ticks = CLOCK_SECOND*10;
 
   //printf("restart 1\r\n");
   do {
-    //printf("send_discover\r\n");
+    printf("send_discover\r\n");
     send_discover();
+    PT_YIELD(&s.pt);
     timer_set(&s.timer, s.ticks);
     PT_WAIT_UNTIL(&s.pt, uip_newdata() || timer_expired(&s.timer));
 
     if(uip_newdata() && parse_msg() == DHCPOFFER) {
-  //    printf("DHCPOFFER\r\n");
+      printf("DHCPOFFER\r\n");
       s.state = STATE_OFFER_RECEIVED;
       break;
     }
@@ -275,11 +278,11 @@ PT_THREAD(handle_dhcp(void))
     }
   } while(s.state != STATE_OFFER_RECEIVED);
   
-  s.ticks = CLOCK_SECOND;
+  s.ticks = CLOCK_SECOND*10;
   PT_YIELD(&s.pt);
   do {
     PT_YIELD(&s.pt);
-    //printf("send_request\r\n");
+    printf("send_request\r\n");
     send_request();
     timer_set(&s.timer, s.ticks);
     PT_YIELD(&s.pt);
@@ -287,7 +290,7 @@ PT_THREAD(handle_dhcp(void))
 
 //    printf("DHCPACK 1 %u\r\n", (int)uip_newdata());
     if(uip_newdata() && parse_msg() == DHCPACK) {
-      ///printf("DHCPACK\r\n");
+      printf("DHCPACK\r\n");
       s.state = STATE_CONFIG_RECEIVED;
       break;
     }

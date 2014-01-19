@@ -360,11 +360,11 @@ uip_icmp6chksum(void)
 }
 #endif /* UIP_CONF_IPV6 */
 /*---------------------------------------------------------------------------*/
-u16_t
-uip_tcpchksum(void)
-{
-  return upper_layer_chksum(UIP_PROTO_TCP);
-}
+// u16_t
+// uip_tcpchksum(void)
+// {
+//   return upper_layer_chksum(UIP_PROTO_TCP);
+// }
 /*---------------------------------------------------------------------------*/
 #if UIP_UDP_CHECKSUMS
 u16_t

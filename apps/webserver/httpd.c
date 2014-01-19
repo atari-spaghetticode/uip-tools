@@ -131,7 +131,7 @@ PT_THREAD(receive_file(struct pt* worker,struct httpd_state *s,const char* filen
       s->temp_file_length > s->inputbuf_size ? 
         s->inputbuf_size : s->temp_file_length );
 
-    fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
+    //fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 

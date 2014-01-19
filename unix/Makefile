@@ -35,21 +35,23 @@ all: uip
 CC     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 LD     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 AR     = /opt/cross-mint/bin/m68k-atari-mint-ar
-APPS   = webserver dhcpc
-CFLAGS = -std=gnu99 -Wall -O2 -fomit-frame-pointer -m68030 \
+APPS   = atari dhcpc
+CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-I$(abspath ../uip) \
 		-I$(abspath .) \
-		-I$(abspath ../apps/webserver) \
+		-I$(abspath ../apps/atari) \
 		-I$(abspath ../apps/dhcpc) \
 		-I$(abspath ../dev) \
-		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN
+		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN \
+		-DUIP_ARCH_IPCHKSUM \
+		-DUIP_ARCH_ADD32
 
 LD_FLAGS = -s -Wl,--traditional-format
 
 -include ../uip/Makefile.include
 
-uip: $(addprefix $(OBJECTDIR)/, main.o tapdev.o clock-arch.o) apps.a uip.a
-	$(LD) $(LD_FLAGS) $(addprefix $(OBJECTDIR)/, main.o tapdev.o clock-arch.o) apps.a uip.a -o $@.tos
+uip: $(addprefix $(OBJECTDIR)/, main.o tapdev.o uip_arch.o clock-arch.o) apps.a uip.a
+	$(LD) $(LD_FLAGS) $(addprefix $(OBJECTDIR)/, main.o tapdev.o uip_arch.o clock-arch.o) apps.a uip.a -o $@.tos
 
 clean:
 	rm -fr *.o *~ *core uip $(OBJECTDIR) *.a
