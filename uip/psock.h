@@ -175,8 +175,11 @@ PT_THREAD(psock_send(struct psock *psock, const char *buf, unsigned int len));
  *
  * \hideinitializer
  */
-#define PSOCK_SEND(psock, data, datalen)		\
+#define PSOCK_SEND(psock, data, datalen)    \
     PT_WAIT_THREAD(&((psock)->pt), psock_send(psock, data, datalen))
+
+#define PSOCK_SEND2(pt, psock, data, datalen)		\
+    PT_WAIT_THREAD(pt, psock_send(psock, data, datalen))
 
 /**
  * \brief      Send a null-terminated string.

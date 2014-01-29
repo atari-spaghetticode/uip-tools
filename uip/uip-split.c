@@ -51,8 +51,8 @@ uip_split_output(void)
   u16_t tcplen, len1, len2;
 
   /* We only try to split maximum sized TCP segments. */
-  if(BUF->proto == UIP_PROTO_TCP &&
-     uip_len == UIP_BUFSIZE - UIP_LLH_LEN) {
+//  printf("????\r\n");
+  if(BUF->proto == UIP_PROTO_TCP && uip_len > 1400) {
 
     tcplen = uip_len - UIP_TCPIP_HLEN;
     /* Split the segment in two. If the original packet length was
@@ -62,9 +62,11 @@ uip_split_output(void)
       ++len2;
     }
 
+//    printf("%u -> %u %u %u\r\n", tcplen, len1, len2, UIP_TCPIP_HLEN);
+
     /* Create the first packet. This is done by altering the length
        field of the IP header and updating the checksums. */
-    uip_len = len1 + UIP_TCPIP_HLEN;
+    uip_len = len1 + UIP_TCPIP_HLEN + 54;
 #if UIP_CONF_IPV6
     /* For IPv6, the IP length field does not include the IPv6 IP header
        length. */
@@ -87,6 +89,8 @@ uip_split_output(void)
     
     /* Transmit the first packet. */
     /*    uip_fw_output();*/
+
+ //   uip_len +=54;
     tcpip_output();
 
     /* Now, create the second packet. To do this, it is not enough to
@@ -94,7 +98,7 @@ uip_split_output(void)
        sequence number and point the uip_appdata to a new place in
        memory. This place is detemined by the length of the first
        packet (len1). */
-    uip_len = len2 + UIP_TCPIP_HLEN;
+    uip_len = len2 + UIP_TCPIP_HLEN ;
 #if UIP_CONF_IPV6
     /* For IPv6, the IP length field does not include the IPv6 IP header
        length. */
@@ -126,6 +130,7 @@ uip_split_output(void)
 
     /* Transmit the second packet. */
     /*    uip_fw_output();*/
+//    uip_len +=54;
     tcpip_output();
   } else {
     /*    uip_fw_output();*/

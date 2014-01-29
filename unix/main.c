@@ -106,14 +106,16 @@ struct ProfileProbe netOther;
 
 void net_send()
 {
-    //uip_split_output();
-    probeBegin(&netSend);
-    RTL8019dev_send();
-    probeEnd(&netSend);
+  uip_split_output();
+  //tcpip_output();
 }
 
 void tcpip_output()
 {
+  probeBegin(&netSend);
+  uip_arp_out();
+  RTL8019dev_send();
+  probeEnd(&netSend);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -165,7 +167,7 @@ main(void)
            uip_len is set to a value > 0. */
         if(uip_len > 0) {
        //   printf("sending data.. %d\r\n",uip_len);
-          uip_arp_out();
+          //uip_arp_out();
           net_send();
         }
       } else if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
@@ -176,7 +178,8 @@ main(void)
            uip_len is set to a value > 0. */
         if(uip_len > 0) {
        //   printf("sending arp.. %d\r\n",uip_len);
-          net_send();
+          RTL8019dev_send();
+          //net_send();
         }
     }
       probeEnd(&netInput);
@@ -190,7 +193,7 @@ main(void)
            should be sent out on the network, the global variable
            uip_len is set to a value > 0. */
         if(uip_len > 0) {
-          uip_arp_out();
+         // uip_arp_out();
           net_send();
         }
       }
@@ -202,7 +205,7 @@ main(void)
            should be sent out on the network, the global variable
            uip_len is set to a value > 0. */
         if(uip_len > 0) {
-          uip_arp_out();
+          //uip_arp_out();
           net_send();
         }
       }

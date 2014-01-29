@@ -112,12 +112,20 @@ Fclose_safe( int16_t* fd )
   return _fd;
 }
 
+_DTA  dta;  /* global! */
+
+file_size( const char* path )
+{
+  Fsetdta (&dta);
+  Fsfirst ( path, 0 );
+  return dta.dta_size;
+}
+
 static
 PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* filename,const size_t filelen))
 {
   PT_BEGIN(worker);
 
-  (void)Cconws("recv: ");
   (void)Cconws(filename);
 
   // make sure folder exists
@@ -256,17 +264,59 @@ PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
     PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length) );
   }
   
-  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 201 Created\r\nConnection: close\r\n");    
+  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n");    
 
   PT_END(worker);
 }
 
+struct GetState {
+  int bytes_read;
+  int bytes_read2;
+  int file_len;
+  char file_len_str[30];
+  char header_buf[1024];
+};
+
 static
 PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 {
+  struct GetState* this = (struct GetState*)s->heap;
+
   PT_BEGIN(worker);
 
+  (void)Cconws(s->filename);
+
+  this->file_len = file_size( s->filename );
+
+  // TODO: send header and file data in single burst (packet)
+
+  s->fd = Fopen(s->filename,0);
+  if ( s->fd > 0 ) {
+
+    snprintf( this->header_buf,sizeof(this->header_buf),
+      "HTTP/1.1 200 OK\r\n"
+      "Content-Type: application/octet-stream\r\n"
+      "Content-Length: %u\r\n\r\n",
+      this->file_len );
+     
+    PSOCK_SEND_STR2(worker, &s->sin, this->header_buf );
+
+  } else {
+    PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 404 Not Found\r\n");
+    PT_EXIT(worker); 
+  }
   
+  this->bytes_read2 = 0;
+
+  while ( 1 ) {
+    this->bytes_read = Fread(s->fd, 1420, s->inputbuf);
+    if ( this->bytes_read == 0 ) 
+      break;
+    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read );
+  }
+  
+  Cconws(" -> OK.\r\n");
+  Fclose_safe(&s->fd);
 
   PT_END(worker);
 }
@@ -276,6 +326,8 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
 {
   char temp_path[256];
   size_t len;
+
+  (void)Cconws(s->filename);
 
   PT_BEGIN(worker);
   PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 200 OK\r\nConnection: close\r\n");
@@ -371,60 +423,71 @@ void parse_urlencoded( struct atarid_state *s )
   s->multipart_encoded = 0;
 }
 
-#define HeaderEntry(str,func) {str, sizeof(str), func}
+#define HeaderEntry(str,func,type) {str, sizeof(str), func, type}
 
 struct {
   const char* entry;
   size_t entry_len;
   char(*parse_func)(struct atarid_state *s);
+  char request_type;
 } commands[] = {
-  HeaderEntry ( "POST", parse_post ),
-  HeaderEntry ( "GET", parse_get ),
-  HeaderEntry ( "RUN", parse_run ),
-  HeaderEntry ( "DELETE", parse_run ),
-  HeaderEntry ( "Content-Length:", parse_content_len ),
-  HeaderEntry ( "Expect: 100-continue", parse_expect ),
-  HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart ),
-  HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded ),
+  HeaderEntry ( "POST", parse_post, 1 ),
+  HeaderEntry ( "PUT", parse_post, 1 ),
+  HeaderEntry ( "GET", parse_get, 1 ),
+  HeaderEntry ( "RUN", parse_run, 1 ),
+  HeaderEntry ( "DELETE", parse_run, 1 ),
+  HeaderEntry ( "Content-Length:", parse_content_len, 0 ),
+  HeaderEntry ( "Expect: 100-continue", parse_expect, 0 ),
+  HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart, 0 ),
+  HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded, 0 ),
 };
 
 static
 PT_THREAD(handle_input(struct atarid_state *s))
 {
   PSOCK_BEGIN(&s->sin);
-  s->expected_100_continue = 0;
-  s->expected_file_length = -1;
-  s->handler_func = NULL;
-  s->filename[0] = '\0';
-  s->multipart_encoded = 0;
 
-  while(1) {
-    // eat away the header
-    PSOCK_READTO(&s->sin, ISO_nl);
+  while (1) 
+  {
+    s->expected_100_continue = 0;
+    s->expected_file_length = -1;
+    s->handler_func = NULL;
+    s->filename[0] = '\0';
+    s->multipart_encoded = 0;
+    s->fd = -1;
 
-    if ( s->inputbuf[0] == '\r' ) {
-      //got header, now get the data
-      break;
-    }
+    while(1) {
+      // eat away the header
+      PSOCK_READTO(&s->sin, ISO_nl);
 
-    for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
-      if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
-        commands[i].parse_func(s);
+      if ( s->inputbuf[0] == '\r' ) {
+        //got header, now get the data
         break;
       }
+
+      for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
+        if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
+          if ( commands[i].request_type ) {
+            Cconws(commands[i].entry);
+            Cconws(": ");
+          }
+          commands[i].parse_func(s);
+          break;
+        }
+      }
+    }
+
+    if ( s->expected_100_continue ) {
+      PSOCK_SEND_STR( &s->sin, "HTTP/1.1 100 Continue\r\n");
+    }
+
+    if ( s->handler_func ) {
+      PT_INIT(&s->worker[0]);
+      PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
     }
   }
 
-  if ( s->expected_100_continue ) {
-    PSOCK_SEND_STR( &s->sin, "HTTP/1.1 100 Continue\r\n");
-  }
-
-  if ( s->handler_func ) {
-    PT_INIT(&s->worker[0]);
-    PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
-  }
-
-  PSOCK_CLOSE_EXIT(&s->sin);
+ // PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
 }
 /*---------------------------------------------------------------------------*/
@@ -437,10 +500,10 @@ handle_error(struct atarid_state *s)
 }
 
 /*---------------------------------------------------------------------------*/
-static void
+char
 handle_connection(struct atarid_state *s)
 {
-  handle_input(s);
+  return handle_input(s);
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -449,29 +512,35 @@ atarid_appcall(void)
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
   if ( uip_timedout() ) {
     handle_error(s);
+//    printf("timeout\r\n");
   } else if( uip_aborted() ) {
  //   handle_error(s);
+    printf("abort\r\n");
   } else if(uip_closed()  ) {
+//    printf("closed\r\n");
     handle_error(s);
   } else if(uip_connected()) {
 //    printf("ptr %p\r\n", s);
+    printf("Connect!\r\n");
     s->inputbuf_size = INPUTBUF_SIZE;
     s->inputbuf = &s->inputbuf_data[MULTIPART_BOUNDARY_SIZE];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
-    handle_connection(s);
+ //   handle_connection(s);
   } else if(s != NULL) {
-    if(uip_poll()) {
-      ++s->timer;
-      // if(s->timer >= 20) {
-       //   uip_abort();
-      // }
-    } else {
-      s->timer = 0;
-    }
+    // if(uip_poll()) {
+    //   ++s->timer;
+    //   // if(s->timer >= 20) {
+    //    //   uip_abort();
+    //   // }
+    // } else {
+    //   s->timer = 0;
+    // }
+
     handle_connection(s);
+
   } else {
-    printf("abort\r\n");
+    printf("abort2\r\n");
     uip_abort();
   }
 }

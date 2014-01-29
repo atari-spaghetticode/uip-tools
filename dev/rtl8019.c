@@ -1,7 +1,6 @@
 #include "rtl8019.h"
 #include "delay.h"
 #include "debug.h"
-//#include "avr/pgmspace.h"
 #include "rtlregs.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -102,8 +101,6 @@ inline const unsigned char readRTL(const uint16_t address)
 
 }
 
-
-
 /*****************************************************************************
 *  RTL8019setupPorts(void);
 *
@@ -114,8 +111,6 @@ inline const unsigned char readRTL(const uint16_t address)
 *****************************************************************************/
 void RTL8019setupPorts(void)
 {
-
-
 
 }
 
@@ -146,9 +141,6 @@ void RTL8019setupPorts(void)
 *                 the NIC if there is a buffer overrun
 *****************************************************************************/
 void overrun(void);
-
-
-
 
 //******************************************************************
 //* REALTEK CONTROL REGISTER OFFSETS
@@ -225,12 +217,8 @@ void overrun(void);
 #define RXSTART_INIT    0x46
 #define RXSTOP_INIT     0x60
 
-
-
 void RTL8019beginPacketSend(unsigned int packetLength)
 {
-
-  volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned int sendPacketLength;
     sendPacketLength = (packetLength>=ETHERNET_MIN_PACKET_LENGTH) ?
                      packetLength : ETHERNET_MIN_PACKET_LENGTH ;
@@ -262,30 +250,21 @@ void RTL8019beginPacketSend(unsigned int packetLength)
     writeRTL(CR,0x12);
 }
 
-
-
 inline void RTL8019sendPacketData(unsigned char * localBuffer, unsigned int length)
 {
     unsigned int i;
-    volatile unsigned char *base = (unsigned char *)0x8300;
     for(i=0;i<length;i++)
         writeRTL(RDMAPORT, localBuffer[i]);
 }
 
-
-
 inline void RTL8019endPacketSend(void)
 {
-  volatile unsigned char *base = (unsigned char *)0x8300;
     //send the contents of the transmit buffer onto the network
     writeRTL(CR,0x24);
     
     // clear the remote DMA interrupt
     writeRTL(ISR, (1<<ISR_RDC));
 }
-
-
-
 
 // pointers to locations in the RTL8019 receive buffer
 static unsigned char nextPage;
@@ -297,11 +276,8 @@ static unsigned int currentRetreiveAddress;
 #define  enetpacketLenL       0x02
 #define  enetpacketLenH       0x03
 
-
-
 unsigned int RTL8019beginPacketRetreive(void)
 {
-  volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned char i;
     unsigned char bnry;
     
@@ -369,8 +345,6 @@ unsigned int RTL8019beginPacketRetreive(void)
       }
     }
     writeRTL(ISR, 1<<6);
-
-    
     
     rxlen = (pageheader[enetpacketLenH]<<8) + pageheader[enetpacketLenL];
     nextPage = pageheader[nextblock_ptr] ;
@@ -389,11 +363,9 @@ unsigned int RTL8019beginPacketRetreive(void)
     return rxlen-4;
 }
 
-
 void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
 {
     unsigned int i;
-    volatile unsigned char *base = (unsigned char *)0x8300;
     // initiate DMA to transfer the data
     writeRTL(RBCR0, (unsigned char)length);
     writeRTL(RBCR1, (unsigned char)(length>>8));
@@ -431,11 +403,8 @@ void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
         currentRetreiveAddress = currentRetreiveAddress - (0x6000-0x4600) ;
 }
 
-
-
 void RTL8019endPacketRetreive(void)
 {
-  volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned char i;
 
     // end the DMA operation
@@ -449,10 +418,8 @@ void RTL8019endPacketRetreive(void)
     writeRTL(BNRY, nextPage);
 }
 
-
 void overrun(void)
 {
-  volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned char data_L, resend;   
 
     data_L = readRTL(CR);
@@ -482,9 +449,6 @@ void overrun(void)
     
     writeRTL(ISR, 0xFF);
 }
-
-
-
 
 /*!
  * \brief Size of a single ring buffer page.
@@ -671,7 +635,6 @@ void RTL8019getMac(uint8_t* macaddr)
 bool initRTL8019(uint8_t* macaddr)
 {
     unsigned char i, rb;
-    volatile unsigned char *base = (unsigned char *)0x8300;
 
     if ( !NicReset() ) {
         return false;
@@ -776,7 +739,6 @@ bool initRTL8019(uint8_t* macaddr)
 
 void processRTL8019Interrupt(void)
 {
-  volatile unsigned char *base = (unsigned char *)0x8300;
   unsigned char byte = readRTL(ISR);
     
   if( byte & (1<<ISR_OVW) )

@@ -42,9 +42,11 @@ CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-I$(abspath ../apps/atari) \
 		-I$(abspath ../apps/dhcpc) \
 		-I$(abspath ../dev) \
-		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN \
-		-DUIP_ARCH_IPCHKSUM \
-		-DUIP_ARCH_ADD32
+		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN 
+
+#		\
+#		-DUIP_ARCH_IPCHKSUM \
+#		-DUIP_ARCH_ADD32
 
 LD_FLAGS = -s -Wl,--traditional-format
 

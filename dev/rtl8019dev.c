@@ -23,8 +23,7 @@
 *****************************************************************************/
 
 
-#define IP_TCP_HEADER_LENGTH 40
-#define TOTAL_HEADER_LENGTH (IP_TCP_HEADER_LENGTH+ETHERNET_HEADER_LENGTH)
+#define TOTAL_HEADER_LENGTH (UIP_TCPIP_HLEN+UIP_LLH_LEN)
 
 
 
@@ -42,9 +41,8 @@ void RTL8019dev_send(void)
   if( uip_len <= TOTAL_HEADER_LENGTH ) {
     RTL8019sendPacketData(uip_buf, uip_len);
   } else {
-    uip_len -= TOTAL_HEADER_LENGTH;
     RTL8019sendPacketData(uip_buf, TOTAL_HEADER_LENGTH);
-    RTL8019sendPacketData((unsigned char *)uip_appdata, uip_len);
+    RTL8019sendPacketData((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH );
   }
   
   RTL8019endPacketSend();
