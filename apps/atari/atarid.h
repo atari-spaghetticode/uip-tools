@@ -45,6 +45,8 @@
 
 struct atarid_state {
   const char* http_request_type;
+  int http_result_code;
+  const char* http_result_string;
   unsigned char timer;
   struct psock sin;
   char* inputbuf;
@@ -56,9 +58,6 @@ struct atarid_state {
   uint32_t expected_100_continue;
   
   char multipart_encoded;
-  char boundary[70];
-  size_t boundary_len;
-  char part_header[1024];
 
   struct pt worker[4];
   size_t temp_file_length;

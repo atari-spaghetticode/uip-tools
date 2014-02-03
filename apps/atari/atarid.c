@@ -64,6 +64,7 @@
 #include <sys/stat.h>
 
 #include <osbind.h>
+#include <errno.h>
 
 #define ISO_nl      0x0a
 #define ISO_space   0x20
@@ -127,15 +128,15 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
   PT_BEGIN(worker);
 
   (void)Cconws(filename);
+  (void)Cconws("\033K");
 
   // make sure folder exists
   mkdir_for_file ( filename );
 
-//  s->file = fopen( filename,"wb" );
   s->fd = Fcreate(filename,0);
   
   if ( s->fd < 0 ) {
-    PSOCK_SEND_STR2(worker,&s->sin,"HTTP/1.1 400 Bad Request\r\nConnection: close\r\n");    
+    s->http_result_code = 400;
     (void)Cconws(" -> failed to open!\r\n");
     PT_EXIT(worker);
   }
@@ -148,102 +149,18 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
       s->temp_file_length > s->inputbuf_size ? 
         s->inputbuf_size : s->temp_file_length );
 
-    //fwrite ( s->inputbuf,PSOCK_DATALEN(&s->sin), 1, s->file );
     Fwrite( s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf );
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
   Cconws(" -> OK.\r\n");
-  //fclose( s->file );
+
   Fclose_safe(&s->fd);
+  s->http_result_code = 201;
 
   PT_END(worker);
 }
 
-struct MultipartState {
-  uint8_t* buf_ptr;
-  uint8_t* buf_end_ptr;
-  size_t data_len;
-};
-
-static
-PT_THREAD(receive_multipart(struct pt* worker,struct atarid_state *s,const char* filename,const size_t filelen))
-{
-  struct MultipartState* this = (struct MultipartState*)s->heap;
-  PT_BEGIN(worker);
-
-  s->temp_file_length = filelen;
-  memset( s->inputbuf_data,0,MULTIPART_BOUNDARY_SIZE);
-
-  while (1) {
-    this->data_len = s->temp_file_length > s->inputbuf_size ? s->inputbuf_size : s->temp_file_length;
-    PSOCK_READBUF_LEN2(worker, &s->sin, this->data_len);
-    s->temp_file_length-=PSOCK_DATALEN(&s->sin);
-
-    this->buf_ptr = s->inputbuf_data;
-    this->buf_end_ptr = &s->inputbuf_data[this->data_len + 1 + MULTIPART_BOUNDARY_SIZE];
-
-    while( this->buf_ptr < this->buf_end_ptr ) {
-      //Cconws("1\r\n");
-      // there's a chance we've encountered a boundary
-      if ( this->buf_ptr[0] == '-' && this->buf_ptr[1] == '-' 
-          && 0 == memcmp(s->boundary,&this->buf_ptr[2],s->boundary_len )) {
-        // figure out if this is last boundary
-        if ( this->buf_ptr[2+s->boundary_len] == '-' && 
-            this->buf_ptr[3+s->boundary_len] == '-') {
-          // final boundary
-          //new_header = 0;
-          Cconws("final\r\n");
-          PT_EXIT(worker);
-        } else {
-          this->buf_ptr+= s->boundary_len + 2;
-          uint8_t* new_header = this->buf_ptr;
-          uint8_t* header_end = this->buf_end_ptr;
-
-          printf("boundary \r\n");
-
-          while ( this->buf_ptr < this->buf_end_ptr ) {
-            if ( this->buf_ptr[0] == '\r' && this->buf_ptr[1] == '\n' 
-              && this->buf_ptr[2] == '\r' && this->buf_ptr[3] == '\n' ) {
-              this->buf_ptr+=4;
-              header_end = this->buf_ptr;
-              break;
-            }
-            this->buf_ptr++;
-          }
-          //*header_end = 0;
-          memcpy ( s->part_header, new_header, header_end - new_header );
-          s->part_header[header_end - new_header] = 0;
-
-          if ( header_end == this->buf_end_ptr ) {
-            // we need more data
-            while(1) {
-              size_t len;
-              PSOCK_READTO2(worker,&s->sin, ISO_nl);
-              len = PSOCK_DATALEN(&s->sin);
-              strncat( s->part_header, s->inputbuf, len );
-              if ( len == 2 ) {
-                break;
-              }
-            }
-          }
-          Cconws ("header:\r\n");
-          Cconws ( s->part_header );
-        }
-      } else {
-        ++this->buf_ptr;
-      }
-    }
-
-    if ( this->data_len == s->inputbuf_size ) {
-      memcpy( s->inputbuf_data, 
-        &s->inputbuf[ this->data_len - MULTIPART_BOUNDARY_SIZE ], 
-        MULTIPART_BOUNDARY_SIZE);
-    }
-  }
-
-  PT_END(worker);
-}
 /*---------------------------------------------------------------------------*/
 
 static
@@ -252,19 +169,15 @@ PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
   PT_BEGIN(worker);
 
   if ( s->expected_file_length == -1 ) {
-    PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n");        
+    s->http_result_code = 411;
     PT_EXIT(worker);
-  }
-
-  if ( s->multipart_encoded == 1 ) {
-    PT_INIT(&worker[1]);
-    PT_WAIT_THREAD(worker, receive_multipart(&worker[1],s,s->filename,s->expected_file_length) );
+  } else if ( s->multipart_encoded == 1 ) {
+    s->http_result_code = 401;
+    PT_EXIT(worker);
   } else {
     PT_INIT(&worker[1]);
     PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length) );
   }
-  
-  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n");    
 
   PT_END(worker);
 }
@@ -276,6 +189,53 @@ struct GetState {
   char file_len_str[30];
   char header_buf[1024];
 };
+
+/*---------------------------------------------------------------------------*/
+
+const char* file_stat_json(const char* path)
+{
+  Fsetdta (&dta);
+
+  char* response = malloc (1024); 
+  *response = 0; 
+  
+  strcat(response,"\r\n{\r\n");
+
+  if ( path[0] == '/' && path[1] == '\0' ) {
+    // list drivers
+
+  } else if ( 0 == Fsfirst( path,0x3f )  ) {
+
+
+    if ( dta.dta_attribute&FA_DIR ) { 
+      strcat(response," \"");
+      strcat(response,dta.dta_name);
+      strcat(response," \": [\r\n");
+
+      // this is a folder 
+      do {
+
+        strcat(response,"  {\r\n" 
+                "    \"name:\" : \"");
+        strcat(response,dta.dta_name);
+        strcat(response,"\"\r\n");
+
+        strcat(response,"  },\r\n"); 
+      } while ( 0 == Fsnext( ) );
+
+      strcat(response," ]\r\n");
+    } else {
+      // this is a file
+    }
+  } else {
+    Cconws("Error\r\n");
+  }
+  strcat(response,"}\r\n");
+
+  return response;
+}
+
+/*---------------------------------------------------------------------------*/
 
 static
 PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
@@ -343,11 +303,11 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   }
   // set cwd
   Dsetpath(temp_path);
-  Pexec(0,s->filename,"","");
+  Pexec(PE_LOADGO,s->filename,"","");
   PT_END(worker);
 }
 
-void parse_file_path ( struct atarid_state *s )
+void parse_url( struct atarid_state *s )
 {
   char* fn_end = s->inputbuf;
   char* fn;
@@ -374,19 +334,19 @@ void parse_file_path ( struct atarid_state *s )
 
 void parse_post( struct atarid_state *s )
 {
-  parse_file_path(s);
+  parse_url(s);
   s->handler_func = handle_post;
 }
 
 void parse_get( struct atarid_state *s )
 {
-  parse_file_path(s);
+  parse_url(s);
   s->handler_func = handle_get;
 }
 
 void parse_run( struct atarid_state *s )
 {
-  parse_file_path(s);
+  parse_url(s);
   s->handler_func = handle_run;
 }
 
@@ -403,19 +363,6 @@ void parse_expect( struct atarid_state *s )
 void parse_multipart( struct atarid_state *s )
 {
   s->multipart_encoded = 1;
-
-  char* boundary_start = s->inputbuf;
-  char* boundary_end;
-
-  while ( *boundary_start++ != '=' );
-  boundary_end = boundary_start;
-  while ( *boundary_end != '\r' ) boundary_end++;
-  *boundary_end = '\0';
-  Cconws("Boundary: ");
-  Cconws(boundary_start);
-  Cconws("\r\n");
-  strncpy(s->boundary,boundary_start,sizeof(s->boundary) );
-  s->boundary_len = strlen(s->boundary);
 }
 
 void parse_urlencoded( struct atarid_state *s )
@@ -435,11 +382,22 @@ struct {
   HeaderEntry ( "PUT", parse_post, 1 ),
   HeaderEntry ( "GET", parse_get, 1 ),
   HeaderEntry ( "RUN", parse_run, 1 ),
-  HeaderEntry ( "DELETE", parse_run, 1 ),
+  HeaderEntry ( "\r\nDELETE", parse_run, 1 ),
   HeaderEntry ( "Content-Length:", parse_content_len, 0 ),
   HeaderEntry ( "Expect: 100-continue", parse_expect, 0 ),
   HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart, 0 ),
   HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded, 0 ),
+};
+
+struct {
+  int http_result_code;
+  const char* http_response_string;
+} http_responses[] = {
+  { 200, "OK" },
+  { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
+  { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
+  { 404, "HTTP/1.1 404 Not Found\r\n\r\n" },
+  { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
 };
 
 static
@@ -447,15 +405,16 @@ PT_THREAD(handle_input(struct atarid_state *s))
 {
   PSOCK_BEGIN(&s->sin);
 
-  while (1) 
-  {
+  do {
+
     s->expected_100_continue = 0;
     s->expected_file_length = -1;
     s->handler_func = NULL;
     s->filename[0] = '\0';
     s->multipart_encoded = 0;
     s->fd = -1;
-
+    s->http_result_code = 0;
+    
     while(1) {
       // eat away the header
       PSOCK_READTO(&s->sin, ISO_nl);
@@ -468,6 +427,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
       for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
         if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
           if ( commands[i].request_type ) {
+            Cconws("\033Y\x2f\x20");
             Cconws(commands[i].entry);
             Cconws(": ");
           }
@@ -485,9 +445,22 @@ PT_THREAD(handle_input(struct atarid_state *s))
       PT_INIT(&s->worker[0]);
       PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
     }
-  }
 
- // PSOCK_CLOSE_EXIT(&s->sin);
+    if ( s->http_result_code != 0 ) {
+      // send result code
+      for ( size_t i = 0; i < sizeof( http_responses ) / sizeof(http_responses[0]); ++i ) {
+        if ( s->http_result_code == http_responses[i].http_result_code ) {
+          s->http_result_string = http_responses[i].http_response_string;
+          break;
+        }
+      }
+      
+      PSOCK_SEND_STR( &s->sin, s->http_result_string );
+    }
+
+  } while (s->http_result_code < 400); 
+
+  PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
 }
 /*---------------------------------------------------------------------------*/
@@ -521,7 +494,7 @@ atarid_appcall(void)
     handle_error(s);
   } else if(uip_connected()) {
 //    printf("ptr %p\r\n", s);
-    printf("Connect!\r\n");
+//    printf("Connect!\r\n");
     s->inputbuf_size = INPUTBUF_SIZE;
     s->inputbuf = &s->inputbuf_data[MULTIPART_BOUNDARY_SIZE];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
@@ -554,6 +527,11 @@ atarid_appcall(void)
 void
 atarid_init(void)
 {
+ // Cconws("\r\n\r\n\r\n\r\n\033f\033p\033j");
+
+  Cconws( file_stat_json( "d:\\sndh\\*.*" ) );
+
+  Cconws("\033f");
   uip_listen(HTONS(80));
 }
 /*---------------------------------------------------------------------------*/
