@@ -60,6 +60,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 
@@ -192,45 +193,78 @@ struct GetState {
 
 /*---------------------------------------------------------------------------*/
 
+void fstrcat( char* string, char* format, ... )
+{
+  char formated[256];
+  va_list args;
+  va_start (args, format);
+  vsnprintf (formated, sizeof(formated), format, args );
+  strcat( string, formated);
+  va_end (args);
+} 
+
+static void file_stat_single(char* str)
+{
+    fstrcat(str," {\r\n" 
+      "    \"type:\" : \"%s\",\r\n",
+      dta.dta_attribute&FA_DIR ? "dir" : "file");
+    if (!(dta.dta_attribute&FA_DIR)) {
+      fstrcat(str, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
+    }
+    fstrcat(str, "    \"name:\" : %s\r\n", dta.dta_name );
+    fstrcat(str,"  },\r\n"); 
+}
+
 const char* file_stat_json(const char* path)
 {
+  char* response;
   Fsetdta (&dta);
 
-  char* response = malloc (1024); 
-  *response = 0; 
+  response = malloc (1024);
+  *response = 0;
   
-  strcat(response,"\r\n{\r\n");
+  strcat(response,"[\r\n");
 
   if ( path[0] == '/' && path[1] == '\0' ) {
     // list drivers
-
+    uint32_t drv_map = Drvmap();
+    char i = 0;
+    while ( drv_map ) {
+      if ( drv_map&1 ) {
+        fstrcat(response," {\r\n" 
+          "    \"type:\" : \dir\",\r\n" );
+        fstrcat(response, "    \"name:\" : %c\r\n", 'a' + i );
+        fstrcat(response,"  },\r\n");
+      }
+      i++;
+      drv_map >>=1;
+    }
   } else if ( 0 == Fsfirst( path,0x3f )  ) {
-
-
-    if ( dta.dta_attribute&FA_DIR ) { 
-      strcat(response," \"");
-      strcat(response,dta.dta_name);
-      strcat(response," \": [\r\n");
-
-      // this is a folder 
-      do {
-
-        strcat(response,"  {\r\n" 
-                "    \"name:\" : \"");
-        strcat(response,dta.dta_name);
-        strcat(response,"\"\r\n");
-
-        strcat(response,"  },\r\n"); 
-      } while ( 0 == Fsnext( ) );
-
-      strcat(response," ]\r\n");
+    // ok so this is a file
+    if ( dta.dta_attribute&FA_DIR ) {
+      char _path[512];
+      strncpy(_path,path,sizeof(_path));
+      if ( _path[strlen(_path)-1] != '\\' ) {
+        strcat(_path,"\\");
+      }
+      strcat(_path,"*.*");
+      printf("%s\r\n", _path);
+      if ( 0 == Fsfirst( _path,0x3f ) ) {         
+        do {
+          file_stat_single(response);
+        } while ( 0 == Fsnext( ) );
+      } else {
+        /* Error */
+        Cconws("path not found 2\r\n");
+      }
     } else {
-      // this is a file
+      file_stat_single(response);
     }
   } else {
-    Cconws("Error\r\n");
+      Cconws("path not found\r\n");
   }
-  strcat(response,"}\r\n");
+
+  strcat(response,"]\r\n");
 
   return response;
 }
@@ -529,7 +563,7 @@ atarid_init(void)
 {
  // Cconws("\r\n\r\n\r\n\r\n\033f\033p\033j");
 
-  Cconws( file_stat_json( "d:\\sndh\\*.*" ) );
+  Cconws( file_stat_json( "/" ) );
 
   Cconws("\033f");
   uip_listen(HTONS(80));
