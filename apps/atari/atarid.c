@@ -183,47 +183,48 @@ PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
   PT_END(worker);
 }
 
-struct GetState {
-  int bytes_read;
-  int bytes_read2;
-  int file_len;
-  char file_len_str[30];
-  char header_buf[1024];
-};
-
 /*---------------------------------------------------------------------------*/
 
-void fstrcat( char* string, char* format, ... )
+void fstrcat( char* string, size_t* size, char* format, ... )
 {
   char formated[256];
   va_list args;
+  size_t formated_len = 0;
+
   va_start (args, format);
-  vsnprintf (formated, sizeof(formated), format, args );
+  formated_len = vsnprintf (formated, sizeof(formated), format, args );
+
+  if ( *size  < strlen(string) + formated_len ) {
+    *size<<=1;
+    string = realloc(string,*size);
+  }  
+
   strcat( string, formated);
   va_end (args);
 } 
 
-static void file_stat_single(char* str)
+static void file_stat_single(char* str, size_t* size)
 {
-    fstrcat(str," {\r\n" 
+    fstrcat(str,size," {\r\n" 
       "    \"type:\" : \"%s\",\r\n",
       dta.dta_attribute&FA_DIR ? "dir" : "file");
     if (!(dta.dta_attribute&FA_DIR)) {
-      fstrcat(str, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
+      fstrcat(str,size, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
     }
-    fstrcat(str, "    \"name:\" : %s\r\n", dta.dta_name );
-    fstrcat(str,"  },\r\n"); 
+    fstrcat(str,size, "    \"name:\" : %s\r\n", dta.dta_name );
+    fstrcat(str,size,"  },\r\n"); 
 }
 
 const char* file_stat_json(const char* path)
 {
   char* response;
+  size_t response_size = 1024;
   Fsetdta (&dta);
 
-  response = malloc (1024);
+  response = malloc (response_size);
   *response = 0;
-  
-  strcat(response,"[\r\n");
+
+  fstrcat(response,&response_size,"[\r\n");
 
   if ( path[0] == '/' && path[1] == '\0' ) {
     // list drivers
@@ -231,10 +232,11 @@ const char* file_stat_json(const char* path)
     char i = 0;
     while ( drv_map ) {
       if ( drv_map&1 ) {
-        fstrcat(response," {\r\n" 
-          "    \"type:\" : \dir\",\r\n" );
-        fstrcat(response, "    \"name:\" : %c\r\n", 'a' + i );
-        fstrcat(response,"  },\r\n");
+        fstrcat(response,&response_size," {\r\n" 
+          "    \"type:\" : \"drive\",\r\n" );
+        fstrcat(response,&response_size,
+           "    \"name:\" : %c\r\n", 'a' + i );
+        fstrcat(response, &response_size,"  },\r\n");
       }
       i++;
       drv_map >>=1;
@@ -251,25 +253,31 @@ const char* file_stat_json(const char* path)
       printf("%s\r\n", _path);
       if ( 0 == Fsfirst( _path,0x3f ) ) {         
         do {
-          file_stat_single(response);
+          file_stat_single(response,&response_size);
         } while ( 0 == Fsnext( ) );
       } else {
         /* Error */
         Cconws("path not found 2\r\n");
       }
     } else {
-      file_stat_single(response);
+      file_stat_single(response,&response_size);
     }
   } else {
       Cconws("path not found\r\n");
   }
 
-  strcat(response,"]\r\n");
+  fstrcat(response,&response_size,"]\r\n");
 
   return response;
 }
 
 /*---------------------------------------------------------------------------*/
+
+struct GetState {
+  int bytes_read;
+  size_t buffer_start_offset;
+  int file_len;
+};
 
 static
 PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
@@ -281,32 +289,35 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
   (void)Cconws(s->filename);
 
   this->file_len = file_size( s->filename );
-
-  // TODO: send header and file data in single burst (packet)
+  this->buffer_start_offset = 0;
 
   s->fd = Fopen(s->filename,0);
+  
   if ( s->fd > 0 ) {
 
-    snprintf( this->header_buf,sizeof(this->header_buf),
+    this->buffer_start_offset = snprintf(
+      s->inputbuf,UIP_TCP_MSS,
       "HTTP/1.1 200 OK\r\n"
-      "Content-Type: application/octet-stream\r\n"
+      "Content-Type: %s\r\n"
       "Content-Length: %u\r\n\r\n",
+      "application/octet-stream",
       this->file_len );
-     
-    PSOCK_SEND_STR2(worker, &s->sin, this->header_buf );
-
+  
   } else {
     PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 404 Not Found\r\n");
     PT_EXIT(worker); 
   }
   
-  this->bytes_read2 = 0;
-
   while ( 1 ) {
-    this->bytes_read = Fread(s->fd, 1420, s->inputbuf);
+    this->bytes_read = Fread(s->fd, 
+          UIP_TCP_MSS-this->buffer_start_offset, 
+          &s->inputbuf[this->buffer_start_offset]);
+
     if ( this->bytes_read == 0 ) 
       break;
-    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read );
+    
+    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset );
+    this->buffer_start_offset = 0;
   }
   
   Cconws(" -> OK.\r\n");
@@ -314,6 +325,8 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 
   PT_END(worker);
 }
+
+/*---------------------------------------------------------------------------*/
 
 static
 PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
@@ -563,9 +576,10 @@ atarid_init(void)
 {
  // Cconws("\r\n\r\n\r\n\r\n\033f\033p\033j");
 
-  Cconws( file_stat_json( "/" ) );
+ // Cconws( file_stat_json( "/" ) );
 
-  Cconws("\033f");
+ // Cconws("\033f");
+  printf("val %d\r\n", UIP_TCP_MSS);
   uip_listen(HTONS(80));
 }
 /*---------------------------------------------------------------------------*/
