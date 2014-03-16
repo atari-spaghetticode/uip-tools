@@ -103,7 +103,7 @@ void mkdir_for_file( const char* path )
 
 /*---------------------------------------------------------------------------*/
 
-Fclose_safe( int16_t* fd )
+int Fclose_safe( int16_t* fd )
 {
   int16_t _fd = *fd;
 
@@ -116,7 +116,7 @@ Fclose_safe( int16_t* fd )
 
 _DTA  dta;  /* global! */
 
-file_size( const char* path )
+size_t file_size( const char* path )
 {
   Fsetdta (&dta);
   Fsfirst ( path, 0 );
@@ -129,7 +129,7 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
   PT_BEGIN(worker);
 
   (void)Cconws(filename);
-  (void)Cconws("\033K");
+  //(void)Cconws("\033K");
 
   // make sure folder exists
   mkdir_for_file ( filename );
@@ -154,7 +154,7 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
-  Cconws(" -> OK.\r\n");
+  (void)Cconws(" -> OK.\r\n");
 
   Fclose_safe(&s->fd);
   s->http_result_code = 201;
@@ -185,7 +185,13 @@ PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
 
 /*---------------------------------------------------------------------------*/
 
-void fstrcat( char* string, size_t* size, char* format, ... )
+struct Repsonse {
+  char* malloc_block;
+  char* current;
+  size_t size;
+};
+
+void fstrcat( struct Repsonse* response, char* format, ... )
 {
   char formated[256];
   va_list args;
@@ -194,89 +200,204 @@ void fstrcat( char* string, size_t* size, char* format, ... )
   va_start (args, format);
   formated_len = vsnprintf (formated, sizeof(formated), format, args );
 
-  if ( *size  < strlen(string) + formated_len ) {
-    *size<<=1;
-    string = realloc(string,*size);
+  if ( response->size  <= ( response->current-response->malloc_block ) + formated_len ) {
+    size_t current_offset = response->current-response->malloc_block;
+    printf("realloc: %zu->%zu\r\n", response->size, response->size*2 );
+    response->size = response->size * 2;
+    response->malloc_block = realloc(response->malloc_block,response->size);
+    response->current = &response->malloc_block[current_offset];
+    printf("realloc: %p\r\n", response->malloc_block);
   }  
 
-  strcat( string, formated);
+  strcat( response->current, formated);
+  response->current = &response->current[ formated_len ];
   va_end (args);
 } 
 
-static void file_stat_single(char* str, size_t* size)
+static void file_stat_single(struct Repsonse* response)
 {
-    fstrcat(str,size," {\r\n" 
+    fstrcat(response," {\r\n" 
       "    \"type:\" : \"%s\",\r\n",
       dta.dta_attribute&FA_DIR ? "dir" : "file");
     if (!(dta.dta_attribute&FA_DIR)) {
-      fstrcat(str,size, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
+      fstrcat(response, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
     }
-    fstrcat(str,size, "    \"name:\" : %s\r\n", dta.dta_name );
-    fstrcat(str,size,"  },\r\n"); 
+    fstrcat(response, "    \"name:\" : %s\r\n", dta.dta_name );
+    fstrcat(response,"  },\r\n"); 
 }
+
 
 const char* file_stat_json(const char* path)
 {
-  char* response;
-  size_t response_size = 1024;
+  struct Repsonse response = { NULL, NULL, 8192 };
+  char dos_path[512] = { '\0' };
+  char dos_path_helper[2] = { '\0', '\0' };
+  
   Fsetdta (&dta);
+  response.malloc_block = (char*)malloc (response.size);
+  *response.malloc_block = 0;
+  response.current = response.malloc_block;
 
-  response = malloc (response_size);
-  *response = 0;
+  // conver unix proper paths to atari/dos path
+  dos_path_helper[0] = path[1];
+  strncat(dos_path, dos_path_helper, sizeof(dos_path));
+  dos_path_helper[0] = ':';
+  strncat(dos_path, dos_path_helper, sizeof(dos_path));
+  strncat(dos_path, &path[2], sizeof(dos_path));
+  for ( size_t i = 0; i < strlen(dos_path); ++i ) {
+    if ( dos_path[i] == '/' ) {
+      dos_path[i] = '\\';
+    }
+  }
 
-  fstrcat(response,&response_size,"[\r\n");
+  printf("dos: %s\r\n",dos_path );
 
-  if ( path[0] == '/' && path[1] == '\0' ) {
+  fstrcat(&response,"[\r\n");
+
+  if ( dos_path[0] == '/' && dos_path[1] == '\0' ) {
     // list drivers
     uint32_t drv_map = Drvmap();
     char i = 0;
     while ( drv_map ) {
       if ( drv_map&1 ) {
-        fstrcat(response,&response_size," {\r\n" 
+        fstrcat(&response, " {\r\n" 
           "    \"type:\" : \"drive\",\r\n" );
-        fstrcat(response,&response_size,
+        fstrcat(&response,
            "    \"name:\" : %c\r\n", 'a' + i );
-        fstrcat(response, &response_size,"  },\r\n");
+        fstrcat(&response,"  },\r\n");
       }
       i++;
       drv_map >>=1;
     }
-  } else if ( 0 == Fsfirst( path,0x3f )  ) {
-    // ok so this is a file
-    if ( dta.dta_attribute&FA_DIR ) {
-      char _path[512];
-      strncpy(_path,path,sizeof(_path));
-      if ( _path[strlen(_path)-1] != '\\' ) {
-        strcat(_path,"\\");
+  } 
+    /* if we're at the root of the drive or at a folder */
+  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,0x3f ) ) {
+    // ok so this is a folder
+    if ( strlen(dos_path ) == 3 || (dta.dta_attribute&FA_DIR) ) {
+      if ( dos_path[strlen(dos_path)-1] != '\\' ) {
+        strcat(dos_path,"\\");
       }
-      strcat(_path,"*.*");
-      printf("%s\r\n", _path);
-      if ( 0 == Fsfirst( _path,0x3f ) ) {         
+      strcat(dos_path,"*.*");
+      printf("scanning: %s\r\n", dos_path);
+      if ( 0 == Fsfirst( dos_path,0x3f ) ) {         
         do {
-          file_stat_single(response,&response_size);
+          file_stat_single(&response);
         } while ( 0 == Fsnext( ) );
       } else {
         /* Error */
         Cconws("path not found 2\r\n");
       }
     } else {
-      file_stat_single(response,&response_size);
+      // it's a file
+      file_stat_single(&response);
     }
   } else {
       Cconws("path not found\r\n");
   }
 
-  fstrcat(response,&response_size,"]\r\n");
+  fstrcat(&response,"]\r\n");
 
-  return response;
+  printf("done: %zu\r\n", response.size);
+  return response.malloc_block;
 }
 
 /*---------------------------------------------------------------------------*/
+struct GetDirJsonState {
+  int bytes_read;
+  size_t buffer_start_offset;
+  int file_len;
+};
+
+static
+PT_THREAD(handle_get_dir_json(struct pt* worker,struct atarid_state *s))
+{
+  struct GetDirJsonState* this = (struct GetDirJsonState*)s->heap;
+
+  PT_BEGIN(worker);
+  
+  file_stat_json( s->filename );
+
+  PT_END(worker);
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct DataSource
+{
+  void (*read)( struct DataSource*, size_t, void* );
+  void (*close)( struct DataSource*, size_t, void* );
+};
+
+struct FsSource
+{
+  struct DataSource src;
+  int fd;
+};
+
+int fileSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+{
+  struct FsSource* fs = (struct FsSource*) ds;
+  return Fread(fs->fd, size, ptr);
+}
+
+void fileSourceClose( struct DataSource* ds )
+{
+  struct FsSource* fs = (struct FsSource*) ds;
+  Fclose_safe(&fs->fd);
+  free ( (void*) fs );
+}
+
+struct DataSource* fileSourceCreate( const char* fname )
+{
+  struct FsSource* src = NULL;
+  int fd = Fopen(fname,0);
+
+  if ( fd > 0 ) {
+    src = (struct FsSource*)malloc(sizeof(struct FsSource));
+    src->src.read = fileSourceRead;
+    src->src.close = fileSourceClose;
+    src->fd = fd;
+  }
+  
+  return (struct DataSource*)src;
+}
+
+struct MemSource
+{
+  struct DataSource src;
+  char* ptr;
+  size_t size;
+  char* current;
+};
+
+int memSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+{
+  struct MemSource* mem = (struct MemSource*) ds;
+}
+
+void memSourceClose (  struct DataSource* ds )
+{
+  struct MemSource* mem = (struct MemSource*) ds;
+  free ( (void*) mem->ptr );
+  free ( (void*) mem );
+}
+
+struct MemSource* memSourceCreate ( char* ptr, size_t size )
+{
+  struct MemSource* src = NULL;
+  src = (struct MemSource*)malloc(sizeof(struct MemSource));
+  src->src.read = memSourceRead;
+  src->src.close = memSourceClose;
+
+  return (struct DataSource*)src;
+}
+
 
 struct GetState {
   int bytes_read;
   size_t buffer_start_offset;
   int file_len;
+  struct DataSource* source;
 };
 
 static
@@ -357,7 +478,7 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
 void parse_url( struct atarid_state *s )
 {
   char* fn_end = s->inputbuf;
-  char* fn;
+  char* fn,*fn2;
 
   while (*fn_end++ != '/' );
   
@@ -368,6 +489,21 @@ void parse_url( struct atarid_state *s )
 
   *fn_end = 0;
 
+  /* extract query string */
+
+  fn2=fn;
+  s->query[ 0 ] = 0;
+
+  while ( *fn2 != '?' && fn2 != fn_end ) fn2++;
+
+  if ( fn2 != fn_end ) {
+    /* got query string */
+    strncpy ( s->query, &fn2[1], sizeof(s->query) );
+    *fn2=0;
+  }
+
+  /* convert path to dos/atari format */
+
   while ( fn != fn_end-- ) {
     if ( *fn_end == '/' ) {
       *fn_end = '\\';
@@ -377,6 +513,7 @@ void parse_url( struct atarid_state *s )
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
   strncpy( &s->filename[2],++fn, sizeof(s->filename));
+
 }
 
 void parse_post( struct atarid_state *s )
@@ -388,7 +525,13 @@ void parse_post( struct atarid_state *s )
 void parse_get( struct atarid_state *s )
 {
   parse_url(s);
-  s->handler_func = handle_get;
+
+  if ( s->query[0] != 0 ) {
+    s->handler_func = handle_get_dir_json;
+  } else {
+    s->handler_datasrc = fileSourceCreate( s->filename );
+    s->handler_func = handle_get;
+  }
 }
 
 void parse_run( struct atarid_state *s )
@@ -429,7 +572,7 @@ struct {
   HeaderEntry ( "PUT", parse_post, 1 ),
   HeaderEntry ( "GET", parse_get, 1 ),
   HeaderEntry ( "RUN", parse_run, 1 ),
-  HeaderEntry ( "\r\nDELETE", parse_run, 1 ),
+  HeaderEntry ( "DELETE", parse_run, 1 ),
   HeaderEntry ( "Content-Length:", parse_content_len, 0 ),
   HeaderEntry ( "Expect: 100-continue", parse_expect, 0 ),
   HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart, 0 ),
@@ -474,7 +617,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
       for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
         if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
           if ( commands[i].request_type ) {
-            Cconws("\033Y\x2f\x20");
+//            Cconws("\033Y\x2f\x20");
             Cconws(commands[i].entry);
             Cconws(": ");
           }
@@ -532,33 +675,23 @@ atarid_appcall(void)
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
   if ( uip_timedout() ) {
     handle_error(s);
-//    printf("timeout\r\n");
   } else if( uip_aborted() ) {
- //   handle_error(s);
     printf("abort\r\n");
   } else if(uip_closed()  ) {
-//    printf("closed\r\n");
+    /* allow connection handler to do it's cleanup if connection was closed while
+      calling into UIP which would result in this code being executed and thead
+      never resumed again so that it would have no chance of cleaning up after itself.
+      */    
+    handle_connection(s);
+    /* now check if there's and outstanding error */
     handle_error(s);
   } else if(uip_connected()) {
-//    printf("ptr %p\r\n", s);
-//    printf("Connect!\r\n");
     s->inputbuf_size = INPUTBUF_SIZE;
     s->inputbuf = &s->inputbuf_data[MULTIPART_BOUNDARY_SIZE];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
- //   handle_connection(s);
   } else if(s != NULL) {
-    // if(uip_poll()) {
-    //   ++s->timer;
-    //   // if(s->timer >= 20) {
-    //    //   uip_abort();
-    //   // }
-    // } else {
-    //   s->timer = 0;
-    // }
-
     handle_connection(s);
-
   } else {
     printf("abort2\r\n");
     uip_abort();
@@ -576,7 +709,8 @@ atarid_init(void)
 {
  // Cconws("\r\n\r\n\r\n\r\n\033f\033p\033j");
 
- // Cconws( file_stat_json( "/" ) );
+  //file_stat_json( "/d/" );
+ // Cconws( file_stat_json( "/d/" ) );
 
  // Cconws("\033f");
   printf("val %d\r\n", UIP_TCP_MSS);

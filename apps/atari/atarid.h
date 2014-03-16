@@ -43,6 +43,8 @@
 // dashes at the begining and end
 #define MULTIPART_BOUNDARY_SIZE (70+4)
 
+struct DataSource;
+
 struct atarid_state {
   const char* http_request_type;
   int http_result_code;
@@ -52,6 +54,7 @@ struct atarid_state {
   char* inputbuf;
   char inputbuf_data[INPUTBUF_SIZE+MULTIPART_BOUNDARY_SIZE];
   uint32_t inputbuf_size;
+  char query[256];
   char filename[256];
   FILE* file;
   size_t expected_file_length;
@@ -63,6 +66,8 @@ struct atarid_state {
   size_t temp_file_length;
   
   char(*handler_func)(struct pt* worker,struct atarid_state *s);
+
+  struct DataSource* handler_datasrc;
 
   int16_t  fd;
 
