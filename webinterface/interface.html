@@ -18,48 +18,62 @@
         $(document).ready(function () {
             $('#mainSplitter').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '20%' }, { size: '80%'}] });
             $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '60%', collapsible: false }, { size: '20%', collapsible: false }] });
-            $("#jqxPanel").jqxPanel({ width: '100%', height: '100%', autoUpdate: true});
-
-      
-      
+            $("#jqxPanel").jqxPanel({ width: '100%', height: '100%', autoUpdate: true});     
             $('#jqxPanel').jqxPanel({autoUpdate: true});
             $('#jqxPanel').jqxPanel('append', $('treeGrid'));
             
-var generateTasks = function (rowsCount) {
-    var rowsCount = !rowsCount ? 1 + Math.floor(Math.random() * 5) : rowsCount;
-    var data = new Array();
-    var generatekey = function () {
-        var S4 = function () {
-            return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-        };
-        return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
-    };
+            var fetchDirectory = function (path)
+            {
+                var arr = $.parseJSON( $.ajax({
+                                            type: 'GET',
+                                            url: path,
+                                            dataType: 'jsonp',
+                                            success: function() { },
+                                            data: {},
+                                            async: false
+                                        }));
 
-    for (var i = 0; i < rowsCount; i++) {
-        var row = {};
-        var tasks = ["Shopping", "Housewares", "Kitchen supplies", "Groceries", "Cleaning supplies", "Office supplies", "Remodeling", "Paint bedroom", "Paint wall", "Fitness", "Decorate living room",
-            "Fix lights", "Fix front door", "Clean kitchen"];
-        var firstNames =
-        [
-            "Andrew", "Nancy", "Shelley", "Regina", "Yoshi", "Antoni", "Mayumi", "Ian", "Peter", "Lars", "Petra", "Martin", "Sven", "Elio", "Beate", "Cheryl", "Michael", "Guylene"
-        ];
+//                $.getJSON(path, function(data){
+  //                  var arr = $.parseJSON(data);
+    //                record.lead=true;
+//            });
+            }
 
-        var lastNames =
-        [
-            "Fuller", "Davolio", "Burke", "Murphy", "Nagase", "Saavedra", "Ohno", "Devling", "Wilson", "Peterson", "Winkler", "Bein", "Petersen", "Rossi", "Vileid", "Saylor", "Bjorn", "Nodier"
-        ];
-        row["id"] = generatekey();
-        row["firstname"] = firstNames[Math.floor(Math.random() * firstNames.length)];
-        row["lastname"] = lastNames[Math.floor(Math.random() * lastNames.length)];
-        row["name"] = row["firstname"] + " " + row["lastname"];
-        var taskindex = Math.floor(Math.random() * tasks.length);
-        row["task"] = tasks[taskindex];
-        row["duration"] = 1+Math.floor(Math.random() * 10);
-        data.push(row);
-    }
-    return data;
-}
+/*            var generateTasks = function (rowsCount) {
+                var rowsCount = !rowsCount ? 1 + Math.floor(Math.random() * 5) : rowsCount;
+                var data = new Array();
+                var generatekey = function () {
+                    var S4 = function () {
+                        return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+                    };
+                    return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
+                };
 
+                for (var i = 0; i < rowsCount; i++) {
+                    var row = {};
+                    var tasks = ["Shopping", "Housewares", "Kitchen supplies", "Groceries", "Cleaning supplies", "Office supplies", "Remodeling", "Paint bedroom", "Paint wall", "Fitness", "Decorate living room",
+                        "Fix lights", "Fix front door", "Clean kitchen"];
+                    var firstNames =
+                    [
+                        "Andrew", "Nancy", "Shelley", "Regina", "Yoshi", "Antoni", "Mayumi", "Ian", "Peter", "Lars", "Petra", "Martin", "Sven", "Elio", "Beate", "Cheryl", "Michael", "Guylene"
+                    ];
+
+                    var lastNames =
+                    [
+                        "Fuller", "Davolio", "Burke", "Murphy", "Nagase", "Saavedra", "Ohno", "Devling", "Wilson", "Peterson", "Winkler", "Bein", "Petersen", "Rossi", "Vileid", "Saylor", "Bjorn", "Nodier"
+                    ];
+                    row["id"] = generatekey();
+                    row["firstname"] = firstNames[Math.floor(Math.random() * firstNames.length)];
+                    row["lastname"] = lastNames[Math.floor(Math.random() * lastNames.length)];
+                    row["name"] = row["firstname"] + " " + row["lastname"];
+                    var taskindex = Math.floor(Math.random() * tasks.length);
+                    row["task"] = tasks[taskindex];
+                    row["duration"] = 1+Math.floor(Math.random() * 10);
+                    data.push(row);
+                }
+                return data;
+            }
+*/
             $("#treeGrid").jqxTreeGrid(
             {
                 width: '100%',
@@ -75,11 +89,12 @@ var generateTasks = function (rowsCount) {
                         dataType: "array",
                         dataFields: [
                             { name: "id", type: "string" },
+                            { name: "type", type: "string" },
+                            { name: "size", type: "number" },
                             { name: "name", type: "string" },
-                            { name: "duration", type: "number" },
-                            { name: "task", type: "number" }
+                            { name: "path", type: "string" }
                         ],
-                        localData: expandedRecord === null ? generateTasks(3000) : generateTasks(),
+                        localData:  fetchDirectory("http://falcon2/c/?dir"),
                         id: 'id'
                     }
                     var dataAdapter = new $.jqx.dataAdapter(source, {

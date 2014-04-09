@@ -218,11 +218,11 @@ static void file_stat_single(struct Repsonse* response)
 {
     fstrcat(response," {\r\n" 
       "    \"type:\" : \"%s\",\r\n",
-      dta.dta_attribute&FA_DIR ? "dir" : "file");
+      dta.dta_attribute&FA_DIR ? "d" : "f");
     if (!(dta.dta_attribute&FA_DIR)) {
       fstrcat(response, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
     }
-    fstrcat(response, "    \"name:\" : %s\r\n", dta.dta_name );
+    fstrcat(response, "    \"name:\" : \"%s\"\r\n", dta.dta_name );
     fstrcat(response,"  },\r\n"); 
 }
 
@@ -238,23 +238,25 @@ const char* file_stat_json(const char* path)
   *response.malloc_block = 0;
   response.current = response.malloc_block;
 
-  // conver unix proper paths to atari/dos path
-  dos_path_helper[0] = path[1];
-  strncat(dos_path, dos_path_helper, sizeof(dos_path));
-  dos_path_helper[0] = ':';
-  strncat(dos_path, dos_path_helper, sizeof(dos_path));
-  strncat(dos_path, &path[2], sizeof(dos_path));
-  for ( size_t i = 0; i < strlen(dos_path); ++i ) {
-    if ( dos_path[i] == '/' ) {
-      dos_path[i] = '\\';
-    }
-  }
+  strncpy (dos_path,path,sizeof(dos_path));
+
+  // // conver unix proper paths to atari/dos path
+  // dos_path_helper[0] = path[1];
+  // strncat(dos_path, dos_path_helper, sizeof(dos_path));
+  // dos_path_helper[0] = ':';
+  // strncat(dos_path, dos_path_helper, sizeof(dos_path));
+  // strncat(dos_path, &path[2], sizeof(dos_path));
+  // for ( size_t i = 0; i < strlen(dos_path); ++i ) {
+  //   if ( dos_path[i] == '/' ) {
+  //     dos_path[i] = '\\';
+  //   }
+  // }
 
   printf("dos: %s\r\n",dos_path );
 
-  fstrcat(&response,"[\r\n");
+  fstrcat(&response," [\r\n");
 
-  if ( dos_path[0] == '/' && dos_path[1] == '\0' ) {
+  if ( dos_path[0] == '\0' ) {
     // list drivers
     uint32_t drv_map = Drvmap();
     char i = 0;
@@ -285,14 +287,14 @@ const char* file_stat_json(const char* path)
         } while ( 0 == Fsnext( ) );
       } else {
         /* Error */
-        Cconws("path not found 2\r\n");
+        (void)Cconws("path not found 2\r\n");
       }
     } else {
       // it's a file
       file_stat_single(&response);
     }
   } else {
-      Cconws("path not found\r\n");
+      (void)Cconws("path not found\r\n");
   }
 
   fstrcat(&response,"]\r\n");
@@ -302,42 +304,32 @@ const char* file_stat_json(const char* path)
 }
 
 /*---------------------------------------------------------------------------*/
-struct GetDirJsonState {
-  int bytes_read;
-  size_t buffer_start_offset;
-  int file_len;
-};
-
-static
-PT_THREAD(handle_get_dir_json(struct pt* worker,struct atarid_state *s))
-{
-  struct GetDirJsonState* this = (struct GetDirJsonState*)s->heap;
-
-  PT_BEGIN(worker);
-  
-  file_stat_json( s->filename );
-
-  PT_END(worker);
-}
-
-/*---------------------------------------------------------------------------*/
 
 struct DataSource
 {
-  void (*read)( struct DataSource*, size_t, void* );
-  void (*close)( struct DataSource*, size_t, void* );
+  size_t (*read)( struct DataSource*, size_t, void* );
+  void (*close)( struct DataSource*);
+  size_t (*size)( struct DataSource*);
+  const char* mimeType;
 };
 
 struct FsSource
 {
   struct DataSource src;
   int fd;
+  size_t size;
 };
 
-int fileSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+int fileSourceSize( struct DataSource* ds)
 {
   struct FsSource* fs = (struct FsSource*) ds;
-  return Fread(fs->fd, size, ptr);
+  return fs->size;
+}
+
+size_t fileSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+{
+  struct FsSource* fs = (struct FsSource*) ds;
+  return (size_t)Fread(fs->fd, size, ptr);
 }
 
 void fileSourceClose( struct DataSource* ds )
@@ -345,18 +337,22 @@ void fileSourceClose( struct DataSource* ds )
   struct FsSource* fs = (struct FsSource*) ds;
   Fclose_safe(&fs->fd);
   free ( (void*) fs );
+  printf("fileSourceClose\r\n");
 }
 
-struct DataSource* fileSourceCreate( const char* fname )
+struct DataSource* fileSourceCreate( const char* fname, const char* mimeType )
 {
   struct FsSource* src = NULL;
   int fd = Fopen(fname,0);
 
   if ( fd > 0 ) {
     src = (struct FsSource*)malloc(sizeof(struct FsSource));
+    src->size = file_size( fname );
     src->src.read = fileSourceRead;
     src->src.close = fileSourceClose;
+    src->src.size = fileSourceSize;
     src->fd = fd;
+    src->src.mimeType = mimeType;
   }
   
   return (struct DataSource*)src;
@@ -367,12 +363,23 @@ struct MemSource
   struct DataSource src;
   char* ptr;
   size_t size;
-  char* current;
+  size_t current;
 };
 
 int memSourceRead( struct DataSource* ds,  size_t size, void* ptr)
 {
   struct MemSource* mem = (struct MemSource*) ds;
+  size_t actual_size = size + mem->current > mem->size ? mem->size-mem->current : size;
+
+  if ( mem->current >= mem->size ) {
+    return 0;
+  }
+
+  memcpy ( ptr, &mem->ptr[mem->current], actual_size );
+
+  mem->current+=actual_size;
+
+  return actual_size;
 }
 
 void memSourceClose (  struct DataSource* ds )
@@ -380,18 +387,29 @@ void memSourceClose (  struct DataSource* ds )
   struct MemSource* mem = (struct MemSource*) ds;
   free ( (void*) mem->ptr );
   free ( (void*) mem );
+  printf("memSourceClose\r\n");
 }
 
-struct MemSource* memSourceCreate ( char* ptr, size_t size )
+int memSourceSize( struct DataSource* ds)
+{
+  struct MemSource* mem = (struct MemSource*) ds;
+  return mem->size;
+}
+
+struct MemSource* memSourceCreate ( char* ptr, size_t size, const char* mimeType )
 {
   struct MemSource* src = NULL;
   src = (struct MemSource*)malloc(sizeof(struct MemSource));
   src->src.read = memSourceRead;
   src->src.close = memSourceClose;
+  src->src.size = memSourceSize;
+  src->current = 0;
+  src->ptr = ptr;
+  src->size = size;
+  src->src.mimeType = mimeType;
 
   return (struct DataSource*)src;
 }
-
 
 struct GetState {
   int bytes_read;
@@ -404,24 +422,25 @@ static
 PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 {
   struct GetState* this = (struct GetState*)s->heap;
+  struct DataSource* src = s->handler_datasrc;
 
   PT_BEGIN(worker);
 
-  (void)Cconws(s->filename);
-
-  this->file_len = file_size( s->filename );
   this->buffer_start_offset = 0;
-
-  s->fd = Fopen(s->filename,0);
   
-  if ( s->fd > 0 ) {
+  printf("1111\r\n");
+
+  if ( src ) {
+  
+    this->file_len = src->size(src);
+    printf("2222 %d\r\n", this->file_len);
 
     this->buffer_start_offset = snprintf(
       s->inputbuf,UIP_TCP_MSS,
       "HTTP/1.1 200 OK\r\n"
       "Content-Type: %s\r\n"
       "Content-Length: %u\r\n\r\n",
-      "application/octet-stream",
+      src->mimeType,
       this->file_len );
   
   } else {
@@ -430,9 +449,11 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
   }
   
   while ( 1 ) {
-    this->bytes_read = Fread(s->fd, 
-          UIP_TCP_MSS-this->buffer_start_offset, 
-          &s->inputbuf[this->buffer_start_offset]);
+    this->bytes_read = src->read(src,UIP_TCP_MSS-this->buffer_start_offset, 
+            &s->inputbuf[this->buffer_start_offset]);
+    // this->bytes_read = Fread(s->fd, 
+    //       UIP_TCP_MSS-this->buffer_start_offset, 
+    //       &s->inputbuf[this->buffer_start_offset]);
 
     if ( this->bytes_read == 0 ) 
       break;
@@ -441,8 +462,11 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
     this->buffer_start_offset = 0;
   }
   
-  Cconws(" -> OK.\r\n");
-  Fclose_safe(&s->fd);
+  (void)Cconws(" -> OK.\r\n");
+//  Fclose_safe(&s->fd);
+  src->close(src);
+  free(s->handler_datasrc);
+  s->handler_datasrc = NULL;
 
   PT_END(worker);
 }
@@ -513,7 +537,7 @@ void parse_url( struct atarid_state *s )
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
   strncpy( &s->filename[2],++fn, sizeof(s->filename));
-
+  printf("parse_url \'%s\' query \'%s\'\r\n",s->filename, s->query);
 }
 
 void parse_post( struct atarid_state *s )
@@ -527,11 +551,15 @@ void parse_get( struct atarid_state *s )
   parse_url(s);
 
   if ( s->query[0] != 0 ) {
-    s->handler_func = handle_get_dir_json;
+    char* dir_json = file_stat_json( s->filename );
+    printf("what 1 %u\r\n", strlen(dir_json) );
+    s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript" );
+    printf("what 2\r\n");
   } else {
-    s->handler_datasrc = fileSourceCreate( s->filename );
-    s->handler_func = handle_get;
+    s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream" );
   }
+  s->handler_func = handle_get;
+
 }
 
 void parse_run( struct atarid_state *s )
