@@ -192,9 +192,20 @@
                                 });
 */                            
 
-                            var xhr = new XMLHttpRequest;
-                            xhr.open("POST", obj.value.path + "/" + name, false);
-                            xhr.send(theFile.target.result);
+                                var xhr = new XMLHttpRequest;
+                                xhr.upload.addEventListener("progress", 
+                                    function(e) { 
+                                        console.log("upload progress" + e); 
+                                    },
+                                    false );
+                                xhr.addEventListener("progress", 
+                                    function(e) { 
+                                        console.log("upload progress" + e); 
+                                    },
+                                    false );
+
+                                xhr.open("POST", obj.value.path + "/" + name, true);
+                                xhr.send( new Uint8Array(theFile.target.result)) ;
                             };
                             reader.readAsArrayBuffer(f);
                         }

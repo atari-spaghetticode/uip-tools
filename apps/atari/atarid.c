@@ -645,9 +645,9 @@ void parse_get( struct atarid_state *s )
     }
   } else if ( s->query[0] != 0 ) {
     char* dir_json = file_stat_json( s->filename );
-    printf("what 1 %u\r\n", strlen(dir_json) );
+//    printf("what 1 %u\r\n", strlen(dir_json) );
     s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript","identity",1 );
-    printf("what 2\r\n");
+//    printf("what 2\r\n");
   } 
 
   s->handler_func = handle_get;
@@ -833,7 +833,7 @@ atarid_init(void)
  // Cconws( file_stat_json( "/d/" ) );
 
  // Cconws("\033f");
-  printf("val %d\r\n", UIP_TCP_MSS);
+//  printf("val %d\r\n", UIP_TCP_MSS);
   uip_listen(HTONS(80));
 }
 /*---------------------------------------------------------------------------*/

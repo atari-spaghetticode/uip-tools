@@ -12,3 +12,4 @@ APP:
 	* allow for more then one connection?
 	* remove logging (scrolling slows down massively)
 	* test on ST
+	* chdir for RUN command

@@ -86,6 +86,7 @@ struct __attribute__ ((__packed__)) dhcp_msg {
 #define DHCP_OPTION_SUBNET_MASK   1
 #define DHCP_OPTION_ROUTER        3
 #define DHCP_OPTION_DNS_SERVER    6
+#define DHCP_OPTION_HOSTNAME     12
 #define DHCP_OPTION_REQ_IPADDR   50
 #define DHCP_OPTION_LEASE_TIME   51
 #define DHCP_OPTION_MSG_TYPE     53
@@ -224,6 +225,10 @@ parse_options(u8_t *optptr, int len)
     case DHCP_OPTION_LEASE_TIME:
       memcpy(s.lease_time, optptr + 2, 4);
       break;
+    case DHCP_OPTION_HOSTNAME:
+      memset(s.hostname,0,sizeof(s.hostname));
+      memcpy(s.hostname, optptr + 2, optptr[1]);
+      break;
     case DHCP_OPTION_END:
    //   printf("dhcp type: %u\r\n", type);
       return type;
@@ -304,9 +309,13 @@ PT_THREAD(handle_dhcp(void))
   } while(s.state != STATE_CONFIG_RECEIVED);
   
 #if 1
-  printf("IP %d.%d.%d.%d\n",
+  printf("IP %d.%d.%d.%d\r\n",
 	 uip_ipaddr1(s.ipaddr), uip_ipaddr2(s.ipaddr),
 	 uip_ipaddr3(s.ipaddr), uip_ipaddr4(s.ipaddr));
+  if ( s.hostname[0] != 0 ) {
+    printf("Hostname: %s\r\n", s.hostname);
+  }
+
   // printf("Got netmask %d.%d.%d.%d\n",
 	 // uip_ipaddr1(s.netmask), uip_ipaddr2(s.netmask),
 	 // uip_ipaddr3(s.netmask), uip_ipaddr4(s.netmask));
@@ -338,7 +347,9 @@ PT_THREAD(handle_dhcp(void))
 void
 dhcpc_init(const void *mac_addr, int mac_len)
 {
-  Cconws("DHCP: ");
+  printf("DHCP: ");
+
+  memset(&s,0,sizeof(s));
 
   uip_ipaddr_t addr;
   
