@@ -56,6 +56,7 @@ struct atarid_state {
   uint32_t inputbuf_size;
   char query[256];
   char filename[256];
+  char original_filename[256];
   FILE* file;
   size_t expected_file_length;
   uint32_t expected_100_continue;

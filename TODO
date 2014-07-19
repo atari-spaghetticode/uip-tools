@@ -1,6 +1,14 @@
-get file
-post multiple files in a single request:
-	how indivudial files are named?
-make sure or create folders
-RETS API for:
-	execute binary
+WEBINTERFACE:
+	* sorting
+	* file/folder icons
+	* display date
+	* file download/upload and drag&drop
+	* add logo
+	* add panel with ajax trafic
+
+APP:
+	* Allow it to run as accessory?
+	* display date
+	* allow for more then one connection?
+	* remove logging (scrolling slows down massively)
+	* test on ST

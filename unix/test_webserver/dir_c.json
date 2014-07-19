@@ -1,0 +1,469 @@
+ [
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AA"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "AUTO"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AB"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "BTFONTS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CLIPBRD"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CONHOLIO"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CPX"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CT60"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CT60_2"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AD"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "DSYS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "EASYMINT"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "EM.170"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "EXTENDOS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "1517",
+    "name" : "NEWDESK.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "72",
+    "name" : "MEMDEBUG.TXT"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AG"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "GEMINI2"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AG"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "GEMSYS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "13",
+    "name" : "HDDRUTIL.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "3878",
+    "name" : "VI2.DAT"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "ROBINSON.CD"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "28364",
+    "name" : "HDDRIVER.OLD"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "1079",
+    "name" : "SBOOT.XML"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "14250",
+    "name" : "SETMAC.PRG"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AM"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "MINT"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AN"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "NVDITOOL.S"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "XBOOT"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "258",
+    "name" : "BOOT.LOG"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CTPCI"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "7442",
+    "name" : "FVDI.SYS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "27182",
+    "name" : "HDDRIVER.SYS"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "CT60_UPD"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AV"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "VIDEL"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AV"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "VMODES"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AA"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "478",
+    "name" : "ASSIGN.SYS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294901760",
+    "name" : "AC"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "23",
+    "name" : "CONTROL.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "44685",
+    "name" : "XCONTROL.ACC"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "22216",
+    "name" : "CT60TEMP.ACC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "SLB"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "700",
+    "name" : "SETUP.LOG"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "80",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "2233660",
+    "name" : "EASYMINT.ZIP"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "75",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "216",
+    "name" : "EXTENDOS.BAK"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "70",
+    "name" : "AE"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "216",
+    "name" : "EXTENDOS.CNF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "83",
+    "name" : "AH"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "22236",
+    "name" : "CT60TEMP.ACX"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "84",
+    "name" : "AM"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "16450",
+    "name" : "MULTISYN.DAT"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294901760",
+    "name" : "AN"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "51349",
+    "name" : "ST-GUIDE.HYP"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AN"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "319",
+    "name" : "NVDI.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "19686",
+    "name" : "BUBBLE.ACC"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "17660",
+    "name" : "UMOUSE.LOG"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "71",
+    "name" : "AS"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "14580",
+    "name" : "STMASTER.PRG"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AV"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "6229",
+    "name" : "ST-GUIDE.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "4294967295",
+    "name" : "AV"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "202",
+    "name" : "VI2.INF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "1460",
+    "name" : "ST-GUIDE.REF"
+  }
+,
+ {
+    "type" : "f",
+    "size" : "44267",
+    "name" : "ST-GUIDE.ACC"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "UTILS"
+  }
+,
+ {
+    "type" : "d",
+    "name" : "THING126"
+  }
+]

@@ -67,6 +67,14 @@
 #include <osbind.h>
 #include <errno.h>
 
+// static content
+#include "index.h"
+#include "icon-down.h"
+#include "icon-up.h"
+#include "icon-left.h"
+#include "icon-right.h"
+#include "loader.h"
+
 #define ISO_nl      0x0a
 #define ISO_space   0x20
 #define ISO_bang    0x21
@@ -216,14 +224,24 @@ void fstrcat( struct Repsonse* response, char* format, ... )
 
 static void file_stat_single(struct Repsonse* response)
 {
-    fstrcat(response," {\r\n" 
-      "    \"type:\" : \"%s\",\r\n",
-      dta.dta_attribute&FA_DIR ? "d" : "f");
-    if (!(dta.dta_attribute&FA_DIR)) {
-      fstrcat(response, "    \"size:\" : \"%u\",\r\n", dta.dta_size );
+  char json_name[256];
+
+  fstrcat(response," {\r\n" 
+    "    \"type\" : \"%s\",\r\n",
+    dta.dta_attribute&FA_DIR ? "d" : "f");
+  if (!(dta.dta_attribute&FA_DIR)) {
+    fstrcat(response, "    \"size\" : \"%u\",\r\n", dta.dta_size );
+  }
+  strncpy ( json_name, dta.dta_name,sizeof(json_name) );
+  for( size_t i=0;json_name[i] != 0; i++ )
+  {
+    if ( json_name[i] == '\\') {
+      json_name[i] = '_';
     }
-    fstrcat(response, "    \"name:\" : \"%s\"\r\n", dta.dta_name );
-    fstrcat(response,"  },\r\n"); 
+  }
+
+  fstrcat(response, "    \"name\" : \"%s\"\r\n", json_name );
+  fstrcat(response,"  }\r\n"); 
 }
 
 
@@ -256,17 +274,33 @@ const char* file_stat_json(const char* path)
 
   fstrcat(&response," [\r\n");
 
+  // this is a bit dodgy, I'm not sure why I need to do this:
+  // it turns out that to scan the root of the drive I need to
+  // supply a path that ends with a backslash:
+  // d:\
+  // otherwise it won't work
+  // But for forlders it accually can't end with backslash because
+  // it won't work.. madness!!!!!
+  if ( strlen(dos_path) > 3 && dos_path[strlen(dos_path)-1] == '\\' ) {
+    dos_path[strlen(dos_path)-1] = 0;
+  }
+
   if ( dos_path[0] == '\0' ) {
     // list drivers
     uint32_t drv_map = Drvmap();
     char i = 0;
+    int first = 1;  
     while ( drv_map ) {
       if ( drv_map&1 ) {
+        if (!first){
+          fstrcat(&response,",\r\n");
+        }
+        first = 0;
         fstrcat(&response, " {\r\n" 
-          "    \"type:\" : \"drive\",\r\n" );
+          "    \"type\" : \"d\",\r\n" );
         fstrcat(&response,
-           "    \"name:\" : %c\r\n", 'a' + i );
-        fstrcat(&response,"  },\r\n");
+           "    \"name\" : \"%c\"\r\n", 'a' + i );
+        fstrcat(&response,"  }\r\n");
       }
       i++;
       drv_map >>=1;
@@ -281,9 +315,18 @@ const char* file_stat_json(const char* path)
       }
       strcat(dos_path,"*.*");
       printf("scanning: %s\r\n", dos_path);
-      if ( 0 == Fsfirst( dos_path,0x3f ) ) {         
+      if ( 0 == Fsfirst( dos_path,0x3f ) ) {
+        int first = 1;         
         do {
-          file_stat_single(&response);
+          // skip .. and . pseudo folders
+          if ( strcmp(dta.dta_name,"..") != 0 && strcmp(dta.dta_name,".") != 0  ) {          
+            if (!first){
+              fstrcat(&response,",\r\n");
+            }
+            first = 0;
+
+            file_stat_single(&response);
+          }
         } while ( 0 == Fsnext( ) );
       } else {
         /* Error */
@@ -310,7 +353,8 @@ struct DataSource
   size_t (*read)( struct DataSource*, size_t, void* );
   void (*close)( struct DataSource*);
   size_t (*size)( struct DataSource*);
-  const char* mimeType;
+  const char* mime_type;
+  const char* encoding_type;
 };
 
 struct FsSource
@@ -340,7 +384,10 @@ void fileSourceClose( struct DataSource* ds )
   printf("fileSourceClose\r\n");
 }
 
-struct DataSource* fileSourceCreate( const char* fname, const char* mimeType )
+struct DataSource* fileSourceCreate( 
+  const char* fname, 
+  const char* mime_type, 
+  const char* encoding_type )
 {
   struct FsSource* src = NULL;
   int fd = Fopen(fname,0);
@@ -352,7 +399,8 @@ struct DataSource* fileSourceCreate( const char* fname, const char* mimeType )
     src->src.close = fileSourceClose;
     src->src.size = fileSourceSize;
     src->fd = fd;
-    src->src.mimeType = mimeType;
+    src->src.mime_type = mime_type;
+    src->src.encoding_type = encoding_type;
   }
   
   return (struct DataSource*)src;
@@ -364,6 +412,7 @@ struct MemSource
   char* ptr;
   size_t size;
   size_t current;
+  char ownership;
 };
 
 int memSourceRead( struct DataSource* ds,  size_t size, void* ptr)
@@ -385,9 +434,10 @@ int memSourceRead( struct DataSource* ds,  size_t size, void* ptr)
 void memSourceClose (  struct DataSource* ds )
 {
   struct MemSource* mem = (struct MemSource*) ds;
-  free ( (void*) mem->ptr );
+  if ( mem->ownership ) {
+    free ( (void*) mem->ptr );
+  }
   free ( (void*) mem );
-  printf("memSourceClose\r\n");
 }
 
 int memSourceSize( struct DataSource* ds)
@@ -396,7 +446,12 @@ int memSourceSize( struct DataSource* ds)
   return mem->size;
 }
 
-struct MemSource* memSourceCreate ( char* ptr, size_t size, const char* mimeType )
+struct MemSource* memSourceCreate ( 
+    char* ptr, 
+    size_t size, 
+    const char* mime_type, 
+    const char* encoding_type,
+    char ownership )
 {
   struct MemSource* src = NULL;
   src = (struct MemSource*)malloc(sizeof(struct MemSource));
@@ -406,8 +461,9 @@ struct MemSource* memSourceCreate ( char* ptr, size_t size, const char* mimeType
   src->current = 0;
   src->ptr = ptr;
   src->size = size;
-  src->src.mimeType = mimeType;
-
+  src->src.mime_type = mime_type;
+  src->src.encoding_type = encoding_type;
+  src->ownership = ownership;
   return (struct DataSource*)src;
 }
 
@@ -428,23 +484,23 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 
   this->buffer_start_offset = 0;
   
-  printf("1111\r\n");
-
   if ( src ) {
   
     this->file_len = src->size(src);
-    printf("2222 %d\r\n", this->file_len);
-
+  
     this->buffer_start_offset = snprintf(
       s->inputbuf,UIP_TCP_MSS,
       "HTTP/1.1 200 OK\r\n"
       "Content-Type: %s\r\n"
+      "Content-Encoding: %s\r\n"
       "Content-Length: %u\r\n\r\n",
-      src->mimeType,
+      src->mime_type,
+      src->encoding_type,
       this->file_len );
   
   } else {
-    PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 404 Not Found\r\n");
+    //PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n");
+    s->http_result_code = 404;
     PT_EXIT(worker); 
   }
   
@@ -513,6 +569,9 @@ void parse_url( struct atarid_state *s )
 
   *fn_end = 0;
 
+  /* store original path */
+  strncpy( s->original_filename,fn, sizeof(s->original_filename));
+
   /* extract query string */
 
   fn2=fn;
@@ -523,11 +582,12 @@ void parse_url( struct atarid_state *s )
   if ( fn2 != fn_end ) {
     /* got query string */
     strncpy ( s->query, &fn2[1], sizeof(s->query) );
+    printf("query \'%s\'\r\n", fn);
     *fn2=0;
   }
 
-  /* convert path to dos/atari format */
 
+  /* convert path to dos/atari format */
   while ( fn != fn_end-- ) {
     if ( *fn_end == '/' ) {
       *fn_end = '\\';
@@ -536,8 +596,8 @@ void parse_url( struct atarid_state *s )
 
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
-  strncpy( &s->filename[2],++fn, sizeof(s->filename));
-  printf("parse_url \'%s\' query \'%s\'\r\n",s->filename, s->query);
+  strncpy( &s->filename[2],++fn, sizeof(s->filename)-2);
+  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
 }
 
 void parse_post( struct atarid_state *s )
@@ -548,18 +608,49 @@ void parse_post( struct atarid_state *s )
 
 void parse_get( struct atarid_state *s )
 {
+  struct {
+    const char* url;
+    const unsigned char* data_ptr;
+    const unsigned int data_size;
+    const char* content_type;
+    const char* encoding_type;
+  } static_url_mapping [] = {
+    { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
+    { "images/icon-down.png", icon_down_png,icon_down_png_len,"image/png", "identity"},
+    { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
+    { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
+    { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
+    { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},
+    { NULL,NULL,0 }
+  };
+
   parse_url(s);
 
-  if ( s->query[0] != 0 ) {
+  s->handler_datasrc = NULL;
+
+  if ( s->query[0] == 0 ) {
+    for ( size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
+      if ( strcmp( static_url_mapping[i].url, s->original_filename) == 0 ) {
+        s->handler_datasrc = memSourceCreate(  
+                              static_url_mapping[i].data_ptr, 
+                              static_url_mapping[i].data_size,
+                              static_url_mapping[i].content_type,
+                              static_url_mapping[i].encoding_type,
+                              0 );
+        break;
+      }
+    }
+    if ( !s->handler_datasrc ) {
+      s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream","identity" );
+    }
+  } else if ( s->query[0] != 0 ) {
     char* dir_json = file_stat_json( s->filename );
     printf("what 1 %u\r\n", strlen(dir_json) );
-    s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript" );
+    s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript","identity",1 );
     printf("what 2\r\n");
-  } else {
-    s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream" );
-  }
-  s->handler_func = handle_get;
+  } 
 
+  s->handler_func = handle_get;
 }
 
 void parse_run( struct atarid_state *s )
@@ -592,9 +683,9 @@ void parse_urlencoded( struct atarid_state *s )
 
 struct {
   const char* entry;
-  size_t entry_len;
-  char(*parse_func)(struct atarid_state *s);
-  char request_type;
+  const size_t entry_len;
+  const char(*parse_func)(struct atarid_state *s);
+  const char request_type;
 } commands[] = {
   HeaderEntry ( "POST", parse_post, 1 ),
   HeaderEntry ( "PUT", parse_post, 1 ),
@@ -608,13 +699,13 @@ struct {
 };
 
 struct {
-  int http_result_code;
+  const int http_result_code;
   const char* http_response_string;
 } http_responses[] = {
   { 200, "OK" },
   { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
   { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
-  { 404, "HTTP/1.1 404 Not Found\r\n\r\n" },
+  { 404, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" },
   { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
 };
 
@@ -629,6 +720,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
     s->expected_file_length = -1;
     s->handler_func = NULL;
     s->filename[0] = '\0';
+    s->original_filename[0]= '\0';
     s->multipart_encoded = 0;
     s->fd = -1;
     s->http_result_code = 0;

@@ -1,7 +1,0 @@
-
-vpath $(abspath . ../webinterface)
-
-interface.c:
-	$(CPP) interface.html interface.cpp
-
-all: interface.c
