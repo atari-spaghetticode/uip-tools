@@ -110,8 +110,7 @@
                         items[item_index] = {};
                         items[item_index]["value"] = dirtree[i];
                         items[item_index]["label"] =  dirtree[i]["name"];
-                        items[item_index]["expanded"] =  false;
-                  //      items[item_index]["path"] =  path + ;
+                        items[item_index]["expanded"] =  true;
                         items[item_index]["items"] =  [];
                         item_index++;
                     } else {
@@ -135,9 +134,11 @@
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var $element = $(event.args.element);
                 if ( obj.value.subtree == null ) {
+                  //  $('#jqxTree').jqxTree('removeItem', obj.nextItem.element);
                     var dir = fetchAndParseDir(obj.value.path,"/?dir");
                     obj.value.subtree = dir[1];
                     $('#jqxTree').jqxTree('addTo', dir[0], $element[0]);
+                    //$('#jqxTree').jqxTree('updateItem',$element, { "items": dir[0]});
                 }
                 populateGridList(obj.value.subtree);
                 $('#mainSplitter').jqxSplitter('refresh');                    
@@ -153,25 +154,20 @@
                 //var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var items = event.args.items;
                 for (i = 0; i < items.length; i++) {
-/*                    items[i].subtreeElement.ondragenter = function (ev) {
-                        
-                    };
-*/                    
-                    var fun = function (ev) {    
+
+                    var dragdropdefault = function (ev) {    
                         if (ev.preventDefault) {
                             ev.preventDefault(); // Necessary. Allows us to drop.
                         }
                         console.log( ev.type + " event " );
                     };
 
-                    var fun2 = function (ev) {    
+                    var drophandler = function (ev) {    
                         if (ev.preventDefault) {
                             ev.preventDefault(); // Necessary. Allows us to drop.
                         }
 
-//                        var obj = $('#jqxTree').jqxTree("getItem", ev.target );
-                        var el = ev.path.item(1);
-                        var obj = $('#jqxTree').jqxTree("getItem", el );
+                        var obj = $('#jqxTree').jqxTree("getItem", ev.target.parentElement );
                         console.log( ev.type + " event target path " + obj.value.path );
 
                         ev.stopPropagation(); // Stops some browsers from redirecting.
@@ -181,43 +177,39 @@
                         for (var i = 0, f; f = files[i]; i++) {
                             var reader = new FileReader();
                             var name = f.name;
-                            reader.onload = function(theFile) {
-/*                                $.ajax({
-                                  type: "PUT",
-                                  url: obj.value.path + "/" + name,
-                                  data: theFile.target.result,
-                                  mimeType: "application/octet-stream",
-                                  async: false,
-                                  processData: false
-                                });
-*/                            
+                            reader.onload = (function(name) {
+                                return function(theFile) {
+                      
+                                    var xhr = new XMLHttpRequest;
+                                    xhr.upload.addEventListener("progress", 
+                                        function(e) { 
+                                            console.log("upload progress" + e); 
+                                        },
+                                        false );
+                                    xhr.addEventListener("progress", 
+                                        function(e) { 
+                                            console.log("upload progress" + e); 
+                                        },
+                                        false );
 
-                                var xhr = new XMLHttpRequest;
-                                xhr.upload.addEventListener("progress", 
-                                    function(e) { 
-                                        console.log("upload progress" + e); 
-                                    },
-                                    false );
-                                xhr.addEventListener("progress", 
-                                    function(e) { 
-                                        console.log("upload progress" + e); 
-                                    },
-                                    false );
+                                    xhr.open("POST", obj.value.path + "/" + name, true);
 
-                                xhr.open("POST", obj.value.path + "/" + name, true);
-                                xhr.send( new Uint8Array(theFile.target.result)) ;
-                            };
+                                    var blob = new Blob([theFile.target.result], {type: 'application/octet-binary'});
+                                    xhr.send( blob ) ;
+                                };
+                            })(name);
+
                             reader.readAsArrayBuffer(f);
                         }
                     };
 
-                    items[i].subtreeElement.ondrag = fun;
-                    items[i].subtreeElement.ondragend = fun;
-                    items[i].subtreeElement.ondragenter = fun;
-                    items[i].subtreeElement.ondragleave = fun;
-                    items[i].subtreeElement.ondragover = fun;
-                    items[i].subtreeElement.ondragstart = fun;
-                    items[i].subtreeElement.ondrop = fun2;
+                    items[i].subtreeElement.ondrag = dragdropdefault;
+                    items[i].subtreeElement.ondragend = dragdropdefault;
+                    items[i].subtreeElement.ondragenter = dragdropdefault;
+                    items[i].subtreeElement.ondragleave = dragdropdefault;
+                    items[i].subtreeElement.ondragover = dragdropdefault;
+                    items[i].subtreeElement.ondragstart = dragdropdefault;
+                    items[i].subtreeElement.ondrop = drophandler;
                 }
             });
 
