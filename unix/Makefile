@@ -49,7 +49,7 @@ CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 #		-DUIP_ARCH_IPCHKSUM \
 #		-DUIP_ARCH_ADD32
 
-LD_FLAGS = -Wl,--traditional-format -Wl,-Map,linker.map
+LD_FLAGS = -s -Wl,--traditional-format -Wl,-Map,linker.map
 
 -include ../uip/Makefile.include
 

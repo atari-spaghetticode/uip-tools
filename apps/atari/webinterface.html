@@ -27,15 +27,15 @@
 
             var current_path = '/';
 
-            $( document ).ajaxSuccess(function( event, request, settings ) {
+/*            $( document ).ajaxSuccess(function( event, request, settings ) {
               $( "#log_panel" ).append( "<li>" + settings.type + " " + settings.url + "</li>" );
-            });
+            });*/
 
             $('#mainSplitter').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '20%' }, { size: '80%'}] });
-            $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '60%', collapsible: false }, { size: '20%', collapsible: false }] });
-            $("#jqxPanel").jqxPanel({ width: '100%', height: '100%', autoUpdate: true});     
-            $('#jqxPanel').jqxPanel({autoUpdate: true});
-            $('#jqxPanel').jqxPanel('append', $('treeGrid'));
+            $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '80%', collapsible: false }, { size: '20%', collapsible: false }] });
+          //  $("#jqxPanel").jqxPanel({ width: '100%', height: '100%', autoUpdate: true});     
+          //  $('#jqxPanel').jqxPanel({autoUpdate: false});
+        //    $('#jqxPanel').jqxPanel('append', $('treeGrid'));
             
             var fetchDirectory = function (path,query)
             {
@@ -63,7 +63,7 @@
             $("#treeGrid").jqxTreeGrid(
             {
                 width: '100%',
-                height: '100%',
+                height: '80%',
                 altRows: true,
                 sortable: true,
                 columns: [
@@ -73,24 +73,38 @@
                 ]
             });
 
+            $("#treeGrid2").jqxTreeGrid(
+            {
+                width: '100%',
+                height: '20%',
+                altRows: true,
+                sortable: true,
+                columns: [
+                    { text: 'Type', dataField: "name", align: 'center', width: '33%' },
+                    { text: 'Path', dataField: "size", cellsAlign: 'center', align: 'center', width: '33%' },
+                    { text: 'Status', dataField: "date", cellsAlign: 'center', align: 'center', width: '34%' },
+                ]
+            });
+
             $('#treeGrid').on('rowClick', 
                 function (event)
                 {
-                    $("#treeGrid").jqxTreeGrid('sortBy', 'zort', 'asc');
-                    $('#rightSplitter').jqxSplitter('refresh');
+                  //  $("#treeGrid").jqxTreeGrid('sortBy', 'zort', 'asc');
+                  //  $('#rightSplitter').jqxSplitter('refresh');
                 });
 
 
             var populateGridList = function(items) {
-                
-                $("#treeGrid").jqxTreeGrid('beginUpdate');
-                $("#treeGrid").jqxTreeGrid('clear');
+                if ( items != null ) {
+                    $("#treeGrid").jqxTreeGrid('beginUpdate');
+                    $("#treeGrid").jqxTreeGrid('clear');
 
-                for (i = 0; i < items.length; i++) {
-                    $('#treeGrid').jqxTreeGrid('addRow', null, items[i]);
+                    for (i = 0; i < items.length; i++) {
+                        $('#treeGrid').jqxTreeGrid('addRow', null, items[i]);
+                    }
+
+                    $("#treeGrid").jqxTreeGrid('endUpdate');                    
                 }
-
-                $("#treeGrid").jqxTreeGrid('endUpdate');
             }
             
             var fetchAndParseDir = function(path,query) {
@@ -110,12 +124,14 @@
                         items[item_index] = {};
                         items[item_index]["value"] = dirtree[i];
                         items[item_index]["label"] =  dirtree[i]["name"];
-                        items[item_index]["expanded"] =  true;
-                        items[item_index]["items"] =  [];
+                        items[item_index]["expanded"] =  false;
+                        items[item_index]["items"] =  [{ "value": "ajax1.htm", "label": "Loading..." }];
                         item_index++;
                     } else {
-                        var row = { "name": dirtree[i]["name"], "size": dirtree[i]["size"]  };
-                        files.push(row);
+                        if ( dirtree[i]["size"] < 0x80000000 ) {
+                            var row = { "name": dirtree[i]["name"], "size": dirtree[i]["size"]  };
+                            files.push(row);
+                        }
                     }
                 }
 
@@ -134,21 +150,31 @@
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var $element = $(event.args.element);
                 if ( obj.value.subtree == null ) {
-                  //  $('#jqxTree').jqxTree('removeItem', obj.nextItem.element);
                     var dir = fetchAndParseDir(obj.value.path,"/?dir");
                     obj.value.subtree = dir[1];
-                    $('#jqxTree').jqxTree('addTo', dir[0], $element[0]);
+                    //
+                    $('#jqxTree').jqxTree('removeItem', obj.nextItem.element);
+                    $('#jqxTree').jqxTree('addTo', dir[0], $element[0] );
+                    //obj.items = dir[0];
                     //$('#jqxTree').jqxTree('updateItem',$element, { "items": dir[0]});
                 }
                 populateGridList(obj.value.subtree);
-                $('#mainSplitter').jqxSplitter('refresh');                    
+           //     $('#rightSplitter').jqxSplitter('refresh');                    
             });
 
             $('#jqxTree').on("select", function (event) {
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 populateGridList(obj.value.subtree);
-                $('#mainSplitter').jqxSplitter('refresh');                    
+                //$("#treeGrid").jqxTreeGrid('refresh');                  
+                //$('#rightSplitter').jqxSplitter('refresh');
+                //$('#jqxSplitter').jqxSplitter('expand');
             });
+
+            $('#rightSplitter').on('resize', function (event)  { 
+                var panels = event.args.panels;
+                $('#treeGrid').jqxTreeGrid({height:panels[0].size});
+                $('#treeGrid2').jqxTreeGrid({height:panels[1].size});
+            }); 
 
             $('#jqxTree').on("added", function (event) {
                 //var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
@@ -202,14 +228,15 @@
                             reader.readAsArrayBuffer(f);
                         }
                     };
-
-                    items[i].subtreeElement.ondrag = dragdropdefault;
-                    items[i].subtreeElement.ondragend = dragdropdefault;
-                    items[i].subtreeElement.ondragenter = dragdropdefault;
-                    items[i].subtreeElement.ondragleave = dragdropdefault;
-                    items[i].subtreeElement.ondragover = dragdropdefault;
-                    items[i].subtreeElement.ondragstart = dragdropdefault;
-                    items[i].subtreeElement.ondrop = drophandler;
+                    if ( items[i].subtreeElement != null ) {                    
+                        items[i].subtreeElement.ondrag = dragdropdefault;
+                        items[i].subtreeElement.ondragend = dragdropdefault;
+                        items[i].subtreeElement.ondragenter = dragdropdefault;
+                        items[i].subtreeElement.ondragleave = dragdropdefault;
+                        items[i].subtreeElement.ondragover = dragdropdefault;
+                        items[i].subtreeElement.ondragstart = dragdropdefault;
+                        items[i].subtreeElement.ondrop = drophandler;
+                    }
                 }
             });
 
@@ -231,11 +258,8 @@
         <div id="jqxTree"></div>
         <div>
             <div id="rightSplitter">
-                <div id="jqxPanel">
                     <div id="treeGrid"></div>
-                    </div>
-                <div id="log_panel">
-                    Activity</div>
+                <div id="treeGrid2"> </div>
             </div>
         </div>
     </div>
