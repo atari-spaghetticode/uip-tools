@@ -252,6 +252,7 @@ const char* file_stat_json(const char* path)
   char dos_path_helper[2] = { '\0', '\0' };
   
   Fsetdta (&dta);
+  memset( &dta,0,sizeof(dta) );
   response.malloc_block = (char*)malloc (response.size);
   *response.malloc_block = 0;
   response.current = response.malloc_block;
@@ -307,7 +308,7 @@ const char* file_stat_json(const char* path)
     }
   } 
     /* if we're at the root of the drive or at a folder */
-  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,0x3f ) ) {
+  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,FA_RDONLY|FA_DIR|FA_CHANGED ) ) {
     // ok so this is a folder
     if ( strlen(dos_path ) == 3 || (dta.dta_attribute&FA_DIR) ) {
       if ( dos_path[strlen(dos_path)-1] != '\\' ) {

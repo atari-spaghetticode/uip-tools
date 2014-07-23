@@ -12,6 +12,10 @@ class MyRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.path = 'test_webserver/dir_d.json'
         elif self.path == '/c/?dir':
             self.path = 'test_webserver/dir_c.json'
+        elif self.path == '/e/?dir':
+            self.path = 'test_webserver/dir_e.json'
+        elif self.path == '/f/?dir':
+            self.path = 'test_webserver/dir_f.json'
         elif self.path.endswith('?dir'):
             self.path = 'test_webserver/dir_d.json'
         else:

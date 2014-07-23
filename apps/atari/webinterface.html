@@ -25,17 +25,8 @@
 
         $(document).ready(function () {
 
-            var current_path = '/';
-
-/*            $( document ).ajaxSuccess(function( event, request, settings ) {
-              $( "#log_panel" ).append( "<li>" + settings.type + " " + settings.url + "</li>" );
-            });*/
-
             $('#mainSplitter').jqxSplitter({ width: '100%', height: '100%', panels: [{ size: '20%' }, { size: '80%'}] });
             $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '80%', collapsible: false }, { size: '20%', collapsible: false }] });
-          //  $("#jqxPanel").jqxPanel({ width: '100%', height: '100%', autoUpdate: true});     
-          //  $('#jqxPanel').jqxPanel({autoUpdate: false});
-        //    $('#jqxPanel').jqxPanel('append', $('treeGrid'));
             
             var fetchDirectory = function (path,query)
             {
@@ -146,28 +137,29 @@
             $('#jqxTree').jqxTree({ source: source,  height: "100%", width: "100%" });
 
             $('#jqxTree').on("expand", function (event) {
-                //var label = $('#jqxTree').jqxTree("getItem", event.args.element).label;
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var $element = $(event.args.element);
-                if ( obj.value.subtree == null ) {
+                //if ( obj.value.subtree == null ) 
+                {
                     var dir = fetchAndParseDir(obj.value.path,"/?dir");
                     obj.value.subtree = dir[1];
-                    //
-                    $('#jqxTree').jqxTree('removeItem', obj.nextItem.element);
-                    $('#jqxTree').jqxTree('addTo', dir[0], $element[0] );
-                    //obj.items = dir[0];
-                    //$('#jqxTree').jqxTree('updateItem',$element, { "items": dir[0]});
+                    
+                    if ( dir[0].length > 0 ) {
+                        while ( obj.subtreeElement.firstChild != null ) {
+                            $('#jqxTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
+                        }
+                        $('#jqxTree').jqxTree('addTo', dir[0], $element[0] );
+                    } else {
+                        $('#jqxTree').jqxTree('collapseItem', $element[0]);
+                    }
                 }
+                $('#jqxTree').jqxTree('selectItem', $element[0]);
                 populateGridList(obj.value.subtree);
-           //     $('#rightSplitter').jqxSplitter('refresh');                    
             });
 
             $('#jqxTree').on("select", function (event) {
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 populateGridList(obj.value.subtree);
-                //$("#treeGrid").jqxTreeGrid('refresh');                  
-                //$('#rightSplitter').jqxSplitter('refresh');
-                //$('#jqxSplitter').jqxSplitter('expand');
             });
 
             $('#rightSplitter').on('resize', function (event)  { 
