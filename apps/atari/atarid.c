@@ -361,7 +361,7 @@ struct DataSource
 struct FsSource
 {
   struct DataSource src;
-  int fd;
+  int16_t fd;
   size_t size;
 };
 
@@ -391,7 +391,7 @@ struct DataSource* fileSourceCreate(
   const char* encoding_type )
 {
   struct FsSource* src = NULL;
-  int fd = Fopen(fname,0);
+  int16_t fd = Fopen(fname,0);
 
   if ( fd > 0 ) {
     src = (struct FsSource*)malloc(sizeof(struct FsSource));
