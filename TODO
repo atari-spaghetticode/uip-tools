@@ -1,4 +1,8 @@
 WEBINTERFACE:
+	* it's possible to select something in folder panel and file panel. This is confusing and only one selection should be possible at a time.
+	* closing empty folders (folders with no folders in them) causes the deletion of that folder
+	
+
 	* sorting
 	* file/folder icons
 	* display date
@@ -7,6 +11,7 @@ WEBINTERFACE:
 	* add panel with ajax trafic
 
 APP:
+	* disable disk drives so it wont collapse
 	* Allow it to run as accessory?
 	* display date
 	* allow for more then one connection?
