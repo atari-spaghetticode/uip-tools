@@ -171,22 +171,13 @@
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var $element = $(event.args.element);
 
-/*                setTimeout(
-                    function(){
-                        console.log("1");
-                        while ( obj.subtreeElement.firstChild != null ) {
-                            $('#jqxTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
-                            console.log("2");
-                        }
+                while ( obj.subtreeElement.firstChild != null ) {
+                    $('#jqxTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
+                    console.log("2");
+                }
 
-                        console.log("3");
-
-                        $('#jqxTree').jqxTree('addTo', [{ "value": "ajax1.htm", "label": "Loading..." }], $element[0] );
-                        console.log("4");
-                    }, 10); */
-
-                    $('#jqxTree').jqxTree('removeItem', $element[0] );
-                    //$('#jqxTree').jqxTree('addTo', [{ "value": "ajax1.htm", "label": "Loading..." }], $element[0] );
+                    //$('#jqxTree').jqxTree('removeItem', $element[0] );
+                $('#jqxTree').jqxTree('addTo', [{ "value": "ajax1.htm", "label": "Loading..." }], $element[0] );
 
             });
 

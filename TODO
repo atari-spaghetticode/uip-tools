@@ -1,8 +1,7 @@
 WEBINTERFACE:
+	* add current path field
 	* it's possible to select something in folder panel and file panel. This is confusing and only one selection should be possible at a time.
 	* closing empty folders (folders with no folders in them) causes the deletion of that folder
-	
-
 	* sorting
 	* file/folder icons
 	* display date
@@ -18,3 +17,11 @@ APP:
 	* remove logging (scrolling slows down massively)
 	* test on ST
 	* chdir for RUN command
+
+SCRIPTS:
+	* productionise
+	* add help option
+	* uideploy - add incremental uploads
+
+BUGS:
+	* UI: expanding an empty folder would cause that folder to disappear from the list
