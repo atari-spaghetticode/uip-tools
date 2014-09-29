@@ -500,7 +500,6 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
       this->file_len );
   
   } else {
-    //PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n");
     s->http_result_code = 404;
     PT_EXIT(worker); 
   }
@@ -508,23 +507,16 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
   while ( 1 ) {
     this->bytes_read = src->read(src,UIP_TCP_MSS-this->buffer_start_offset, 
             &s->inputbuf[this->buffer_start_offset]);
-    // this->bytes_read = Fread(s->fd, 
-    //       UIP_TCP_MSS-this->buffer_start_offset, 
-    //       &s->inputbuf[this->buffer_start_offset]);
-
     if ( this->bytes_read == 0 ) 
       break;
-    
     PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset );
     this->buffer_start_offset = 0;
   }
   
   (void)Cconws(" -> OK.\r\n");
-//  Fclose_safe(&s->fd);
   src->close(src);
   free(s->handler_datasrc);
   s->handler_datasrc = NULL;
-
   PT_END(worker);
 }
 
@@ -537,9 +529,11 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   size_t len;
 
   (void)Cconws(s->filename);
+  (void)Cconws("\r\n");
 
   PT_BEGIN(worker);
-  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.1 200 OK\r\nConnection: close\r\n");
+  /* this wont work, connection needs to be closed first */
+  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
 
   len = strlen( s->filename );
   strncpy( temp_path, s->filename, sizeof(temp_path));
@@ -583,10 +577,9 @@ void parse_url( struct atarid_state *s )
   if ( fn2 != fn_end ) {
     /* got query string */
     strncpy ( s->query, &fn2[1], sizeof(s->query) );
-    printf("query \'%s\'\r\n", fn);
+//    printf("query \'%s\'\r\n", fn);
     *fn2=0;
   }
-
 
   /* convert path to dos/atari format */
   while ( fn != fn_end-- ) {
@@ -598,16 +591,31 @@ void parse_url( struct atarid_state *s )
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
   strncpy( &s->filename[2],++fn, sizeof(s->filename)-2);
-  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
+//  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
 }
 
-void parse_post( struct atarid_state *s )
+static void parse_post( struct atarid_state *s )
 {
   parse_url(s);
   s->handler_func = handle_post;
 }
 
-void parse_get( struct atarid_state *s )
+static void query_dir(struct atarid_state *s)
+{
+  char* dir_json = file_stat_json( s->filename );
+  s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript","identity",1 );
+}
+
+static void query_run(struct atarid_state *s)
+{
+  s->handler_func = handle_run;
+}
+
+static void query_newfolder(struct atarid_state *s)
+{
+}
+
+static void parse_get( struct atarid_state *s )
 {
   struct {
     const char* url;
@@ -625,11 +633,23 @@ void parse_get( struct atarid_state *s )
     { NULL,NULL,0 }
   };
 
+  static struct {
+    const char* query_string;
+    void (*query_func)(struct atarid_state *s);
+  } query_mapping [] = {
+    {"dir",query_dir},
+    {"run",query_run},
+    {"newfolder",query_newfolder},
+    {NULL,NULL}
+  };
+
   parse_url(s);
 
   s->handler_datasrc = NULL;
+  s->handler_func = handle_get;
 
   if ( s->query[0] == 0 ) {
+    /* request a static resource */
     for ( size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
       if ( strcmp( static_url_mapping[i].url, s->original_filename) == 0 ) {
         s->handler_datasrc = memSourceCreate(  
@@ -645,37 +665,35 @@ void parse_get( struct atarid_state *s )
       s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream","identity" );
     }
   } else if ( s->query[0] != 0 ) {
-    char* dir_json = file_stat_json( s->filename );
-//    printf("what 1 %u\r\n", strlen(dir_json) );
-    s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript","identity",1 );
-//    printf("what 2\r\n");
-  } 
+    for ( size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
+      if ( strcmp( query_mapping[i].query_string, s->query ) == 0 ) {
+          query_mapping[i].query_func(s);
+        break;
+      }
+    }
+  } else {
+    s->http_result_code = 400;
+    s->handler_func = NULL;
+  }
 
-  s->handler_func = handle_get;
 }
 
-void parse_run( struct atarid_state *s )
-{
-  parse_url(s);
-  s->handler_func = handle_run;
-}
-
-void parse_content_len( struct atarid_state *s )
+static void parse_content_len( struct atarid_state *s )
 {
   s->expected_file_length = atoi( &s->inputbuf[15] );
 }
 
-void parse_expect( struct atarid_state *s )
+static void parse_delete( struct atarid_state *s )
+{
+
+}
+
+static void parse_expect( struct atarid_state *s )
 {
   s->expected_100_continue = 1;
 }
 
-void parse_multipart( struct atarid_state *s )
-{
-  s->multipart_encoded = 1;
-}
-
-void parse_urlencoded( struct atarid_state *s )
+static void parse_urlencoded( struct atarid_state *s )
 {
   s->multipart_encoded = 0;
 }
@@ -685,17 +703,15 @@ void parse_urlencoded( struct atarid_state *s )
 struct {
   const char* entry;
   const size_t entry_len;
-  const char(*parse_func)(struct atarid_state *s);
+  void (*parse_func)(struct atarid_state *s);
   const char request_type;
 } commands[] = {
   HeaderEntry ( "POST", parse_post, 1 ),
   HeaderEntry ( "PUT", parse_post, 1 ),
   HeaderEntry ( "GET", parse_get, 1 ),
-  HeaderEntry ( "RUN", parse_run, 1 ),
-  HeaderEntry ( "DELETE", parse_run, 1 ),
+  HeaderEntry ( "DELETE", parse_delete, 1 ),
   HeaderEntry ( "Content-Length:", parse_content_len, 0 ),
   HeaderEntry ( "Expect: 100-continue", parse_expect, 0 ),
-  HeaderEntry ( "Content-Type: multipart/form-data;", parse_multipart, 0 ),
   HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded, 0 ),
 };
 
@@ -752,6 +768,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
       PSOCK_SEND_STR( &s->sin, "HTTP/1.1 100 Continue\r\n");
     }
 
+    /* if handler function was set execute it */
     if ( s->handler_func ) {
       PT_INIT(&s->worker[0]);
       PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );

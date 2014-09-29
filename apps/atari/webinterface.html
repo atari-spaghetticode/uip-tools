@@ -17,11 +17,12 @@
 #include "../../../jqwidgets/jqwidgets/jqxtreegrid.js"
 #include "../../../jqwidgets/jqwidgets/jqxtree.js"
 #include "../../../jqwidgets/jqwidgets/jqxpanel.js"
-#include "../../../jqwidgets/jqwidgets/jqxbuttons.js"
+#include "../../../jqwidgets/jqwidgets/jqxinput.js"
+#include "../../../jqwidgets/jqwidgets/jqxwindow.js"
 
     </script>
 
-<link href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////Jz+f/g4/B/4CNv/+Ajb//f4u//36Jv/9+ib//fom//4iRuf/Y2Nj/////////////////////////////////f5///7HH//+gvv//lLj//4Wy//99sv//gbn//4S+//94sP3/h5G6/////////////////////////////////4Gh//+huv//kbT//4Gr//9xo///b6L//3Om//94r///f7j//3uKwf////////////////////////////////96mv//l7H//4Gj//9zmf//YJD//1+S//9nmv//bJ///3Km//97isH/////////////////////////////////fZv+/5Gq//98mv//aIv//1V///9Sgv//WIn//1+S//9ilf//doW8//j4+P///////////////////////////32b/v+Qqf//e5n//2OI//9Qe///SXX//zeGo/83n4T/N5+C/y2FV/+Gn4j///////////////////////////+Bn///k6v//32b//9oi///V3///0l2//83oYj/WOKG/0HZdP85x2n/dpx3////////////////////////////hKL//5qx//+Gov//cZL//2CG//9Vff//PKaK/17li/9F3nn/PMxt/3Wcdv///////////////////////////4+q//+lvP//k6v//4Ke//9xkv//ZIj//0SujP9o7ZT/S+V+/z3Obv9ehV//w8PD/+np6f////////////////+Pqf//kKz//4Gf//92lv//VYzW/zK1VP9Z3X//VOyI/03ngP9F2nf/LbtR/0apUf/s8Oz////////////////////////////////////////////R7dP/bOGK/2Xylv9T64f/TeeA/1bBav/r7+v//////////////////////////////////////////////////////9Lv0/9t5Yv/Z/CW/1XHa//q7ur/////////////////////////////////////////////////////////////////ze3O/2bOdf/o7uj/////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==" rel="icon" type="image/x-icon">
+#include "icon.inc"
 
     <script type="text/javascript">
 
@@ -29,14 +30,28 @@
 
             var current_path = '/';
 
-            $("#b-new-folder").jqxButton({ width: '150'});
-            $("#b-run").jqxButton({ width: '150'});
-            $("#b-delete").jqxButton({ width: '150'});
-            $("#b-download").jqxButton({ width: '150'});
-
+            $("#button-new-folder").jqxButton({ width: '150'});
+            $("#button-run").jqxButton({ width: '150'});
+            $("#button-delete").jqxButton({ width: '150'});
+            $("#button-download").jqxButton({ width: '150'});
             $('#mainSplitter').jqxSplitter({ width: '100%', height: '90%', panels: [{ size: '20%' }, { size: '80%'}] });
             $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '80%', collapsible: false }, { size: '20%', collapsible: false }] });
-            
+            $("#navigationBar").jqxInput({placeHolder: "selected location", height: 25, width: '70%'});
+
+            $('#enter-folder-name-window').jqxWindow({
+                maxHeight: 150, maxWidth: 600, minHeight: 30, minWidth: 400, height: 105, width: 600,
+                resizable: false, isModal: true, modalOpacity: 0.3, autoOpen: false,
+                okButton: $('#ok'), cancelButton: $('#cancel'),
+                initContent: function () {
+                    $('#ok').jqxButton({ width: '65px' });
+                    $('#cancel').jqxButton({ width: '65px' });
+                    $('#ok').focus();
+                    $("#input-folder-name").jqxInput({placeHolder: "enter folder name", height: '90%'});
+                }
+            });
+
+            $("#button-new-folder").jqxButton({disabled: true });
+
             var fetchDirectory = function (path,query)
             {
                 var my_data;
@@ -129,7 +144,7 @@
                         item_index++;
                     } else {
                         if ( dirtree[i]["size"] < 0x80000000 ) {
-                            var row = { "name": dirtree[i]["name"], "size": dirtree[i]["size"]  };
+                            var row = { "name": dirtree[i]["name"], "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
                             files.push(row);
                         }
                     }
@@ -184,6 +199,21 @@
             $('#jqxTree').on("select", function (event) {
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 populateGridList(obj.value.subtree);
+                $('#navigationBar').val(obj.value.path);
+                $("#treeGrid").jqxTreeGrid('clearSelection');
+                $("#button-new-folder").jqxButton({disabled: false });
+            });
+
+            $('#treeGrid').on("rowSelect", function (event) {
+                $('#navigationBar').val(event.args.row.path);
+                var item = $('#jqxTree').jqxTree('getSelectedItem');
+                $('#jqxTree').jqxTree('clearSelection');
+                $("#button-new-folder").jqxButton({disabled: true });
+            });
+
+            // new folder callback
+            $('#button-new-folder').on('click', function () {
+                $('#enter-folder-name-window').jqxWindow('open');
             });
 
             $('#rightSplitter').on('resize', function (event)  { 
@@ -294,10 +324,11 @@
         </div>
 
         <div id="Containiner3">
-                <input type="button" value="New Folder" id='b-new-folder' />
-                <input type="button" value="Delete" id='b-delete' />
-                <input type="button" value="Run" id='b-run' />
-                <input type="button" value="Download" id='b-download' />
+                <input type="button" value="New Folder" id='button-new-folder' />
+                <input type="button" value="Delete" id='button-delete' />
+                <input type="button" value="Run" id='button-run' />
+                <input type="button" value="Download" id='button-download' />
+                <input type="text" id="navigationBar"/>
         </div>
     </div>
 
@@ -310,5 +341,23 @@
             </div>
         </div>
     </div>
+
+    <div id="enter-folder-name-window">
+        <div>
+            <img width="14" height="14" src="../../images/help.png" alt="" />
+            Modal Window</div>
+        <div>
+            <div>
+                <input type="text" id="input-folder-name"/>
+            </div>
+            <div>
+            <div style="float: right; margin-top: 15px;">
+                <input type="button" id="ok" value="OK" style="margin-right: 10px" />
+                <input type="button" id="cancel" value="Cancel" />
+            </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
