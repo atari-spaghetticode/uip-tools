@@ -1,13 +1,30 @@
-uIP is a very small implementation of the TCP/IP stack that is written
-by Adam Dunkels <adam@sics.se>. More information can be obtained 
-at the uIP homepage at http://www.sics.se/~adam/uip/.
+API
+	upload a file: 
 
-This is version $Name: uip-1-0 $.
+		curl -0T filename.tos falcon2/d/filename.tos
 
-The directory structure look as follows:
+		This executes a PUT request.
 
-apps/  - Example applications
-doc/   - Documentation
-lib/   - Library code used by some applications
-uip/   - uIP TCP/IP stack code
-unix/  - uIP as a user space process under FreeBSD or Linux
+		note that you need to specify not only destination folder but also a file name!
+
+	download a file:
+
+		curl -0 falcon2/c/filename.tos
+
+	run an executable:
+
+		curl -0 falcon2/c/filename.tos?run="command line"
+
+	delete a file:
+
+		curl -0X DELETE falcon2/c/filename.tos
+
+	create a folder
+
+		curl -0 falcon2/c/foldername?newfolder
+
+	request file info or directory listing in json format
+
+		curl -0 falcon2/c/filename.tos?dir
+		curl -0 falcon2/c/foldername?dir
+
