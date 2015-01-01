@@ -1,4 +1,9 @@
-API
+#Introduction#
+
+uip-tools is a project to bring an easy way to upload files to your beloved TOS machine with NetUSBee compatible network adapeter without a need to MiNT or Sting.
+It is a self contained binary, including a TCP/IP stack based on uIP embedded stack with DHCP.   
+
+#REST API#
 	upload a file: 
 
 		curl -0T filename.tos falcon2/d/filename.tos
@@ -27,4 +32,3 @@ API
 
 		curl -0 falcon2/c/filename.tos?dir
 		curl -0 falcon2/c/foldername?dir
-
