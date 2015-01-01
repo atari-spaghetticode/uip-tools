@@ -19,6 +19,7 @@
 #include "../../../jqwidgets/jqwidgets/jqxpanel.js"
 #include "../../../jqwidgets/jqwidgets/jqxinput.js"
 #include "../../../jqwidgets/jqwidgets/jqxwindow.js"
+#include "../../../jqwidgets/jqwidgets/jqxprogressbar.js"
 
     </script>
 
@@ -40,13 +41,13 @@
 
             $('#enter-folder-name-window').jqxWindow({
                 maxHeight: 150, maxWidth: 600, minHeight: 30, minWidth: 400, height: 105, width: 600,
-                resizable: false, isModal: true, modalOpacity: 0.3, autoOpen: false,
+                resizable: false, isModal: true, modalOpacity: 0.3, autoOpen: false, title: 'Enter folder name',
                 okButton: $('#ok'), cancelButton: $('#cancel'),
                 initContent: function () {
                     $('#ok').jqxButton({ width: '65px' });
                     $('#cancel').jqxButton({ width: '65px' });
                     $('#ok').focus();
-                    $("#input-folder-name").jqxInput({placeHolder: "enter folder name", height: '90%'});
+                    $("#input-folder-name").jqxInput({placeHolder: "folder name", height: '90%'});
                 }
             });
 
@@ -93,11 +94,11 @@
                 width: '100%',
                 height: '20%',
                 altRows: true,
-                sortable: true,
+                sortable: false,
                 columns: [
-                    { text: 'Type', dataField: "name", align: 'center', width: '33%' },
-                    { text: 'Path', dataField: "size", cellsAlign: 'center', align: 'center', width: '33%' },
-                    { text: 'Status', dataField: "date", cellsAlign: 'center', align: 'center', width: '34%' },
+                    { text: 'Path', dataField: "name", align: 'center', width: '70%' },
+                    { text: 'Size', dataField: "size", cellsAlign: 'center', align: 'center', width: '10%' },
+                    { text: 'Status', dataField: "status", cellsAlign: 'center', align: 'center', width: '20%' },
                 ]
             });
 
@@ -122,66 +123,6 @@
                 }
             }
             
-            var fetchAndParseDir = function(path,query) {
-
-                current_path = path;
-
-                var items = [];
-                var files = [];
-
-                var dirtree = fetchDirectory(path,query);
-                var item_index = 0;
-                
-
-                for (i = 0; i < dirtree.length; i++) {
-                    // prepare full host path
-                    if ( dirtree[i].type == "d") {
-                        items[item_index] = {};
-                        items[item_index]["value"] = dirtree[i];
-                        items[item_index]["label"] =  dirtree[i]["name"];
-                        items[item_index]["expanded"] =  false;
-                        items[item_index]["items"] =  [{ "value": "ajax1.htm", "label": "Loading..." }];
-                        item_index++;
-                    } else {
-                        if ( dirtree[i]["size"] < 0x80000000 ) {
-                            var row = { "name": dirtree[i]["name"], "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
-                            files.push(row);
-                        }
-                    }
-                }
-
-                return [items,files];
-            }
-
-            // Create jqxTree
-            var dir = fetchAndParseDir("","?dir");
-            var source = dir[0];
-            populateGridList(dir[1]);
-            
-            $('#jqxTree').jqxTree({ source: source,  height: "100%", width: "100%" });
-
-            $('#jqxTree').on("expand", function (event) {
-                var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
-                var $element = $(event.args.element);
-                //if ( obj.value.subtree == null ) 
-                {
-                    var dir = fetchAndParseDir(obj.value.path,"/?dir");
-                    obj.value.subtree = dir[1];
-                    
-                    if ( dir[0].length > 0 ) {
-                        while ( obj.subtreeElement.firstChild != null ) {
-                            $('#jqxTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
-                        }
-                        $('#jqxTree').jqxTree('addTo', dir[0], $element[0] );
-                    } else {
-                        $('#jqxTree').jqxTree('collapseItem', $element[0]);
-                    }
-                }
-                $('#jqxTree').jqxTree('selectItem', $element[0]);
-                populateGridList(obj.value.subtree);
-                $('#mainSplitter').jqxSplitter('refresh');
-            });
-
             $('#jqxTree').on("collapse", function (event) {
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 var $element = $(event.args.element);
@@ -222,6 +163,57 @@
                 $('#treeGrid2').jqxTreeGrid({height:panels[1].size});
             });
 
+            var job_key = 0;
+            var job_list = [];
+
+            var job_start = function(job) {
+
+                job.xhr.upload.addEventListener("progress",
+                    function(e) { 
+                        console.log("upload progress" + e); 
+                        var percent = e.loaded/e.total*100;
+                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                            "status", "<meter min=0 max=100 style='width:20em;height:1em' value='" 
+                            + percent + "'>" + percent + "</meter>" + "<b>" + percent + "%</b>");
+                        console.log("?? " + job.key + " ?? " + e.loaded/e.total);
+                    },
+                    false );
+
+                job.xhr.upload.addEventListener("load",
+                    function(e) { 
+                        console.log("load" + e); 
+                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                            "status", "done");
+                        job_list.shift();
+                        if ( job_list.length > 0 ) {
+                            job_start(job_list[0]);
+                        }
+                    },
+                    false );
+
+                job.xhr.upload.addEventListener("error",
+                    function(e) { 
+
+                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                            "status", "error!");
+
+                        job_list.shift();
+                        if ( job_list.length > 0 ) {
+                            job_start(job_list[0]);
+                        }
+                    },
+                    false );
+
+                job.xhr.send( job.blob );
+                $("#treeGrid2").jqxTreeGrid('ensureRowVisible', job.key);
+            }
+
+            var job_add = function ( xhr, blob, job_key ) {
+                job_list.push({"xhr": xhr, "blob": blob, "key": job_key });
+                if ( job_list.length == 1 ) {
+                    job_start(job_list[0]);
+                }
+            }
 
             $('#jqxTree').on("added", function (event) {
                 //var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
@@ -246,34 +238,70 @@
                         ev.stopPropagation(); // Stops some browsers from redirecting.
                         ev.preventDefault();
 
-                        var files = ev.dataTransfer.files;
-                        for (var i = 0, f; f = files[i]; i++) {
+                        var uploadFile = function(path,file) {
+
+                            $("#treeGrid2").jqxTreeGrid('addRow', job_key, {
+                                name: obj.value.path + "/" + path + file.name,
+                                size: file.size,
+                                status: "queued"
+                                });
+
                             var reader = new FileReader();
-                            var name = f.name;
-                            reader.onload = (function(name) {
-                                return function(theFile) {
+                            reader.onload = (function(name,key,path) {
+                                return function(event) {
                       
                                     var xhr = new XMLHttpRequest;
-                                    xhr.upload.addEventListener("progress", 
-                                        function(e) { 
-                                            console.log("upload progress" + e); 
-                                        },
-                                        false );
-                                    xhr.addEventListener("progress", 
-                                        function(e) { 
-                                            console.log("upload progress" + e); 
-                                        },
-                                        false );
-
-                                    xhr.open("POST", obj.value.path + "/" + name, true);
-
-                                    var blob = new Blob([theFile.target.result], {type: 'application/octet-binary'});
-                                    xhr.send( blob ) ;
+                                    xhr.open("POST", obj.value.path + "/" + path + name, true);
+                                    console.log(obj.value.path + "/" + path + name);
+                                    var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
+                                    //xhr.send( blob ) ;
+                                    job_add(xhr,blob,key);
                                 };
-                            })(name);
+                            })(file.name,job_key,path);
 
-                            reader.readAsArrayBuffer(f);
+                            job_key++;
+
+                            reader.readAsArrayBuffer(file);
+                        };
+
+                        $("#treeGrid2").jqxTreeGrid('beginUpdate');
+
+                        try {
+                            // check chrome folder api first
+                            function traverseFileTree(item, path) {
+                              path = path || "";
+                              if (item.isFile) {
+                                // Get file
+                                item.file(function(file) {
+                                  uploadFile(path,file);
+                                });
+                              } else if (item.isDirectory) {
+                                // Get folder contents
+                                var dirReader = item.createReader();
+                                dirReader.readEntries(function(entries) {
+                                  for (var i=0; i<entries.length; i++) {
+                                    traverseFileTree(entries[i], path + item.name + "/");
+                                  }
+                                });
+                              }
+                            }
+
+                            var items = ev.dataTransfer.items;
+                            for (var i=0; i<items.length; i++) {
+                                // webkitGetAsEntry is where the magic happens
+                                var item = items[i].webkitGetAsEntry();
+                                if (item) {
+                                  traverseFileTree(item);
+                                }
+                            }
+                        } catch(err) {
+                            var files = ev.dataTransfer.files;
+                            for (var i = 0, f; f = files[i]; i++) {
+                                uploadFile("",f);
+                            }
                         }
+
+                        $("#treeGrid").jqxTreeGrid('endUpdate'); 
                     };
                     if ( items[i].subtreeElement != null ) {                    
                         items[i].subtreeElement.ondrag = dragdropdefault;
@@ -285,6 +313,66 @@
                         items[i].subtreeElement.ondrop = drophandler;
                     }
                 }
+            });
+
+            var fetchAndParseDir = function(path,query) {
+
+                current_path = path;
+
+                var items = [];
+                var files = [];
+
+                var dirtree = fetchDirectory(path,query);
+                var item_index = 0;
+                
+
+                for (i = 0; i < dirtree.length; i++) {
+                    // prepare full host path
+                    if ( dirtree[i].type == "d") {
+                        items[item_index] = {};
+                        items[item_index]["value"] = dirtree[i];
+                        items[item_index]["label"] =  dirtree[i]["name"];
+                        items[item_index]["expanded"] =  false;
+                        items[item_index]["items"] =  [{ "value": "ajax1.htm", "label": "Loading..." }];
+                        item_index++;
+                    } else {
+                        if ( dirtree[i]["size"] < 0x80000000 ) {
+                            var row = { "name": "<b>" + dirtree[i]["name"] + "</b>", "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
+                            files.push(row);
+                        }
+                    }
+                }
+
+                return [items,files];
+            }
+
+            // Create jqxTree
+            var dir = fetchAndParseDir("","?dir");
+            var source = dir[0];
+            populateGridList(dir[1]);
+            
+            $('#jqxTree').jqxTree({ source: source,  height: "100%", width: "100%" });
+
+            $('#jqxTree').on("expand", function (event) {
+                var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
+                var $element = $(event.args.element);
+                //if ( obj.value.subtree == null ) 
+                {
+                    var dir = fetchAndParseDir(obj.value.path,"/?dir");
+                    obj.value.subtree = dir[1];
+                    
+                    if ( dir[0].length > 0 ) {
+                        while ( obj.subtreeElement.firstChild != null ) {
+                            $('#jqxTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
+                        }
+                        $('#jqxTree').jqxTree('addTo', dir[0], $element[0] );
+                    } else {
+                        $('#jqxTree').jqxTree('collapseItem', $element[0]);
+                    }
+                }
+                $('#jqxTree').jqxTree('selectItem', $element[0]);
+                populateGridList(obj.value.subtree);
+                $('#mainSplitter').jqxSplitter('refresh');
             });
 
         });

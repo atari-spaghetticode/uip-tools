@@ -1,13 +1,15 @@
 WEBINTERFACE:
-	* add current path field
-	* it's possible to select something in folder panel and file panel. This is confusing and only one selection should be possible at a time.
-	* closing empty folders (folders with no folders in them) causes the deletion of that folder
+	* drop to root folder doesn't work!
+	* refresh folder after file operation
+	* progress bar and a queue!
 	* sorting
 	* file/folder icons
 	* display date
-	* file download/upload and drag&drop
 	* add logo
 	* add panel with ajax trafic
+
+	done:
+	* multiple file upload
 
 APP:
 	* disable disk drives so it wont collapse
@@ -19,6 +21,8 @@ APP:
 	* chdir for RUN command
 
 SCRIPTS:
+	* add an option to blow remote deploy
+	* sanitise path passed to the tool
 	* productionise
 	* add help option
 	* uideploy - add incremental uploads

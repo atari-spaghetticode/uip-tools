@@ -74,6 +74,7 @@
 #include "icon-left.h"
 #include "icon-right.h"
 #include "loader.h"
+#include "close.h"
 
 #define ISO_nl      0x0a
 #define ISO_space   0x20
@@ -82,6 +83,9 @@
 #define ISO_period  0x2e
 #define ISO_slash   0x2f
 #define ISO_colon   0x3a
+
+#define LOG(x) ((void)Cconws(x))
+//#define LOG(x)
 
 /*---------------------------------------------------------------------------*/
 void mkdir_for_file( const char* path )
@@ -92,6 +96,7 @@ void mkdir_for_file( const char* path )
 
   // remove file name from the path file path base 
   for(size_t i = len; i != 0; --i) {
+    temp_path[i] = toupper(temp_path[i]);
     if ( temp_path[i] == '\\' ) {
       temp_path[i] = '\0';
       break;
@@ -136,8 +141,8 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
 {
   PT_BEGIN(worker);
 
-  (void)Cconws(filename);
-  //(void)Cconws("\033K");
+  LOG(filename);
+  //(void)LOG("\033K");
 
   // make sure folder exists
   mkdir_for_file ( filename );
@@ -146,7 +151,7 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
   
   if ( s->fd < 0 ) {
     s->http_result_code = 400;
-    (void)Cconws(" -> failed to open!\r\n");
+    LOG(" -> failed to open!\r\n");
     PT_EXIT(worker);
   }
 
@@ -161,8 +166,6 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
     Fwrite( s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf );
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
-
-  (void)Cconws(" -> OK.\r\n");
 
   Fclose_safe(&s->fd);
   s->http_result_code = 201;
@@ -210,11 +213,11 @@ void fstrcat( struct Repsonse* response, char* format, ... )
 
   if ( response->size  <= ( response->current-response->malloc_block ) + formated_len ) {
     size_t current_offset = response->current-response->malloc_block;
-    printf("realloc: %zu->%zu\r\n", response->size, response->size*2 );
+//    printf("realloc: %zu->%zu\r\n", response->size, response->size*2 );
     response->size = response->size * 2;
     response->malloc_block = realloc(response->malloc_block,response->size);
     response->current = &response->malloc_block[current_offset];
-    printf("realloc: %p\r\n", response->malloc_block);
+//    printf("realloc: %p\r\n", response->malloc_block);
   }  
 
   strcat( response->current, formated);
@@ -271,7 +274,7 @@ const char* file_stat_json(const char* path)
   //   }
   // }
 
-  printf("dos: %s\r\n",dos_path );
+//  printf("dos: %s\r\n",dos_path );
 
   fstrcat(&response," [\r\n");
 
@@ -315,7 +318,7 @@ const char* file_stat_json(const char* path)
         strcat(dos_path,"\\");
       }
       strcat(dos_path,"*.*");
-      printf("scanning: %s\r\n", dos_path);
+//      printf("scanning: %s\r\n", dos_path);
       if ( 0 == Fsfirst( dos_path,0x3f ) ) {
         int first = 1;         
         do {
@@ -331,19 +334,19 @@ const char* file_stat_json(const char* path)
         } while ( 0 == Fsnext( ) );
       } else {
         /* Error */
-        (void)Cconws("path not found 2\r\n");
+        LOG("path not found 2\r\n");
       }
     } else {
       // it's a file
       file_stat_single(&response);
     }
   } else {
-      (void)Cconws("path not found\r\n");
+      LOG("path not found\r\n");
   }
 
   fstrcat(&response,"]\r\n");
 
-  printf("done: %zu\r\n", response.size);
+//  printf("done: %zu\r\n", response.size);
   return response.malloc_block;
 }
 
@@ -494,6 +497,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
       "HTTP/1.1 200 OK\r\n"
       "Content-Type: %s\r\n"
       "Content-Encoding: %s\r\n"
+      "Connection: Keep-Alive\r\n"
       "Content-Length: %u\r\n\r\n",
       src->mime_type,
       src->encoding_type,
@@ -501,6 +505,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
   
   } else {
     s->http_result_code = 404;
+    LOG("\r\n");
     PT_EXIT(worker); 
   }
   
@@ -513,7 +518,6 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
     this->buffer_start_offset = 0;
   }
   
-  (void)Cconws(" -> OK.\r\n");
   src->close(src);
   free(s->handler_datasrc);
   s->handler_datasrc = NULL;
@@ -528,8 +532,8 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   char temp_path[256];
   size_t len;
 
-  (void)Cconws(s->filename);
-  (void)Cconws("\r\n");
+  LOG(s->filename);
+  LOG("\r\n");
 
   PT_BEGIN(worker);
   /* this wont work, connection needs to be closed first */
@@ -613,6 +617,11 @@ static void query_run(struct atarid_state *s)
 
 static void query_newfolder(struct atarid_state *s)
 {
+  int ret = Dcreate ( s->filename );
+  char* response = malloc(16);
+  memset(response,0,16);
+  sprintf(response,"%d",ret);
+  s->handler_datasrc = memSourceCreate( response, strlen(response), "text", "identity", 1 );
 }
 
 static void parse_get( struct atarid_state *s )
@@ -629,6 +638,7 @@ static void parse_get( struct atarid_state *s )
     { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
     { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
     { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
+    { "images/close.png", close_png,close_png_len,"image/png", "identity"},
     { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},
     { NULL,NULL,0 }
   };
@@ -658,15 +668,18 @@ static void parse_get( struct atarid_state *s )
                               static_url_mapping[i].content_type,
                               static_url_mapping[i].encoding_type,
                               0 );
+        LOG(static_url_mapping[i].url);
         break;
       }
     }
     if ( !s->handler_datasrc ) {
+      LOG(s->filename);
       s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream","identity" );
     }
   } else if ( s->query[0] != 0 ) {
     for ( size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
       if ( strcmp( query_mapping[i].query_string, s->query ) == 0 ) {
+          LOG(query_mapping[i].query_string);
           query_mapping[i].query_func(s);
         break;
       }
@@ -675,7 +688,6 @@ static void parse_get( struct atarid_state *s )
     s->http_result_code = 400;
     s->handler_func = NULL;
   }
-
 }
 
 static void parse_content_len( struct atarid_state *s )
@@ -719,7 +731,7 @@ struct {
   const int http_result_code;
   const char* http_response_string;
 } http_responses[] = {
-  { 200, "OK" },
+  { 200, "HTTP/1.1 200 OK" },
   { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
   { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
   { 404, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" },
@@ -754,9 +766,8 @@ PT_THREAD(handle_input(struct atarid_state *s))
       for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
         if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
           if ( commands[i].request_type ) {
-//            Cconws("\033Y\x2f\x20");
-            Cconws(commands[i].entry);
-            Cconws(": ");
+            LOG(commands[i].entry);
+            LOG(": ");
           }
           commands[i].parse_func(s);
           break;
@@ -773,6 +784,8 @@ PT_THREAD(handle_input(struct atarid_state *s))
       PT_INIT(&s->worker[0]);
       PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
     }
+
+    LOG("\r\n");
 
     if ( s->http_result_code != 0 ) {
       // send result code
@@ -796,7 +809,7 @@ static void
 handle_error(struct atarid_state *s)
 {
   if ( Fclose_safe(&s->fd) != -1 ) {
-    (void)Cconws(" -> failed\r\n");
+    LOG(" -> failed\r\n");
   }
 }
 
@@ -845,12 +858,12 @@ atarid_appcall(void)
 void
 atarid_init(void)
 {
- // Cconws("\r\n\r\n\r\n\r\n\033f\033p\033j");
+ // LOG("\r\n\r\n\r\n\r\n\033f\033p\033j");
 
   //file_stat_json( "/d/" );
- // Cconws( file_stat_json( "/d/" ) );
+ // LOG( file_stat_json( "/d/" ) );
 
- // Cconws("\033f");
+ // LOG("\033f");
 //  printf("val %d\r\n", UIP_TCP_MSS);
   uip_listen(HTONS(80));
 }

@@ -9,7 +9,7 @@ index.h: webinterface.html
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
 
-icons: icon-right.h icon-left.h icon-up.h icon-down.h loader.h
+icons: icon-right.h icon-left.h icon-up.h icon-down.h loader.h close.h
 
 %.h: %.png
 	xxd -i $< > $@
