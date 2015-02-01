@@ -95,7 +95,7 @@ void probeEnd ( struct ProfileProbe* p )
 
 void probePrint ( struct ProfileProbe* p  )
 {
-  printf("%llu\r\n",p->all );
+  //printf("%llu\r\n",p->all );
 }
 
 struct ProfileProbe netSend;
@@ -126,14 +126,15 @@ main(void)
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   
-  printf("uIP tool\r\n");
+  (void)Cconws("uIP tool\r\n");
+
   Super(0);
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  printf("RTL8019 init .. ");
+  (void)Cconws("RTL8019 init .. ");
   if ( !RTL8019dev_init(uip_ethaddr.addr) ) {
-    printf("failed!\r\n");
+    (void)Cconws("failed!\r\n");
     return 1;
   }
 
@@ -221,12 +222,12 @@ main(void)
     probeEnd(&netAll);
   }
 
-  printf("\r\n\r\n");
-  printf("All:     "); probePrint(&netAll);
-  printf("Input:   "); probePrint(&netInput);
-  printf("Other:   "); probePrint(&netOther);
-  printf("DevSend: "); probePrint(&netSend);
-  printf("DevRecv: "); probePrint(&netRecv);
+  // printf("\r\n\r\n");
+  // printf("All:     "); probePrint(&netAll);
+  // printf("Input:   "); probePrint(&netInput);
+  // printf("Other:   "); probePrint(&netOther);
+  // printf("DevSend: "); probePrint(&netSend);
+  // printf("DevRecv: "); probePrint(&netRecv);
 
   return 0;
 }

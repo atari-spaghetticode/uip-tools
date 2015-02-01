@@ -38,8 +38,6 @@ else
 	files_to_send=$(printf "$sums" | md5sum --quiet -c - 2> /dev/null | grep FAILED | sed -e 's/\(.*:\).*/\1/' -e 's/://g' )
 fi
 
-echo "$files_to_send" | curl_commandline
-
 if [ -n "$files_to_send" ]; then
 	files=$(md5sum $local_files)
     curl -s -H "Expect:" $(echo "$files_to_send" | curl_commandline) 2>&1

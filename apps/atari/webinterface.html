@@ -14,7 +14,7 @@
 #include "../../../jqwidgets/jqwidgets/jqxscrollbar.js"
 #include "../../../jqwidgets/jqwidgets/jqxdata.js"
 #include "../../../jqwidgets/jqwidgets/jqxdatatable.js"
-#include "../../../jqwidgets/jqwidgets/jqxtreegrid.js"
+#include "../../../jqwidgets/jqwidgets/jqxTreeGrid.js"
 #include "../../../jqwidgets/jqwidgets/jqxtree.js"
 #include "../../../jqwidgets/jqwidgets/jqxpanel.js"
 #include "../../../jqwidgets/jqwidgets/jqxinput.js"
@@ -76,7 +76,7 @@
                 return arr;
             }
 
-            $("#treeGrid").jqxTreeGrid(
+            $("#FileListTreeGrid").jqxTreeGrid(
             {
                 width: '100%',
                 height: '80%',
@@ -89,7 +89,7 @@
                 ]
             });
 
-            $("#treeGrid2").jqxTreeGrid(
+            $("#StatusFileListTreeGrid").jqxTreeGrid(
             {
                 width: '100%',
                 height: '20%',
@@ -102,24 +102,26 @@
                 ]
             });
 
-            $('#treeGrid').on('rowClick', 
+            $('#FileListTreeGrid').on('rowClick', 
                 function (event)
                 {
-                  //  $("#treeGrid").jqxTreeGrid('sortBy', 'zort', 'asc');
+                  //  $("#FileListTreeGrid").jqxTreeGrid('sortBy', 'zort', 'asc');
                   //  $('#rightSplitter').jqxSplitter('refresh');
                 });
 
 
             var populateGridList = function(items) {
                 if ( items != null ) {
-                    $("#treeGrid").jqxTreeGrid('beginUpdate');
-                    $("#treeGrid").jqxTreeGrid('clear');
+                    $("#FileListTreeGrid").jqxTreeGrid('beginUpdate');
+                    $("#FileListTreeGrid").jqxTreeGrid('clear');
 
                     for (i = 0; i < items.length; i++) {
-                        $('#treeGrid').jqxTreeGrid('addRow', null, items[i]);
+                        var item = items[i];
+                        item.name = "<a href=" + item.path + ">" + item.name + "</a>"; 
+                        $('#FileListTreeGrid').jqxTreeGrid('addRow', null, item);
                     }
 
-                    $("#treeGrid").jqxTreeGrid('endUpdate');                    
+                    $("#FileListTreeGrid").jqxTreeGrid('endUpdate');                    
                 }
             }
             
@@ -141,11 +143,11 @@
                 var obj = $('#jqxTree').jqxTree("getItem", event.args.element);
                 populateGridList(obj.value.subtree);
                 $('#navigationBar').val(obj.value.path);
-                $("#treeGrid").jqxTreeGrid('clearSelection');
+                $("#FileListTreeGrid").jqxTreeGrid('clearSelection');
                 $("#button-new-folder").jqxButton({disabled: false });
             });
 
-            $('#treeGrid').on("rowSelect", function (event) {
+            $('#FileListTreeGrid').on("rowSelect", function (event) {
                 $('#navigationBar').val(event.args.row.path);
                 var item = $('#jqxTree').jqxTree('getSelectedItem');
                 $('#jqxTree').jqxTree('clearSelection');
@@ -159,8 +161,8 @@
 
             $('#rightSplitter').on('resize', function (event)  { 
                 var panels = event.args.panels;
-                $('#treeGrid').jqxTreeGrid({height:panels[0].size});
-                $('#treeGrid2').jqxTreeGrid({height:panels[1].size});
+                $('#FileListTreeGrid').jqxTreeGrid({height:panels[0].size});
+                $('#StatusFileListTreeGrid').jqxTreeGrid({height:panels[1].size});
             });
 
             var job_key = 0;
@@ -172,7 +174,7 @@
                     function(e) { 
                         console.log("upload progress" + e); 
                         var percent = e.loaded/e.total*100;
-                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                        $("#StatusFileListTreeGrid").jqxTreeGrid('setCellValue', job.key, 
                             "status", "<meter min=0 max=100 style='width:20em;height:1em' value='" 
                             + percent + "'>" + percent + "</meter>" + "<b>" + percent + "%</b>");
                         console.log("?? " + job.key + " ?? " + e.loaded/e.total);
@@ -182,7 +184,7 @@
                 job.xhr.upload.addEventListener("load",
                     function(e) { 
                         console.log("load" + e); 
-                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                        $("#StatusFileListTreeGrid").jqxTreeGrid('setCellValue', job.key, 
                             "status", "done");
                         job_list.shift();
                         if ( job_list.length > 0 ) {
@@ -194,7 +196,7 @@
                 job.xhr.upload.addEventListener("error",
                     function(e) { 
 
-                        $("#treeGrid2").jqxTreeGrid('setCellValue', job.key, 
+                        $("#StatusFileListTreeGrid").jqxTreeGrid('setCellValue', job.key, 
                             "status", "error!");
 
                         job_list.shift();
@@ -205,7 +207,7 @@
                     false );
 
                 job.xhr.send( job.blob );
-                $("#treeGrid2").jqxTreeGrid('ensureRowVisible', job.key);
+                $("#StatusFileListTreeGrid").jqxTreeGrid('ensureRowVisible', job.key);
             }
 
             var job_add = function ( xhr, blob, job_key ) {
@@ -240,7 +242,7 @@
 
                         var uploadFile = function(path,file) {
 
-                            $("#treeGrid2").jqxTreeGrid('addRow', job_key, {
+                            $("#StatusFileListTreeGrid").jqxTreeGrid('addRow', job_key, {
                                 name: obj.value.path + "/" + path + file.name,
                                 size: file.size,
                                 status: "queued"
@@ -264,7 +266,7 @@
                             reader.readAsArrayBuffer(file);
                         };
 
-                        $("#treeGrid2").jqxTreeGrid('beginUpdate');
+                        $("#StatusFileListTreeGrid").jqxTreeGrid('beginUpdate');
 
                         try {
                             // check chrome folder api first
@@ -301,7 +303,7 @@
                             }
                         }
 
-                        $("#treeGrid").jqxTreeGrid('endUpdate'); 
+                        $("#StatusFileListTreeGrid").jqxTreeGrid('endUpdate'); 
                     };
                     if ( items[i].subtreeElement != null ) {                    
                         items[i].subtreeElement.ondrag = dragdropdefault;
@@ -337,7 +339,7 @@
                         item_index++;
                     } else {
                         if ( dirtree[i]["size"] < 0x80000000 ) {
-                            var row = { "name": "<b>" + dirtree[i]["name"] + "</b>", "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
+                            var row = { "name": dirtree[i]["name"] , "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
                             files.push(row);
                         }
                     }
@@ -424,8 +426,8 @@
         <div id="jqxTree"></div>
         <div>
             <div id="rightSplitter">
-                    <div id="treeGrid"></div>
-                <div id="treeGrid2"> </div>
+                    <div id="FileListTreeGrid"></div>
+                <div id="StatusFileListTreeGrid"> </div>
             </div>
         </div>
     </div>

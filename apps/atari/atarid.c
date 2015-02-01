@@ -385,7 +385,6 @@ void fileSourceClose( struct DataSource* ds )
   struct FsSource* fs = (struct FsSource*) ds;
   Fclose_safe(&fs->fd);
   free ( (void*) fs );
-  printf("fileSourceClose\r\n");
 }
 
 struct DataSource* fileSourceCreate( 

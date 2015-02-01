@@ -12,6 +12,7 @@ WEBINTERFACE:
 	* multiple file upload
 
 APP:
+	* add version numbering
 	* disable disk drives so it wont collapse
 	* Allow it to run as accessory?
 	* display date
