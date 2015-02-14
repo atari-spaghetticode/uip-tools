@@ -126,7 +126,7 @@ main(void)
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   
-  (void)Cconws("uIP tool\r\n");
+  (void)printf("uIP tool, version %d\r\n", VERSION);
 
   Super(0);
 
