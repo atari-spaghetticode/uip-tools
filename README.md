@@ -1,37 +1,38 @@
 # Introduction
 
 uip-tools brings an easy way to upload or download files to your beloved TOS machine with NetUSBee compatible network adapter without a need to MiNT or Sting TCP/IP stacks.
-It is a self contained binary, including a TCP/IP based on uIP embedded stack with DHCP support.   
+It is a self contained binary, including a TCP/IP based on uIP embedded stack with DHCP support.
 
-# REST API
+# User Interface
 
-In addition to the HTML based user interface, uiptool allows you to use a simple REST API to do a range of operations:
+# Available REST API
 
-	upload a file:
+In addition to the HTML based user interface, uiptool allows you to use a simple REST API to do a range of operations. All examples are provided as curl shell invocations. 
 
-		curl -0T filename.tos falcon2/d/filename.tos
+* Upload a file:
 
-		This executes a PUT request.
+		curl -0T filename.tos 192.168.1.1/d/filename.tos
 
-		note that you need to specify not only destination folder but also a file name!
+	Note that you need to specify not only destination folder but also a file name!
 
-	download a file:
+* Download a file:
 
-		curl -0 falcon2/c/filename.tos
+		curl -0 192.168.1.1/c/filename.tos
 
-	run an executable:
+* Run an executable:
 
-		curl -0 falcon2/c/filename.tos?run="command line"
+		curl -0 192.168.1.1/c/filename.tos?run="command line"
+	The executable needs to be already present on the recent machine.
 
-	delete a file:
+* Delete a file:
 
-		curl -0X DELETE falcon2/c/filename.tos
+		curl -0X DELETE 192.168.1.1/c/filename.tos
 
-	create a folder
+* Create a folder
 
-		curl -0 falcon2/c/foldername?newfolder
+		curl -0 192.168.1.1/c/foldername?newfolder
 
-	request file info or directory listing in json format
+* Request file info or directory listing in json format
 
-		curl -0 falcon2/c/filename.tos?dir
-		curl -0 falcon2/c/foldername?dir
+		curl -0 192.168.1.1/c/filename.tos?dir
+		curl -0 192.168.1.1/c/foldername?dir
