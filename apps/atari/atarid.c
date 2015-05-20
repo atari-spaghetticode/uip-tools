@@ -837,7 +837,7 @@ atarid_appcall(void)
     handle_error(s);
   } else if(uip_connected()) {
     s->inputbuf_size = INPUTBUF_SIZE;
-    s->inputbuf = &s->inputbuf_data[MULTIPART_BOUNDARY_SIZE];
+    s->inputbuf = &s->inputbuf_data[0];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
   } else if(s != NULL) {

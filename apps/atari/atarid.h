@@ -39,9 +39,6 @@
 #include "stdio.h"
 #define HEAP_SIZE 4096
 #define INPUTBUF_SIZE (1500*100)
-// add 4 to maxumum boundary size to catter for mandatory
-// dashes at the begining and end
-#define MULTIPART_BOUNDARY_SIZE (70+4)
 
 struct DataSource;
 
@@ -52,7 +49,7 @@ struct atarid_state {
   unsigned char timer;
   struct psock sin;
   char* inputbuf;
-  char inputbuf_data[INPUTBUF_SIZE+MULTIPART_BOUNDARY_SIZE];
+  char inputbuf_data[INPUTBUF_SIZE];
   uint32_t inputbuf_size;
   char query[256];
   char filename[256];
