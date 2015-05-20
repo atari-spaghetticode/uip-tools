@@ -37,7 +37,7 @@
                     console.log("upload progress" + e); 
                     var percent = e.loaded/e.total*100;
                     $("#FileQueueTreeGrid").jqxTreeGrid('setCellValue', job.key, 
-                        "status", "<meter min=0 max=100 style='width:20em;height:1em' value='" 
+                        "status", "<meter min=0 max=100 style='width:15em;height:1em' value='" 
                         + percent + "'>" + percent + "</meter>" + "<b>" + percent.toFixed(1) + "%</b>");
                     console.log("?? " + job.key + " ?? " + e.loaded/e.total);
                 },
@@ -285,10 +285,9 @@
             $("#button-new-folder").jqxButton({ width: '150'});
             $("#button-run").jqxButton({ width: '150'});
             $("#button-delete").jqxButton({ width: '150'});
-            $("#button-download").jqxButton({ width: '150'});
-            $('#mainSplitter').jqxSplitter({ width: '100%', height: '90%', panels: [{ size: '20%' }, { size: '80%'}] });
+            $('#mainSplitter').jqxSplitter({ width: '100%', height:'93%', panels: [{ size: '20%' }, { size: '80%'}] });
             $('#rightSplitter').jqxSplitter({ height: '100%', orientation: 'horizontal', panels: [{ size: '80%', collapsible: false }, { size: '20%', collapsible: false }] });
-            $("#navigationBar").jqxInput({placeHolder: "", height: 25, width: '70%'});
+            $("#navigationBar").jqxInput({placeHolder: "", height: 30, width: '90%'});
 
             $('#enter-folder-name-window').jqxWindow({
                 maxHeight: 150, maxWidth: 600, minHeight: 30, minWidth: 400, height: 105, width: 600,
@@ -320,13 +319,13 @@
             $("#FileQueueTreeGrid").jqxTreeGrid(
             {
                 width: '100%',
-                height: '20%',
+                height: '19%',
                 altRows: true,
                 sortable: false,
                 columns: [
-                    { text: 'Path', dataField: "name", align: 'center', width: '70%' },
+                    { text: 'Path', dataField: "name", align: 'center', width: '50%' },
                     { text: 'Size', dataField: "size", cellsAlign: 'center', align: 'center', width: '10%' },
-                    { text: 'Status', dataField: "status", cellsAlign: 'center', align: 'center', width: '20%' },
+                    { text: 'Status', dataField: "status", cellsAlign: 'center', align: 'center', width: '40%' },
                 ]
             });
 
@@ -425,24 +424,28 @@
         }
 
         #Containiner {
-             height:10%;
+             margin: 2px;
              width: 100%;
+             height: 7%;
              }
+
         #Containiner2 {
-            float:left;
-             width: 20%;
-      
+            float:left;      
              }
         #Containiner3 {
-             width: 60%;
+            float:right;
+             }
+        #Containiner4 {
+             width: 100%;   
+            float:bottom;
              }
 
     </style>
 </head>
 <body>
 
-    <div id="Containiner" style="clear:both;">
-        <div id="Containiner2">
+    <div id="Containiner" >
+        <div id="Containiner2" >
                 <font size="6">uIPTool</font> by Mystic Bytes
         </div>
 
@@ -450,8 +453,9 @@
                 <input type="button" value="New Folder" id='button-new-folder' />
                 <input type="button" value="Delete" id='button-delete' />
                 <input type="button" value="Run" id='button-run' />
-                <input type="button" value="Download" id='button-download' />
-                <input type="text" id="navigationBar"/>
+        </div>
+        <div id="Container4" style="clear:both;float:bottom;">
+               <b>Location:</b> <input type="text" id="navigationBar"/>
         </div>
     </div>
 

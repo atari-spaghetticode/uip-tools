@@ -262,20 +262,6 @@ const char* file_stat_json(const char* path)
 
   strncpy (dos_path,path,sizeof(dos_path));
 
-  // // conver unix proper paths to atari/dos path
-  // dos_path_helper[0] = path[1];
-  // strncat(dos_path, dos_path_helper, sizeof(dos_path));
-  // dos_path_helper[0] = ':';
-  // strncat(dos_path, dos_path_helper, sizeof(dos_path));
-  // strncat(dos_path, &path[2], sizeof(dos_path));
-  // for ( size_t i = 0; i < strlen(dos_path); ++i ) {
-  //   if ( dos_path[i] == '/' ) {
-  //     dos_path[i] = '\\';
-  //   }
-  // }
-
-//  printf("dos: %s\r\n",dos_path );
-
   fstrcat(&response," [\r\n");
 
   // this is a bit dodgy, I'm not sure why I need to do this:
@@ -318,7 +304,6 @@ const char* file_stat_json(const char* path)
         strcat(dos_path,"\\");
       }
       strcat(dos_path,"*.*");
-//      printf("scanning: %s\r\n", dos_path);
       if ( 0 == Fsfirst( dos_path,0x3f ) ) {
         int first = 1;         
         do {
@@ -346,7 +331,6 @@ const char* file_stat_json(const char* path)
 
   fstrcat(&response,"]\r\n");
 
-//  printf("done: %zu\r\n", response.size);
   return response.malloc_block;
 }
 
@@ -513,6 +497,11 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
             &s->inputbuf[this->buffer_start_offset]);
     if ( this->bytes_read == 0 ) 
       break;
+
+    if ( this->bytes_read < 0 ) {
+
+    }
+
     PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset );
     this->buffer_start_offset = 0;
   }
@@ -549,7 +538,11 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   }
   // set cwd
   Dsetpath(temp_path);
-  Pexec(PE_LOADGO,s->filename,"","");
+  // Bconmap(7);
+  void* basepage = Pexec(PE_LOAD,s->filename,"","");
+  Fforce(1,2);
+  Pexec(PE_GO,0,basepage,0);
+
   PT_END(worker);
 }
 
