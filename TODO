@@ -1,7 +1,6 @@
 WEBINTERFACE:
-	* drop to root folder doesn't work!
+	* queue stats: upload speed, queue depth
 	* refresh folder after file operation
-	* progress bar and a queue!
 	* sorting
 	* file/folder icons
 	* display date
@@ -12,7 +11,7 @@ WEBINTERFACE:
 	* multiple file upload
 
 APP:
-	* add version numbering
+	* add version numbering in webui
 	* disable disk drives so it wont collapse
 	* Allow it to run as accessory?
 	* display date
