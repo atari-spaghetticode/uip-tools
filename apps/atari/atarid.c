@@ -297,24 +297,27 @@ const char* file_stat_json(const char* path)
     }
   } 
     /* if we're at the root of the drive or at a folder */
-  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,FA_RDONLY|FA_DIR|FA_CHANGED ) ) {
+  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM ) ) {
     // ok so this is a folder
     if ( strlen(dos_path ) == 3 || (dta.dta_attribute&FA_DIR) ) {
       if ( dos_path[strlen(dos_path)-1] != '\\' ) {
         strcat(dos_path,"\\");
       }
       strcat(dos_path,"*.*");
-      if ( 0 == Fsfirst( dos_path,0x3f ) ) {
-        int first = 1;         
+      if ( 0 == Fsfirst( dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM ) ) {
+        int first = 1;
         do {
           // skip .. and . pseudo folders
-          if ( strcmp(dta.dta_name,"..") != 0 && strcmp(dta.dta_name,".") != 0  ) {          
-            if (!first){
+          if ( strcmp( dta.dta_name,".." ) != 0
+              && strcmp( dta.dta_name,"." ) != 0
+         //     && !dta.dta_attribute&FA_SYSTEM
+              && !(dta.dta_attribute&FA_LABEL)
+            ) {
+            if (!first) {
               fstrcat(&response,",\r\n");
             }
-            first = 0;
-
             file_stat_single(&response);
+            first = 0;
           }
         } while ( 0 == Fsnext( ) );
       } else {
