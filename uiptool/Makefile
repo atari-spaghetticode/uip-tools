@@ -46,11 +46,7 @@ CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-I$(abspath ../apps/dhcpc) \
 		-I$(abspath ../dev) \
 		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN \
-		-DVERSION=$(shell git rev-list --count master)
-
-#		\
-#		-DUIP_ARCH_IPCHKSUM \
-#		-DUIP_ARCH_ADD32
+		-DVERSION=$(version)
 
 LD_FLAGS = -s -Wl,--traditional-format -Wl,-Map,linker.map
 

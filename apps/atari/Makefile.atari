@@ -4,8 +4,8 @@ vpath %.png ../../jqwidgets/jqwidgets/styles/images/
 vpath %.gif ../../jqwidgets/jqwidgets/styles/images/
 
 index.h: webinterface.html
-	$(CPP) -traditional-cpp -P -o index.html $<
-	gzip -f index.html -c > index.html.gz
+	$(CPP) -traditional-cpp -DVERSION=$(version) -P -o index.html $<
+	gzip -9 -f index.html -c > index.html.gz
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
 
