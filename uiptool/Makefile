@@ -56,4 +56,6 @@ uip: $(addprefix $(OBJECTDIR)/, main.o tapdev.o uip_arch.o clock-arch.o) apps.a 
 	$(LD) $(LD_FLAGS) $(addprefix $(OBJECTDIR)/, main.o tapdev.o uip_arch.o clock-arch.o) apps.a uip.a -o $@.tos
 
 clean:
-	rm -fr *.o *~ *core uip $(OBJECTDIR) *.a
+	rm -fr *.o *~ *core uip $(OBJECTDIR) *.a *.tos *.map index.*
+
+release: clean all
