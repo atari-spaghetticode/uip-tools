@@ -37,12 +37,12 @@
 
 #include "atarid.h"
 
-typedef struct atarid_state uip_tcp_appstate_t;
 /* UIP_APPCALL: the name of the application function. This function
    must return void and take no arguments (i.e., C type "void
    appfunc(void)"). */
 #ifndef UIP_APPCALL
 #define UIP_APPCALL     atarid_appcall
+typedef struct atarid_state uip_tcp_appstate_t;
 #endif
 
 

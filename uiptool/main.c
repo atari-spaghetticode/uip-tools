@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Adam Dunkels.
+ * Copyright (c) 2001, 2015, Adam Dunkels, Mariusz Buras.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@
  *
  */
 
-
 #include "uip.h"
 #include "uip_arp.h"
 #include "uip-split.h"
@@ -66,29 +65,29 @@ uint64_t getMicroseconds( )
 resync:
   timer200hz = *((volatile uint32_t*)0x4BA) ;
   data = *((volatile uint8_t*)0xFFFFFA23);
-  
+
   if ( *((volatile uint32_t*)0x4BA) != timer200hz )
   {
     goto resync;
   }
-  
+
   timer200hz*=5000;       // convert to microseconds
   timer200hz+=(uint64_t)(((192-data)*6666)>>8); //26;     // convert data to microseconds
   return timer200hz;
 }
 
-void initProbe ( struct ProfileProbe* p ) 
+void initProbe ( struct ProfileProbe* p )
 {
   p->last = 0;
   p->all = 0;
 }
 
-void probeBegin ( struct ProfileProbe* p ) 
+void probeBegin ( struct ProfileProbe* p )
 {
   p->last = getMicroseconds( );
 }
 
-void probeEnd ( struct ProfileProbe* p ) 
+void probeEnd ( struct ProfileProbe* p )
 {
   p->all +=  getMicroseconds( ) - p->last;
 }
@@ -119,14 +118,31 @@ void tcpip_output()
 }
 
 /*---------------------------------------------------------------------------*/
+
+void main_appcall(void) {
+     // printf("http!\r\n");
+   switch(uip_conn->lport) {
+    case HTONS(80):
+      atarid_appcall();
+      break;
+    case HTONS(21):
+      telnetd_appcall();
+    break;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 int
 main(void)
 {
   int i;
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
-  
+
   (void)printf("uIP tool, version %d\r\n", VERSION);
+
+  printf("s  = %u\r\n", sizeof(uip_tcp_appstate_t));
 
   Super(0);
 
@@ -141,6 +157,7 @@ main(void)
   uip_init();
   dhcpc_init(uip_ethaddr.addr, 6);
   atarid_init();
+  telnetd_init();
 
   initProbe( &netSend);
   initProbe( &netRecv);
@@ -154,11 +171,11 @@ main(void)
     probeBegin(&netRecv);
     uip_len = RTL8019dev_poll();
     probeEnd(&netRecv);
-    
+
     probeBegin(&netAll);
 
     if(uip_len > 0) {
-        probeBegin(&netInput);
+      probeBegin(&netInput);
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
         //printf("got data.. %d: 0x%x\r\n",uip_len, (int)BUF->type);
         uip_arp_ipin();
@@ -211,7 +228,7 @@ main(void)
         }
       }
 #endif /* UIP_UDP */
-      
+
       /* Call the ARP timer function every 10 seconds. */
       if(timer_expired(&arp_timer)) {
         timer_reset(&arp_timer);
@@ -235,7 +252,7 @@ main(void)
 void
 uip_log(char *m)
 {
-//  printf("uIP log message: %s\n", m);
+  printf("uIP log message: %s\n", m);
 }
 #ifdef __DHCPC_H__
 void

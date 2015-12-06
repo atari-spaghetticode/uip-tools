@@ -54,10 +54,10 @@ struct telnetd_state {
   u8_t state;
 };
 
-typedef struct telnetd_state uip_tcp_appstate_t;
 
 #ifndef UIP_APPCALL
 #define UIP_APPCALL     telnetd_appcall
+typedef struct telnetd_state uip_tcp_appstate_t;
 #endif
 
 #endif /* __TELNETD_H__ */

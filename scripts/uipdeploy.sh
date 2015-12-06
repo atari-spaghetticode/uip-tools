@@ -37,9 +37,9 @@ if (($? > 0)); then
 else
 	files_to_send=$(printf "$sums" | md5sum --quiet -c - 2> /dev/null | grep FAILED | sed -e 's/\(.*:\).*/\1/' -e 's/://g' )
 fi
-
 if [ -n "$files_to_send" ]; then
-	files=$(md5sum $local_files)
+    files=$(md5sum $local_files)
+    echo " $(echo "$files_to_send" | curl_commandline)"
     curl -s -H "Expect:" $(echo "$files_to_send" | curl_commandline) 2>&1
 	printf "$files" | gzip -q -c - | curl -0 -X PUT --data-binary @- ${sum_path}
 else

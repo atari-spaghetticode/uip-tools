@@ -99,7 +99,7 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_MAX_LISTENPORTS 1
+#define UIP_CONF_MAX_LISTENPORTS 2
 
 /**
  * uIP buffer size.
@@ -151,7 +151,8 @@ typedef unsigned short uip_stats_t;
 /*#include "smtp.h"*/
 /*#include "hello-world.h"*/
 /*#include "telnetd.h"*/
-#include "atariserv.h"
+/*#include "atariserv.h"*/
+#include "main_app.h"
 #include "dhcpc.h"
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/

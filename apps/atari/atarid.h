@@ -57,12 +57,12 @@ struct atarid_state {
   FILE* file;
   size_t expected_file_length;
   uint32_t expected_100_continue;
-  
+
   char multipart_encoded;
 
   struct pt worker[4];
   size_t temp_file_length;
-  
+
   char(*handler_func)(struct pt* worker,struct atarid_state *s);
 
   struct DataSource* handler_datasrc;

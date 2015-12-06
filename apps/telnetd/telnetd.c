@@ -34,7 +34,6 @@
 
 #include "uip.h"
 #include "telnetd.h"
-#include "memb.h"
 #include "shell.h"
 
 #include <string.h>
@@ -45,7 +44,6 @@
 struct telnetd_line {
   char line[TELNETD_CONF_LINELEN];
 };
-MEMB(linemem, struct telnetd_line, TELNETD_CONF_NUMLINES);
 
 #define STATE_NORMAL 0
 #define STATE_IAC    1
@@ -66,13 +64,13 @@ static struct telnetd_state s;
 static char *
 alloc_line(void)
 {
-  return memb_alloc(&linemem);
+  return malloc(TELNETD_CONF_LINELEN);
 }
 /*---------------------------------------------------------------------------*/
 static void
 dealloc_line(char *line)
 {
-  memb_free(&linemem, line);
+  free(line);
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -136,8 +134,7 @@ shell_output(char *str1, char *str2)
 void
 telnetd_init(void)
 {
-  uip_listen(HTONS(23));
-  memb_init(&linemem);
+  uip_listen(HTONS(21));
   shell_init();
 }
 /*---------------------------------------------------------------------------*/

@@ -42,7 +42,7 @@ struct __attribute__ ((__packed__)) dhcpc_state {
   struct timer timer;
   const void *mac_addr;
   int mac_len;
-  
+
   u8_t serverid[4];
 
   u16_t lease_time[2];
@@ -51,7 +51,7 @@ struct __attribute__ ((__packed__)) dhcpc_state {
   u16_t dnsaddr[2];
   u16_t default_router[2];
   u8_t  hostname[256];
-  
+
   u16_t ticks;
   char state;
 };

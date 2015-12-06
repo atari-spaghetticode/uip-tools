@@ -38,7 +38,7 @@ CC     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 LD     = /opt/cross-mint/bin/m68k-atari-mint-gcc
 AR     = /opt/cross-mint/bin/m68k-atari-mint-ar
 CPP     = /opt/cross-mint/bin/m68k-atari-mint-cpp
-APPS   = atari dhcpc
+APPS   = atari dhcpc telnetd
 CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-I$(abspath ../uip) \
 		-I$(abspath .) \
