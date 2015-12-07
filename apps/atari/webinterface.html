@@ -87,14 +87,14 @@
             }
         }
 
-        var dragdropdefault = function (ev) {    
+        var dragdropdefault = function (ev) {
             if (ev.preventDefault) {
                 ev.preventDefault(); // Necessary. Allows us to drop.
             }
             console.log( ev.type + " event " );
         };
 
-        var drophandler = function (ev,localpath) {    
+        var drophandler = function (ev,localpath) {
             if (ev.preventDefault) {
                 ev.preventDefault(); // Necessary. Allows us to drop.
             }
@@ -115,7 +115,7 @@
                 var reader = new FileReader();
                 reader.onload = (function(name,key,path) {
                     return function(event) {
-          
+
                         var xhr = new XMLHttpRequest;
                         xhr.open("POST", localpath + "/" + path + name, true);
                         console.log(localpath + "/" + path + name);
@@ -190,7 +190,7 @@
                         path_string.substring(0,path_string.lastIndexOf("/")));
                 } 
             }
-            
+
             event.stopPropagation();
             console.log( event.type + " event" );
         }
@@ -229,7 +229,7 @@
                     $('#FileListTreeGrid').jqxTreeGrid('addRow', null, item);
                 }
 
-                $("#FileListTreeGrid").jqxTreeGrid('endUpdate');                    
+                $("#FileListTreeGrid").jqxTreeGrid('endUpdate');
             }
         }
 
@@ -242,7 +242,6 @@
 
             var dirtree = fetchDirectory(path,query);
             var item_index = 0;
-            
 
             for (i = 0; i < dirtree.length; i++) {
                 // prepare full host path
@@ -266,7 +265,7 @@
 
         var populateDragDropHandlers = function(items) {
             for (i = 0; i < items.length; i++) {
-                if ( items[i].subtreeElement != null ) {                    
+                if ( items[i].subtreeElement != null ) {
                     items[i].subtreeElement.ondrag = dragdropdefault;
                     items[i].subtreeElement.ondragend = dragdropdefault;
                     items[i].subtreeElement.ondragenter = dragdropdefault;
@@ -345,7 +344,7 @@
                 {
                     var dir = fetchAndParseDir(obj.value.path,"/?dir");
                     obj.value.subtree = dir[1];
-                    
+
                     if ( dir[0].length > 0 ) {
                         while ( obj.subtreeElement.firstChild != null ) {
                             $('#folderListTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
@@ -389,7 +388,7 @@
                   //  $("#FileListTreeGrid").jqxTreeGrid('sortBy', 'zort', 'asc');
                   //  $('#rightSplitter').jqxSplitter('refresh');
             });
-            
+
             $('#FileListTreeGrid').on("rowSelect", function (event) {
                 $('#navigationBar').val(event.args.row.path);
                 var item = $('#folderListTree').jqxTree('getSelectedItem');
@@ -407,7 +406,7 @@
                 $('#FileListTreeGrid').jqxTreeGrid({height:panels[0].size});
                 $('#FileQueueTreeGrid').jqxTreeGrid({height:panels[1].size});
             });
-           
+
            //populateDragDropHandlers($('#folderListTree').jqxTree("getItems")); 
         });
     </script>
@@ -430,13 +429,13 @@
              }
 
         #Containiner2 {
-            float:left;      
+            float:left;
              }
         #Containiner3 {
             float:right;
              }
         #Containiner4 {
-             width: 100%;   
+             width: 100%;
             float:bottom;
              }
 
