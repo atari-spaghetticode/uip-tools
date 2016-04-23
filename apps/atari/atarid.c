@@ -63,6 +63,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #include <osbind.h>
 #include <errno.h>
@@ -88,39 +89,43 @@
 //#define LOG(x)
 
 /*---------------------------------------------------------------------------*/
-void mkdir_for_file( const char* path )
+int ensureFolderExists(const char* path, int stripFileName)
 {
   char temp_path[256];
-  size_t len = strlen( path );
-  strncpy( temp_path, path, sizeof(temp_path));
+  const size_t len = strlen(path);
+  strncpy(temp_path, path, sizeof(temp_path));
+  int ret = 0;
 
   // remove file name from the path file path base
-  for(size_t i = len; i != 0; --i) {
-    temp_path[i] = toupper(temp_path[i]);
-    if ( temp_path[i] == '\\' ) {
+  for (size_t i = len; i != 0; --i) {
+    if (stripFileName && temp_path[i] == '\\') {
       temp_path[i] = '\0';
       break;
     }
   }
 
   // skip the drive letter in the path
-  for ( size_t i = 4; i < len; ++i ) {
-    if ( temp_path[i] == '\\' ) {
+  for (size_t i = 4; i < len; ++i) {
+    if (temp_path[i] == '\\') {
       temp_path[i] = '\0';
-      (void)Dcreate ( temp_path );
+      (void)Dcreate(temp_path);
       temp_path[i] = '\\';
     }
   }
-  (void)Dcreate ( temp_path );
+  ret = Dcreate(temp_path);
+  printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
+  // if we strip file name then we don't want error to be reported
+  // because in that case we might be overwriting a file
+  return stripFileName ? 0 : ret;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int Fclose_safe( int16_t* fd )
+int Fclose_safe(int16_t* fd)
 {
   int16_t _fd = *fd;
 
-  if ( _fd > 0 ) {
+  if (_fd > 0) {
     Fclose(_fd);
     *fd = -1;
   }
@@ -129,10 +134,10 @@ int Fclose_safe( int16_t* fd )
 
 _DTA  dta;  /* global! */
 
-size_t file_size( const char* path )
+size_t file_size(const char* path)
 {
   Fsetdta (&dta);
-  Fsfirst ( path, 0 );
+  Fsfirst (path, 0);
   return dta.dta_size;
 }
 
@@ -145,11 +150,15 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
   //(void)LOG("\033K");
 
   // make sure folder exists
-  mkdir_for_file ( filename );
+  if (ensureFolderExists(filename, 1)) {
+    s->http_result_code = 400;
+    LOG(" -> failed to create folder!\r\n");
+    PT_EXIT(worker);
+  }
 
   s->fd = Fcreate(filename,0);
 
-  if ( s->fd < 0 ) {
+  if (s->fd < 0) {
     s->http_result_code = 400;
     LOG(" -> failed to open!\r\n");
     PT_EXIT(worker);
@@ -157,13 +166,13 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
 
   s->temp_file_length = filelen;
 
-  while ( s->temp_file_length > 0) {
+  while (s->temp_file_length > 0) {
 
     PSOCK_READBUF_LEN2(worker, &s->sin,
       s->temp_file_length > s->inputbuf_size ?
-        s->inputbuf_size : s->temp_file_length );
+        s->inputbuf_size : s->temp_file_length);
 
-    Fwrite( s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf );
+    Fwrite(s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf);
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
@@ -180,15 +189,15 @@ PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
 {
   PT_BEGIN(worker);
 
-  if ( s->expected_file_length == -1 ) {
+  if (s->expected_file_length == -1) {
     s->http_result_code = 411;
     PT_EXIT(worker);
-  } else if ( s->multipart_encoded == 1 ) {
+  } else if (s->multipart_encoded == 1) {
     s->http_result_code = 401;
     PT_EXIT(worker);
   } else {
     PT_INIT(&worker[1]);
-    PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length) );
+    PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length));
   }
 
   PT_END(worker);
@@ -202,25 +211,25 @@ struct Repsonse {
   size_t size;
 };
 
-void fstrcat( struct Repsonse* response, char* format, ... )
+void fstrcat(struct Repsonse* response, char* format, ...)
 {
   char formated[256];
   va_list args;
   size_t formated_len = 0;
 
   va_start (args, format);
-  formated_len = vsnprintf (formated, sizeof(formated), format, args );
+  formated_len = vsnprintf (formated, sizeof(formated), format, args);
 
-  if ( response->size  <= ( response->current-response->malloc_block ) + formated_len ) {
+  if (response->size  <= (response->current-response->malloc_block) + formated_len) {
     size_t current_offset = response->current-response->malloc_block;
-//    printf("realloc: %zu->%zu\r\n", response->size, response->size*2 );
+//    printf("realloc: %zu->%zu\r\n", response->size, response->size*2);
     response->size = response->size * 2;
     response->malloc_block = realloc(response->malloc_block,response->size);
     response->current = &response->malloc_block[current_offset];
 //    printf("realloc: %p\r\n", response->malloc_block);
   }
 
-  strcat( response->current, formated);
+  strcat(response->current, formated);
   response->current = &response->current[ formated_len ];
   va_end (args);
 }
@@ -233,17 +242,17 @@ static void file_stat_single(struct Repsonse* response)
     "    \"type\" : \"%s\",\r\n",
     dta.dta_attribute&FA_DIR ? "d" : "f");
   if (!(dta.dta_attribute&FA_DIR)) {
-    fstrcat(response, "    \"size\" : \"%u\",\r\n", dta.dta_size );
+    fstrcat(response, "    \"size\" : \"%u\",\r\n", dta.dta_size);
   }
-  strncpy ( json_name, dta.dta_name,sizeof(json_name) );
-  for( size_t i=0;json_name[i] != 0; i++ )
+  strncpy (json_name, dta.dta_name,sizeof(json_name));
+  for(size_t i=0;json_name[i] != 0; i++)
   {
-    if ( json_name[i] == '\\') {
+    if (json_name[i] == '\\') {
       json_name[i] = '_';
     }
   }
 
-  fstrcat(response, "    \"name\" : \"%s\"\r\n", json_name );
+  fstrcat(response, "    \"name\" : \"%s\"\r\n", json_name);
   fstrcat(response,"  }\r\n");
 }
 
@@ -255,7 +264,7 @@ const char* file_stat_json(const char* path)
   char dos_path_helper[2] = { '\0', '\0' };
 
   Fsetdta (&dta);
-  memset( &dta,0,sizeof(dta) );
+  memset(&dta,0,sizeof(dta));
   response.malloc_block = (char*)malloc (response.size);
   *response.malloc_block = 0;
   response.current = response.malloc_block;
@@ -271,25 +280,25 @@ const char* file_stat_json(const char* path)
   // otherwise it won't work
   // But for forlders it accually can't end with backslash because
   // it won't work.. madness!!!!!
-  if ( strlen(dos_path) > 3 && dos_path[strlen(dos_path)-1] == '\\' ) {
+  if (strlen(dos_path) > 3 && dos_path[strlen(dos_path)-1] == '\\') {
     dos_path[strlen(dos_path)-1] = 0;
   }
 
-  if ( dos_path[0] == '\0' ) {
+  if (dos_path[0] == '\0') {
     // list drivers
     uint32_t drv_map = Drvmap();
     char i = 0;
     int first = 1;
-    while ( drv_map ) {
-      if ( drv_map&1 ) {
+    while (drv_map) {
+      if (drv_map&1) {
         if (!first){
           fstrcat(&response,",\r\n");
         }
         first = 0;
         fstrcat(&response, " {\r\n"
-          "    \"type\" : \"d\",\r\n" );
+          "    \"type\" : \"d\",\r\n");
         fstrcat(&response,
-           "    \"name\" : \"%c\"\r\n", 'a' + i );
+           "    \"name\" : \"%c\"\r\n", 'a' + i);
         fstrcat(&response,"  }\r\n");
       }
       i++;
@@ -297,29 +306,29 @@ const char* file_stat_json(const char* path)
     }
   }
     /* if we're at the root of the drive or at a folder */
-  else if ( strlen(dos_path ) == 3 || 0 == Fsfirst( dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM ) ) {
+  else if (strlen(dos_path) == 3 || 0 == Fsfirst(dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
     // ok so this is a folder
-    if ( strlen(dos_path ) == 3 || (dta.dta_attribute&FA_DIR) ) {
-      if ( dos_path[strlen(dos_path)-1] != '\\' ) {
+    if (strlen(dos_path) == 3 || (dta.dta_attribute&FA_DIR)) {
+      if (dos_path[strlen(dos_path)-1] != '\\') {
         strcat(dos_path,"\\");
       }
       strcat(dos_path,"*.*");
-      if ( 0 == Fsfirst( dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM ) ) {
+      if (0 == Fsfirst(dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
         int first = 1;
         do {
           // skip .. and . pseudo folders
-          if ( strcmp( dta.dta_name,".." ) != 0
-              && strcmp( dta.dta_name,"." ) != 0
+          if (strcmp(dta.dta_name,"..") != 0
+              && strcmp(dta.dta_name,".") != 0
          //     && !dta.dta_attribute&FA_SYSTEM
               && !(dta.dta_attribute&FA_LABEL)
-            ) {
+           ) {
             if (!first) {
               fstrcat(&response,",\r\n");
             }
             file_stat_single(&response);
             first = 0;
           }
-        } while ( 0 == Fsnext( ) );
+        } while (0 == Fsnext());
       } else {
         /* Error */
         LOG("path not found 2\r\n");
@@ -341,9 +350,9 @@ const char* file_stat_json(const char* path)
 
 struct DataSource
 {
-  size_t (*read)( struct DataSource*, size_t, void* );
-  void (*close)( struct DataSource*);
-  size_t (*size)( struct DataSource*);
+  size_t (*read)(struct DataSource*, size_t, void*);
+  void (*close)(struct DataSource*);
+  size_t (*size)(struct DataSource*);
   const char* mime_type;
   const char* encoding_type;
 };
@@ -355,36 +364,36 @@ struct FsSource
   size_t size;
 };
 
-int fileSourceSize( struct DataSource* ds)
+int fileSourceSize(struct DataSource* ds)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   return fs->size;
 }
 
-size_t fileSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+size_t fileSourceRead(struct DataSource* ds,  size_t size, void* ptr)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   return (size_t)Fread(fs->fd, size, ptr);
 }
 
-void fileSourceClose( struct DataSource* ds )
+void fileSourceClose(struct DataSource* ds)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   Fclose_safe(&fs->fd);
-  free ( (void*) fs );
+  free ((void*) fs);
 }
 
 struct DataSource* fileSourceCreate(
   const char* fname,
   const char* mime_type,
-  const char* encoding_type )
+  const char* encoding_type)
 {
   struct FsSource* src = NULL;
   int16_t fd = Fopen(fname,0);
 
-  if ( fd > 0 ) {
+  if (fd > 0) {
     src = (struct FsSource*)malloc(sizeof(struct FsSource));
-    src->size = file_size( fname );
+    src->size = file_size(fname);
     src->src.read = fileSourceRead;
     src->src.close = fileSourceClose;
     src->src.size = fileSourceSize;
@@ -405,32 +414,32 @@ struct MemSource
   char ownership;
 };
 
-int memSourceRead( struct DataSource* ds,  size_t size, void* ptr)
+int memSourceRead(struct DataSource* ds,  size_t size, void* ptr)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   size_t actual_size = size + mem->current > mem->size ? mem->size-mem->current : size;
 
-  if ( mem->current >= mem->size ) {
+  if (mem->current >= mem->size) {
     return 0;
   }
 
-  memcpy ( ptr, &mem->ptr[mem->current], actual_size );
+  memcpy (ptr, &mem->ptr[mem->current], actual_size);
 
   mem->current+=actual_size;
 
   return actual_size;
 }
 
-void memSourceClose (  struct DataSource* ds )
+void memSourceClose ( struct DataSource* ds)
 {
   struct MemSource* mem = (struct MemSource*) ds;
-  if ( mem->ownership ) {
-    free ( (void*) mem->ptr );
+  if (mem->ownership) {
+    free ((void*) mem->ptr);
   }
-  free ( (void*) mem );
+  free ((void*) mem);
 }
 
-int memSourceSize( struct DataSource* ds)
+int memSourceSize(struct DataSource* ds)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   return mem->size;
@@ -441,7 +450,7 @@ struct MemSource* memSourceCreate (
     size_t size,
     const char* mime_type,
     const char* encoding_type,
-    char ownership )
+    char ownership)
 {
   struct MemSource* src = NULL;
   src = (struct MemSource*)malloc(sizeof(struct MemSource));
@@ -474,7 +483,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 
   this->buffer_start_offset = 0;
 
-  if ( src ) {
+  if (src) {
     this->file_len = src->size(src);
 
     this->buffer_start_offset = snprintf(
@@ -486,7 +495,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
       "Content-Length: %u\r\n\r\n",
       src->mime_type,
       src->encoding_type,
-      this->file_len );
+      this->file_len);
 
   } else {
     s->http_result_code = 404;
@@ -494,17 +503,17 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
     PT_EXIT(worker);
   }
 
-  while ( 1 ) {
+  while (1) {
     this->bytes_read = src->read(src,UIP_TCP_MSS-this->buffer_start_offset,
             &s->inputbuf[this->buffer_start_offset]);
-    if ( this->bytes_read == 0 )
+    if (this->bytes_read == 0)
       break;
 
-    if ( this->bytes_read < 0 ) {
+    if (this->bytes_read < 0) {
 
     }
 
-    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset );
+    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset);
     this->buffer_start_offset = 0;
   }
 
@@ -529,11 +538,11 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   /* this wont work, connection needs to be closed first */
   PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
 
-  len = strlen( s->filename );
-  strncpy( temp_path, s->filename, sizeof(temp_path));
+  len = strlen(s->filename);
+  strncpy(temp_path, s->filename, sizeof(temp_path));
   // remove file name from the path file path base
   for(size_t i = len; i != 0; --i) {
-    if ( temp_path[i] == '\\' ) {
+    if (temp_path[i] == '\\') {
       temp_path[i] = '\0';
       break;
     }
@@ -548,51 +557,51 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   PT_END(worker);
 }
 
-void parse_url( struct atarid_state *s )
+void parse_url(struct atarid_state *s)
 {
   char* fn_end = s->inputbuf;
   char* fn,*fn2;
 
-  while (*fn_end++ != '/' );
+  while (*fn_end++ != '/');
 
   fn = fn_end;
 
-  while (*fn_end != ' ' )
+  while (*fn_end != ' ')
     fn_end++;
 
   *fn_end = 0;
 
   /* store original path */
-  strncpy( s->original_filename,fn, sizeof(s->original_filename));
+  strncpy(s->original_filename,fn, sizeof(s->original_filename));
 
   /* extract query string */
 
   fn2=fn;
   s->query[ 0 ] = 0;
 
-  while ( *fn2 != '?' && fn2 != fn_end ) fn2++;
+  while (*fn2 != '?' && fn2 != fn_end) fn2++;
 
-  if ( fn2 != fn_end ) {
+  if (fn2 != fn_end) {
     /* got query string */
-    strncpy ( s->query, &fn2[1], sizeof(s->query) );
+    strncpy (s->query, &fn2[1], sizeof(s->query));
 //    printf("query \'%s\'\r\n", fn);
     *fn2=0;
   }
 
   /* convert path to dos/atari format */
-  while ( fn != fn_end-- ) {
-    if ( *fn_end == '/' ) {
+  while (fn != fn_end--) {
+    if (*fn_end == '/') {
       *fn_end = '\\';
     }
   }
 
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
-  strncpy( &s->filename[2],++fn, sizeof(s->filename)-2);
+  strncpy(&s->filename[2],++fn, sizeof(s->filename)-2);
 //  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
 }
 
-static void parse_post( struct atarid_state *s )
+static void parse_post(struct atarid_state *s)
 {
   parse_url(s);
   s->handler_func = handle_post;
@@ -600,8 +609,8 @@ static void parse_post( struct atarid_state *s )
 
 static void query_dir(struct atarid_state *s)
 {
-  char* dir_json = file_stat_json( s->filename );
-  s->handler_datasrc = memSourceCreate(  dir_json, strlen(dir_json),"text/javascript","identity",1 );
+  char* dir_json = file_stat_json(s->filename);
+  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json),"text/javascript","identity",1);
 }
 
 static void query_run(struct atarid_state *s)
@@ -611,14 +620,14 @@ static void query_run(struct atarid_state *s)
 
 static void query_newfolder(struct atarid_state *s)
 {
-  int ret = Dcreate ( s->filename );
-  char* response = malloc(16);
-  memset(response,0,16);
-  sprintf(response,"%d",ret);
-  s->handler_datasrc = memSourceCreate( response, strlen(response), "text", "identity", 1 );
+  s->http_result_code = 1200;
+  s->handler_func = NULL;
+  if (0!=ensureFolderExists(s->filename, 0)) {
+    s->http_result_code = 400;
+  }
 }
 
-static void parse_get( struct atarid_state *s )
+static void parse_get(struct atarid_state *s)
 {
   struct {
     const char* url;
@@ -652,27 +661,27 @@ static void parse_get( struct atarid_state *s )
   s->handler_datasrc = NULL;
   s->handler_func = handle_get;
 
-  if ( s->query[0] == 0 ) {
+  if (s->query[0] == 0) {
     /* request a static resource */
-    for ( size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
-      if ( strcmp( static_url_mapping[i].url, s->original_filename) == 0 ) {
+    for (size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
+      if (strcmp(static_url_mapping[i].url, s->original_filename) == 0) {
         s->handler_datasrc = memSourceCreate(
                               static_url_mapping[i].data_ptr,
                               static_url_mapping[i].data_size,
                               static_url_mapping[i].content_type,
                               static_url_mapping[i].encoding_type,
-                              0 );
+                              0);
         LOG(static_url_mapping[i].url);
         break;
       }
     }
-    if ( !s->handler_datasrc ) {
+    if (!s->handler_datasrc) {
       LOG(s->filename);
-      s->handler_datasrc = fileSourceCreate( s->filename, "application/octet-stream","identity" );
+      s->handler_datasrc = fileSourceCreate(s->filename, "application/octet-stream","identity");
     }
-  } else if ( s->query[0] != 0 ) {
-    for ( size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
-      if ( strcmp( query_mapping[i].query_string, s->query ) == 0 ) {
+  } else if (s->query[0] != 0) {
+    for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
+      if (strcmp(query_mapping[i].query_string, s->query) == 0) {
           LOG(query_mapping[i].query_string);
           query_mapping[i].query_func(s);
         break;
@@ -684,22 +693,22 @@ static void parse_get( struct atarid_state *s )
   }
 }
 
-static void parse_content_len( struct atarid_state *s )
+static void parse_content_len(struct atarid_state *s)
 {
-  s->expected_file_length = atoi( &s->inputbuf[15] );
+  s->expected_file_length = atoi(&s->inputbuf[15]);
 }
 
-static void parse_delete( struct atarid_state *s )
+static void parse_delete(struct atarid_state *s)
 {
 
 }
 
-static void parse_expect( struct atarid_state *s )
+static void parse_expect(struct atarid_state *s)
 {
   s->expected_100_continue = 1;
 }
 
-static void parse_urlencoded( struct atarid_state *s )
+static void parse_urlencoded(struct atarid_state *s)
 {
   s->multipart_encoded = 0;
 }
@@ -712,13 +721,13 @@ struct {
   void (*parse_func)(struct atarid_state *s);
   const char request_type;
 } commands[] = {
-  HeaderEntry ( "POST", parse_post, 1 ),
-  HeaderEntry ( "PUT", parse_post, 1 ),
-  HeaderEntry ( "GET", parse_get, 1 ),
-  HeaderEntry ( "DELETE", parse_delete, 1 ),
-  HeaderEntry ( "Content-Length:", parse_content_len, 0 ),
-  HeaderEntry ( "Expect: 100-continue", parse_expect, 0 ),
-  HeaderEntry ( "Content-Type: application/x-www-form-urlencoded", parse_urlencoded, 0 ),
+  HeaderEntry ("POST", parse_post, 1),
+  HeaderEntry ("PUT", parse_post, 1),
+  HeaderEntry ("GET", parse_get, 1),
+  HeaderEntry ("DELETE", parse_delete, 1),
+  HeaderEntry ("Content-Length:", parse_content_len, 0),
+  HeaderEntry ("Expect: 100-continue", parse_expect, 0),
+  HeaderEntry ("Content-Type: application/x-www-form-urlencoded", parse_urlencoded, 0),
 };
 
 struct {
@@ -730,6 +739,7 @@ struct {
   { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
   { 404, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" },
   { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
+  { 1200, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n" },
 };
 
 static
@@ -752,14 +762,14 @@ PT_THREAD(handle_input(struct atarid_state *s))
       // eat away the header
       PSOCK_READTO(&s->sin, ISO_nl);
 
-      if ( s->inputbuf[0] == '\r' ) {
+      if (s->inputbuf[0] == '\r') {
         //got header, now get the data
         break;
       }
 
-      for ( size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i ) {
-        if ( 0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1 ) ) {
-          if ( commands[i].request_type ) {
+      for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i) {
+        if (0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1)) {
+          if (commands[i].request_type) {
             LOG(commands[i].entry);
             LOG(": ");
           }
@@ -769,31 +779,34 @@ PT_THREAD(handle_input(struct atarid_state *s))
       }
     }
 
-    if ( s->expected_100_continue ) {
-      PSOCK_SEND_STR( &s->sin, "HTTP/1.1 100 Continue\r\n");
+    if (s->expected_100_continue) {
+      PSOCK_SEND_STR(&s->sin, "HTTP/1.1 100 Continue\r\n");
     }
 
     /* if handler function was set execute it */
-    if ( s->handler_func ) {
+    if (s->handler_func) {
       PT_INIT(&s->worker[0]);
-      PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s) );
+      PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s));
     }
 
     LOG("\r\n");
 
-    if ( s->http_result_code != 0 ) {
+    if (s->http_result_code != 0) {
       // send result code
-      for ( size_t i = 0; i < sizeof( http_responses ) / sizeof(http_responses[0]); ++i ) {
-        if ( s->http_result_code == http_responses[i].http_result_code ) {
+      for (size_t i = 0; i < sizeof(http_responses) / sizeof(http_responses[0]); ++i) {
+        if (s->http_result_code == http_responses[i].http_result_code) {
           s->http_result_string = http_responses[i].http_response_string;
           break;
         }
       }
-
-      PSOCK_SEND_STR( &s->sin, s->http_result_string );
+      if (s->http_result_string) {
+        PSOCK_SEND_STR(&s->sin, s->http_result_string);
+          /* this wont work, connection needs to be closed first */
+      } else {
+        LOG("Error: no result string for the code");
+      }
     }
-
-  } while (s->http_result_code < 400);
+  } while (s->http_result_code == 200);
 
   PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
@@ -802,7 +815,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
 static void
 handle_error(struct atarid_state *s)
 {
-  if ( Fclose_safe(&s->fd) != -1 ) {
+  if (Fclose_safe(&s->fd) != -1) {
     LOG(" -> failed\r\n");
   }
 }
@@ -818,11 +831,11 @@ void
 atarid_appcall(void)
 {
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
-  if ( uip_timedout() ) {
+  if (uip_timedout()) {
     handle_error(s);
-  } else if( uip_aborted() ) {
+  } else if(uip_aborted()) {
     printf("abort\r\n");
-  } else if(uip_closed()  ) {
+  } else if(uip_closed() ) {
     /* allow connection handler to do it's cleanup if connection was closed while
       calling into UIP which would result in this code being executed and thead
       never resumed again so that it would have no chance of cleaning up after itself.
@@ -854,8 +867,8 @@ atarid_init(void)
 {
  // LOG("\r\n\r\n\r\n\r\n\033f\033p\033j");
 
-  //file_stat_json( "/d/" );
- // LOG( file_stat_json( "/d/" ) );
+  //file_stat_json("/d/");
+ // LOG(file_stat_json("/d/"));
 
  // LOG("\033f");
 //  printf("val %d\r\n", UIP_TCP_MSS);
