@@ -16,6 +16,7 @@
  * \file
  *         Web server
  * \author
+ *         Mariusz Buras <mariusz.buras@gmail.com>
  *         Adam Dunkels <adam@sics.se>
  */
 
@@ -113,7 +114,7 @@ int ensureFolderExists(const char* path, int stripFileName)
     }
   }
   ret = Dcreate(temp_path);
-  printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
+  // printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
   // if we strip file name then we don't want error to be reported
   // because in that case we might be overwriting a file
   return stripFileName ? 0 : ret;
@@ -174,6 +175,13 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
 
     Fwrite(s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf);
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
+  }
+
+  if (s->tosFileDateTime) {
+    _DOSTIME dostime;
+    dostime.time = s->tosFileDateTimeData >> 16;
+    dostime.date = s->tosFileDateTimeData & 0xffff;
+    Fdatime (&dostime, s->fd, 1); // set date/time
   }
 
   Fclose_safe(&s->fd);
@@ -601,12 +609,6 @@ void parse_url(struct atarid_state *s)
 //  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
 }
 
-static void parse_post(struct atarid_state *s)
-{
-  parse_url(s);
-  s->handler_func = handle_post;
-}
-
 static void query_dir(struct atarid_state *s)
 {
   char* dir_json = file_stat_json(s->filename);
@@ -627,6 +629,49 @@ static void query_newfolder(struct atarid_state *s)
   }
 }
 
+static void query_setfiledate(struct atarid_state *s)
+{
+  char* dateIntStart = strchr(s->query, '=');;
+  if (dateIntStart) {
+    dateIntStart++; // skip the '='
+    s->tosFileDateTime = 1;
+    s->tosFileDateTimeData = strtoul (dateIntStart, NULL, 0);
+  }
+}
+
+static int parse_query(struct atarid_state *s)
+{
+  static struct {
+    const char* query_string;
+    void (*query_func)(struct atarid_state *s);
+  } query_mapping [] = {
+    {"dir",query_dir},
+    {"run",query_run},
+    {"newfolder",query_newfolder},
+    {"setfiledate",query_setfiledate},
+    {NULL,NULL}
+  };
+
+  if (s->query[0] != 0) {
+    for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
+      if (strncmp(query_mapping[i].query_string, s->query, strlen(query_mapping[i].query_string)) == 0) {
+          LOG(query_mapping[i].query_string);
+          query_mapping[i].query_func(s);
+          break;
+      }
+    }
+    return 1;
+  }
+  return 0;
+}
+
+static void parse_post(struct atarid_state *s)
+{
+  parse_url(s);
+  parse_query(s);
+  s->handler_func = handle_post;
+}
+
 static void parse_get(struct atarid_state *s)
 {
   struct {
@@ -644,16 +689,6 @@ static void parse_get(struct atarid_state *s)
     { "images/close.png", close_png,close_png_len,"image/png", "identity"},
     { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},
     { NULL,NULL,0 }
-  };
-
-  static struct {
-    const char* query_string;
-    void (*query_func)(struct atarid_state *s);
-  } query_mapping [] = {
-    {"dir",query_dir},
-    {"run",query_run},
-    {"newfolder",query_newfolder},
-    {NULL,NULL}
   };
 
   parse_url(s);
@@ -679,15 +714,7 @@ static void parse_get(struct atarid_state *s)
       LOG(s->filename);
       s->handler_datasrc = fileSourceCreate(s->filename, "application/octet-stream","identity");
     }
-  } else if (s->query[0] != 0) {
-    for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
-      if (strcmp(query_mapping[i].query_string, s->query) == 0) {
-          LOG(query_mapping[i].query_string);
-          query_mapping[i].query_func(s);
-        break;
-      }
-    }
-  } else {
+  } else if (!parse_query(s)) {
     s->http_result_code = 400;
     s->handler_func = NULL;
   }
@@ -757,6 +784,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
     s->multipart_encoded = 0;
     s->fd = -1;
     s->http_result_code = 0;
+    s->tosFileDateTime = 0;
 
     while(1) {
       // eat away the header

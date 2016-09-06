@@ -94,6 +94,31 @@
             console.log( ev.type + " event " );
         };
 
+        // This returns at least 32bit int with date encoded for DOSTIME struct
+        // typedef struct
+        // {
+        //      uint16_t     time;  /* Time like Tgettime */
+        //      uint16_t     date;  /* Date like Tgetdate */
+        // } DOSTIME;
+        var convertDateToAtariTOSFormat = function(date) {
+            var tosYear = (date.getFullYear() - 1980);
+            tosYear = tosYear < 0 ? 0 : tosYear;
+            tosYear = tosYear > 119 ? 119 : tosYear;
+
+            var tosDay = date.getDate();
+            var tosMonth = date.getMonth() + 1;
+
+            var tosDate = (tosYear) << 9 | (tosMonth << 5) | tosDay;
+
+            var tosSeconds = date.getSeconds() / 2;
+            var tosMinutes = date.getMinutes();
+            var tosHours = date.getHours();
+
+            var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
+
+            return ((tosTime<<16) | tosDate) >>> 0;
+        }
+
         var drophandler = function (ev,localpath) {
             if (ev.preventDefault) {
                 ev.preventDefault(); // Necessary. Allows us to drop.
@@ -113,17 +138,17 @@
                     });
 
                 var reader = new FileReader();
-                reader.onload = (function(name,key,path) {
+                reader.onload = (function(name,key,path,date) {
                     return function(event) {
 
                         var xhr = new XMLHttpRequest;
-                        xhr.open("POST", localpath + "/" + path + name, true);
+                        xhr.open("POST", localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date), true);
                         console.log(localpath + "/" + path + name);
                         var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
                         //xhr.send( blob ) ;
                         job_add(xhr,blob,key);
                     };
-                })(file.name,job_key,path);
+                })(file.name,job_key,path,file.lastModifiedDate);
 
                 job_key++;
 
