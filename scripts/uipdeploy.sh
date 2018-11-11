@@ -35,7 +35,14 @@ sums=$(curl -s -f --url ${sum_path} | gzip -d -)
 if (($? > 0)); then
     files_to_send=$local_files 
 else
-	files_to_send=$(printf "$sums" | md5sum --quiet -c - 2> /dev/null | grep FAILED | sed -e 's/\(.*:\).*/\1/' -e 's/://g' )
+    local_num=$(printf "$local_files" | wc -l)
+    remote_num=$(printf "$sums" | wc -l)
+    if (( local_num != remote_num)); then
+        files_to_send=$local_files
+        printf "$files_to_send"
+    else
+        files_to_send=$(printf "$sums" | md5sum --quiet -c - 2> /dev/null | grep FAILED | sed -e 's/\(.*:\).*/\1/' -e 's/://g' )
+    fi
 fi
 
 if [ -n "$files_to_send" ]; then

@@ -29,3 +29,5 @@ SCRIPTS:
 
 BUGS:
 	* UI: expanding an empty folder would cause that folder to disappear from the list
+	* Does not seem to copy 0 byte files
+	* Does not seem to copy empty directories

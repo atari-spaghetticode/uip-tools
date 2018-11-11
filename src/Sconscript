@@ -1,0 +1,18 @@
+
+Import('targetEnv')
+import os.path
+SOURCES = [
+	 	Glob('*.c'),
+	 	Glob('uip/*.c'),
+	 	Glob('atari_http_server/*.c'),
+	]
+
+targetEnv.Append( CPPPATH=[ Dir('./uip').srcnode().abspath ] )
+targetEnv.Append( CPPPATH=[ Dir('./atari_http_server').srcnode().abspath ] )
+targetEnv.Append( CPPPATH=[ Dir('./').srcnode().abspath ] )
+
+TARGETS = targetEnv.Program(
+	"uip.tos",
+	source = SOURCES)
+
+Return (["TARGETS"])
