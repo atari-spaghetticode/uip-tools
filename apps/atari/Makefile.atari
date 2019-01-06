@@ -1,7 +1,4 @@
-
 vpath %.html ../apps/atari/
-vpath %.png ../../jqwidgets/jqwidgets/styles/images/
-vpath %.gif ../../jqwidgets/jqwidgets/styles/images/
 
 index.h: webinterface.html
 	$(CPP) -traditional-cpp -DVERSION=$(version) -P -o index.html $<
@@ -9,15 +6,13 @@ index.h: webinterface.html
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
 
-icons: icon-right.h icon-left.h icon-up.h icon-down.h loader.h close.h
+icons: loader.h close.h
 
 %.h: %.png
 	xxd -i $< > $@
-	sed -i -e 's/______jqwidgets_jqwidgets_styles_images_//g' $@
 
 %.h: %.gif
 	xxd -i $< > $@
-	sed -i -e 's/______jqwidgets_jqwidgets_styles_images_//g' $@
 
 .PHONY: staticdata
 staticdata: index.h icons

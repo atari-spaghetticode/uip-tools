@@ -1,0 +1,248 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: insta",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: package install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: package insta",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/K/Repos/uiptools",
+		"/K/Repos/uiptools/uiptool"
+	],
+	"file_history":
+	[
+		"/K/Repos/sqward/uiptool/apps/atari/webinterface.html",
+		"/K/Repos/sqward/uiptool/apps/atari/Makefile.atari",
+		"/K/Repos/sqward/uiptool/uiptool/index.html",
+		"/K/Repos/sqward/uiptool/apps/atari/icon.inc",
+		"/K/Repos/sqward/uiptool/apps/atari/atariserv.h",
+		"/K/Repos/sqward/uiptool/README.md",
+		"/K/Repos/sqward/uiptool/README.uip",
+		"/K/Repos/sqward/uiptool/TODO",
+		"/K/Repos/sqward/uiptool/apps/README",
+		"/K/Repos/sqward/uiptool/apps/atari/atarid.h",
+		"/K/Repos/sqward/uiptool/apps/atari/atarid.c",
+		"/K/Repos/sqward/uiptool/uip/Makefile.include",
+		"/K/Repos/sqward/uiptool/uiptool/index.h",
+		"/K/Repos/sqward/uiptool/uiptool/icon-up.h",
+		"/K/Repos/sqward/uiptool/uiptool/icon-right.h",
+		"/K/Repos/sqward/uiptool/uiptool/icon-left.h",
+		"/K/Repos/sqward/uiptool/uiptool/icon-down.h",
+		"/K/Repos/sqward/uiptool/uiptool/close.h",
+		"/K/Repos/sqward/uiptool/uiptool/clock-arch.h",
+		"/K/Repos/sqward/uiptool/uiptool/clock-arch.c",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/dir_f.json",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/ajaxroot.htm",
+		"/K/Repos/sqward/uiptool/uiptool/Makefile",
+		"/K/Repos/sqward/uiptool/uiptool/tapdev.c",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/dir_e.json",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/dir.json",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/dir_c.json",
+		"/K/Repos/sqward/uiptool/uiptool/test_webserver/dir_d.json",
+		"/K/Repos/sqward/uiptool/uiptool/uip_arch.c",
+		"/K/Repos/sqward/uiptool/uiptool/uip-conf.h",
+		"/K/Repos/sqward/uiptool/uiptool/tapdev.h",
+		"/K/Repos/sqward/uiptool/uiptool/main.c",
+		"/K/Repos/sqward/uiptool/uiptool/loader.h",
+		"/K/Repos/sqward/uiptool/uiptool/.gitignore",
+		"/K/Repos/sqward/uiptool/uip-1.0-changelog.txt",
+		"/K/Repos/sqward/uiptool/scripts/uipdeploy.sh",
+		"/K/Repos/sqward/uiptool/lib/memb.h",
+		"/K/Repos/sqward/uiptool/dev/Makefile",
+		"/K/Repos/sqward/uiptool/dev/delay.h",
+		"/K/Repos/sqward/uiptool/dev/delay.c",
+		"/K/Repos/sqward/uiptool/dev/debug.h",
+		"/K/Repos/sqward/uiptool/dev/debug.c",
+		"/K/Repos/sqward/uiptool/uiptool/obj/timer.d",
+		"/K/Repos/sqward/uiptool/uiptool/linker.map",
+		"/K/Repos/sqward/uiptool/uiptool/obj/atarid.d",
+		"/K/Repos/sqward/uiptool/uiptool/uip_arch.h",
+		"/K/Repos/sqward/uiptool/dev/rtl8019dev.h",
+		"/K/Repos/sqward/uiptool/dev/rtl8019dev.c",
+		"/K/Repos/sqward/uiptool/dev/rtl8019as-drv.c",
+		"/K/Repos/sqward/uiptool/dev/rtl8019.h",
+		"/K/Repos/sqward/uiptool/dev/rtl8019.c",
+		"/K/Repos/sqward/uiptool/dev/rtl8019-drv.h",
+		"/K/Repos/sqward/uiptool/dev/rtl8019-drv.c",
+		"/K/Repos/atari-gcc-startup/SConstruct.CT60",
+		"/K/Repos/atari-gcc-startup/src/mStartupAsmCpp.s",
+		"/K/Repos/atari-gcc-startup/src/mStartupAsmC.s",
+		"/K/Repos/atari-gcc-startup/SConstruct"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 208.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"folders":
+	[
+		{
+			"path": "K:\\Repos\\uiptools"
+		}
+	],
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Packages/Python/Python.sublime-build",
+	"project": "",
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 264.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

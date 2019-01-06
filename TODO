@@ -5,7 +5,7 @@ WEBINTERFACE:
 	* file/folder icons
 	* display date
 	* add logo
-	* add panel with ajax trafic
+	* add panel with ajax traffic
 
 	done:
 	* multiple file upload
@@ -29,3 +29,6 @@ SCRIPTS:
 
 BUGS:
 	* UI: expanding an empty folder would cause that folder to disappear from the list
+	* remote file execution is broken
+	* garbage caused in GEMDOS filesystem (looks like not all paths are validated which causes directory/path creation which aren't possible to remove  afterwards - it looks like file system corruption)
+	* crash when NETUsbee isn't plugged in

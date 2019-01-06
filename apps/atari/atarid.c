@@ -71,10 +71,6 @@
 
 // static content
 #include "index.h"
-#include "icon-down.h"
-#include "icon-up.h"
-#include "icon-left.h"
-#include "icon-right.h"
 #include "loader.h"
 #include "close.h"
 
@@ -682,10 +678,6 @@ static void parse_get(struct atarid_state *s)
     const char* encoding_type;
   } static_url_mapping [] = {
     { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
-    { "images/icon-down.png", icon_down_png,icon_down_png_len,"image/png", "identity"},
-    { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
-    { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
-    { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
     { "images/close.png", close_png,close_png_len,"image/png", "identity"},
     { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},
     { NULL,NULL,0 }
