@@ -2,34 +2,62 @@
 <html lang="en">
 <head>
 <title id='Description'>uiptool</title>
+ <meta charset="UTF-8"> 
 
 #include "icon.inc"
 
     <script type="text/javascript">
+        
+        function updateDriveListUI(DriveArray){
 
+          var div = document.createElement("div");
+          div.style.width = "100px";
+          div.style.height = "100px";
+          div.style.background = "red";
+          div.style.color = "white";
+          div.innerHTML = '';
+            
+          for(var i=0;i<DriveArray.length;++i){
+             div.innerHTML += 'type:' + DriveArray[i].type;
+             div.innerHTML += ' name:' + DriveArray[i].name
+             div.innerHTML +='</br>';
+          };
 
-
-        function processDirectoryReq(e) {
- 
+          document.getElementById("DriveButtonListTab").appendChild(div);
         }
 
+        function processDriveListReq(responseText) {
+                var DriveArray = JSON.parse(responseText);
+                updateDriveListUI(DriveArray);  
+        }
 
+        
+        // send http request 
         function sendHttpReq(addr, params, requestType, isAsync, requestHandler){
 
             var xhr = new XMLHttpRequest();
-            xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
-
+            
             if(isAsync!=true){
+                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
+
                 xhr.send();
                 return xhr.responseText; 
             }else{
-                xhr.addEventListener("readystatechange", requestHandler, false);
+                xhr.onreadystatechange = function() { 
+                    if (xhr.readyState == 4 && xhr.status == 200)
+                       requestHandler(xhr.responseText);
+                    }
+
+                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
+                xhr.send();
             }
+
+            return null;
         }
 
-        function getDriveList(){
-            var requestResult = sendHttpReq(location.host,'dir', 'GET', false, null);
-            alert(requestResult);
+        function updateDriveListReq(){
+            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);
+            
         }
 
 
@@ -39,19 +67,19 @@
 //      uint16_t     time;  /* Time like Tgettime */
 //      uint16_t     date;  /* Date like Tgetdate */
 // } DOSTIME;
-        function convertDateToAtariTOSFormat(date) {
-            var tosYear = (date.getFullYear() - 1980);
-            tosYear = tosYear < 0 ? 0 : tosYear;
-            tosYear = tosYear > 119 ? 119 : tosYear;
-            var tosDay = date.getDate();
-            var tosMonth = date.getMonth() + 1;
-            var tosDate = (tosYear) << 9 | (tosMonth << 5) | tosDay;
-            var tosSeconds = date.getSeconds() / 2;
-            var tosMinutes = date.getMinutes();
-            var tosHours = date.getHours();
-            var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
-            return ((tosTime<<16) | tosDate) >>> 0;
-        }
+     function convertDateToAtariTOSFormat(date) {
+        var tosYear = (date.getFullYear() - 1980);
+        tosYear = tosYear < 0 ? 0 : tosYear;
+        tosYear = tosYear > 119 ? 119 : tosYear;
+        var tosDay = date.getDate();
+        var tosMonth = date.getMonth() + 1;
+        var tosDate = (tosYear) << 9 | (tosMonth << 5) | tosDay;
+        var tosSeconds = date.getSeconds() / 2;
+        var tosMinutes = date.getMinutes();
+        var tosHours = date.getHours();
+        var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
+        return ((tosTime<<16) | tosDate) >>> 0;
+     }
 
     function openLogTab(evt, tabName) {
         var i, tabcontent, tablinks;
@@ -90,22 +118,21 @@
             padding: 0px;
             overflow: hidden;
           clear:both;
-
         }
 
-        #Containiner {
+        #Container {
              margin: 2px;
              width: 100%;
              height: 7%;
              }
 
-        #Containiner2 {
+        #Container2 {
             float:left;
              }
-        #Containiner3 {
+        #Container3 {
             float:right;
              }
-        #Containiner4 {
+        #Container4 {
              width: 100%;
             float:bottom;
              }
@@ -150,17 +177,19 @@
 </head>
 <body>
 
-    <div id="Containiner" >
-        <div id="Containiner2" >
-                <font size="6">uIPTool</font> by Mystic Bytes, ver. VERSION
+    <div id="Container" >
+        <div id="Container2" >
+                <font size="6">uIPTool</font> ver. VERSION
         </div>
-
+        <div id="DriveButtonListTab">
+        <!-- Drive button list here -->
+        </div>
         <div id="Container4" style="clear:both;float:bottom;">
                <b>Location:</b> <input type="text" id="navigationBar"/>
         </div>
     </div>
 
-    <div id="mainSplitter" ondrop="fileListDrop(event);" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
+    <div id="mainSplitter" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
         <div id="folderListTree"></div>
         <div>
             <div id="rightSplitter">
@@ -261,13 +290,15 @@
         </table> 
     </div>
 </div> 
-<script>
+<div id="footer">
+Mystic Bytes &copy;2019
+</div>
 
+<script>
 (function() {
-   // your page initialization code here
-   // the DOM will be available here
-            var current_path = '/';
-            getDriveList();
+            // your page initialization code here
+            // the DOM will be available here
+            updateDriveListReq();
 
 })();
 </script>
