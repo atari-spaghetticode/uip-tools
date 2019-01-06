@@ -1,13 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title id='Description'>uiptool</title>
-    <style> 
-<!-- cut -->
-    </style>
-    <script>
-<!-- cut -->
-    </script>
+<title id='Description'>uiptool</title>
 
 #include "icon.inc"
 
@@ -33,79 +27,6 @@
             return ((tosTime<<16) | tosDate) >>> 0;
         }
 
-        var drophandler = function (ev,localpath) {
-            if (ev.preventDefault) {
-                ev.preventDefault(); // Necessary. Allows us to drop.
-            }
-
-            console.log( ev.type + " event target path " + localpath );
-
-            ev.stopPropagation(); // Stops some browsers from redirecting.
-            ev.preventDefault();
-
-            var uploadFile = function(path,file) {
-
-                $("#FileQueueTreeGrid").jqxTreeGrid('addRow', job_key, {
-                    name: localpath + "/" + path + file.name,
-                    size: file.size,
-                    status: "queued"
-                    });
-
-                var reader = new FileReader();
-                reader.onload = (function(name,key,path,date) {
-                    return function(event) {
-
-                        var xhr = new XMLHttpRequest;
-                        xhr.open("POST", localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date), true);
-                        console.log(localpath + "/" + path + name);
-                        var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
-                        //xhr.send( blob ) ;
-                        job_add(xhr,blob,key);
-                    };
-                })(file.name,job_key,path,file.lastModifiedDate);
-
-                job_key++;
-
-                reader.readAsArrayBuffer(file);
-            };
-
-
-            try {
-                // check chrome folder api first
-                function traverseFileTree(item, path) {
-                  path = path || "";
-                  if (item.isFile) {
-                    // Get file
-                    item.file(function(file) {
-                      uploadFile(path,file);
-                    });
-                  } else if (item.isDirectory) {
-                    // Get folder contents
-                    var dirReader = item.createReader();
-                    dirReader.readEntries(function(entries) {
-                      for (var i=0; i<entries.length; i++) {
-                        traverseFileTree(entries[i], path + item.name + "/");
-                      }
-                    });
-                  }
-                }
-
-                var items = ev.dataTransfer.items;
-                for (var i=0; i<items.length; i++) {
-                    // webkitGetAsEntry is where the magic happens
-                    var item = items[i].webkitGetAsEntry();
-                    if (item) {
-                      traverseFileTree(item);
-                    }
-                }
-            } catch(err) {
-                var files = ev.dataTransfer.files;
-                for (var i = 0, f; f = files[i]; i++) {
-                    uploadFile("",f);
-                }
-            }
-            
-        };
 
         function allowDrop(event) {
             event.preventDefault();
@@ -183,87 +104,40 @@
             return [items,files];
         }
 
-        var populateDragDropHandlers = function(items) {
-            for (i = 0; i < items.length; i++) {
-                if ( items[i].subtreeElement != null ) {
-                    items[i].subtreeElement.ondrag = dragdropdefault;
-                    items[i].subtreeElement.ondragend = dragdropdefault;
-                    items[i].subtreeElement.ondragenter = dragdropdefault;
-                    items[i].subtreeElement.ondragleave = dragdropdefault;
-                    items[i].subtreeElement.ondragover = dragdropdefault;
-                    items[i].subtreeElement.ondragstart = dragdropdefault;
-                    items[i].subtreeElement.ondrop = drophandler;
-                }
-            }
-        }
-
         $(document).ready(function () {
 
             var current_path = '/';
 
-
-
-
-            $('#folderListTree').on("added", function (event) {
-                var rootitems = 'fwfwf';
-                var items = event.args.items;
-             //   populateDragDropHandlers(rootitems);
-            });
-
-            $('#folderListTree').on("expand", function (event) {
-
-                var $element = $(event.args.element);
-                //if ( obj.value.subtree == null ) 
-                {
-                    var dir = fetchAndParseDir(obj.value.path,"/?dir");
-                    obj.value.subtree = dir[1];
-
-                    if ( dir[0].length > 0 ) {
-                        while ( obj.subtreeElement.firstChild != null ) {
-                        }
-                    } else {
-                    }
-                }
-                populateGridList(obj.value.subtree);
-            });
-
-            $('#folderListTree').on("collapse", function (event) {
-                var obj = $('#folderListTree').jqxTree("getItem", event.args.element);
-                var $element = $(event.args.element);
-
-                while ( obj.subtreeElement.firstChild != null ) {
-                    $('#folderListTree').jqxTree('removeItem', obj.subtreeElement.firstChild );
-                    console.log("2");
-                }
-            });
-
-            $('#folderListTree').on("select", function (event) {
-                var obj = $('#folderListTree').jqxTree("getItem", event.args.element);
-                populateGridList(obj.value.subtree);
-                $('#navigationBar').val(obj.value.path + "/");
-            });
-
-            // populate file lists
-            var dir = fetchAndParseDir("","?dir");
-            var source = dir[0];
-            populateGridList(dir[1]);
-
-            $('#FileListTreeGrid').on('rowClick', function (event) {
-            });
-
-            $('#FileListTreeGrid').on("rowSelect", function (event) {
-                $('#navigationBar').val(event.args.row.path);
-            });
-
-            // new folder callback
-            $('#button-new-folder').on('click', function () {
-            });
-
-            $('#rightSplitter').on('resize', function (event)  { 
-                var panels = event.args.panels;
-            });
-
         });
+
+    function openLogTab(evt, tabName) 
+    {
+        var i, tabcontent, tablinks;
+
+        tabcontent = document.getElementsByClassName("tabcontent");
+        tablinks = document.getElementsByClassName("tablinks");
+        buttoncontent = document.getElementsByClassName("button");
+        
+        // Get all elements with class="tabcontent" and hide them
+        for (i = 0; i < tabcontent.length; ++i) {
+            tabcontent[i].style.display = "none";
+        }
+
+        // Get all elements with class="tablinks" and remove the class "active"
+        for (i = 0; i < tablinks.length; ++i) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+       for (i = 0; i < buttoncontent.length; ++i) {
+            buttoncontent[i].style.visibility = 'hidden';
+        }
+
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById(tabName).style.display = "block";
+        document.getElementById("Clear" + tabName + "Button").style.visibility = 'visible';       
+        evt.currentTarget.className += " active";
+    } 
+
     </script>
     <style type="text/css">
         html, body
@@ -294,6 +168,42 @@
             float:bottom;
              }
 
+    <!-- log tab style -->
+    /* Style the tab */
+    .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+    }
+
+    /* Style the buttons that are used to open the tab content */
+    .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+    }
+
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+        background-color: #ddd;
+    }
+
+    /* Create an active/current tablink class */
+    .tab button.active {
+        background-color: #ccc;
+    }
+
+    /* Style the tab content */
+    .tabcontent {
+        display: none;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-top: none;
+     } 
     </style>
 </head>
 <body>
@@ -303,11 +213,6 @@
                 <font size="6">uIPTool</font> by Mystic Bytes, ver. VERSION
         </div>
 
-        <div id="Containiner3">
-                <input type="button" value="New Folder" id='button-new-folder' />
-                <input type="button" value="Delete" id='button-delete' />
-                <input type="button" value="Run" id='button-run' />
-        </div>
         <div id="Container4" style="clear:both;float:bottom;">
                <b>Location:</b> <input type="text" id="navigationBar"/>
         </div>
@@ -323,22 +228,97 @@
         </div>
     </div>
 
-    <div id="enter-folder-name-window">
-        <div>
-            <img width="14" height="14" src="../../images/help.png" alt="" /> Modal Window
-        </div>
-        <div>
-            <div>
-                <input type="text" id="input-folder-name"/>
-            </div>
-            <div>
-            <div style="float: right; margin-top: 15px;">
-                <input type="button" id="ok" value="OK" style="margin-right: 10px" />
-                <input type="button" id="cancel" value="Cancel" />
-            </div>
-            </div>
-        </div>
+ <!-- Tab links -->
+ <div class="tab">
+  <button class="tablinks" onclick="openLogTab(event, 'UploadQueTab')">Upload Que</button>
+  <button class="tablinks" onclick="openLogTab(event, 'TransfersOkTab')">Successfull transfers</button>
+  <button class="tablinks" onclick="openLogTab(event, 'TransfersFailedTab')">Failed transfers</button>
+</div>
+
+<!-- Tab content -->
+<div id="UploadQueTab" class="tabcontent">
+<div id=UploadGrid>
+ <div>
+    <button class="button" id="ClearUploadQueTabButton">Clear</button>
+ </div> 
+ <table style="width:100%">
+  <tr>
+    <th>Source path</th>
+    <th>Destination path</th>
+    <th>Size</th>
+    <th>Status</th>
+  </tr>
+  <tr>
+    <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
+    <td>C:\AUTO\DUMMY.PRG</td>
+    <td>222323 bytes</td>
+    <td>Upload</td>
+  </tr>
+  <tr>
+    <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
+    <td>C:\FOLDER\FOLDER\PIC.PNG</td>
+    <td>3434 bytes</td>
+    <td>Upload</td>
+  </tr>
+</table> 
+</div>
+</div>
+
+<div id="TransfersOkTab" class="tabcontent">
+    <div id=TransferOkGrid>
+    <div> 
+        <button class="button" id="ClearTransferOkButton">Clear</button> 
     </div>
+    <table style="width:100%">
+    <tr>
+        <th>Source path</th>
+        <th>Destination path</th>
+        <th>Size</th>
+        <th>Status</th>
+    </tr>
+    <tr>
+        <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
+        <td>C:\AUTO\DUMMY.PRG</td>
+        <td>222323 bytes</td>
+        <td>Upload</td>
+    </tr>
+    <tr>
+        <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
+        <td>C:\FOLDER\FOLDER\PIC.PNG</td>
+        <td>3434 bytes</td>
+        <td>Upload</td>
+    </tr>
+    </table> 
+    </div>
+</div>
+
+<div id="TransfersFailedTab" class="tabcontent">
+    <div id=TransferFailedGrid>
+        <div>
+            <button class="button" id="ClearTransfersFailedTabButton">Clear</button>
+        </div>
+        <table style="width:100%">
+        <tr>
+            <th>Source path</th>
+            <th>Destination path</th>
+            <th>Size</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
+            <td>C:\AUTO\DUMMY.PRG</td>
+            <td>222323 bytes</td>
+            <td>Failed</td>
+        </tr>
+        <tr>
+        <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
+            <td>C:\FOLDER\FOLDER\PIC.PNG</td>
+            <td>3434 bytes</td>
+            <td>Failed</td>
+        </tr>
+        </table> 
+    </div>
+</div> 
 
 </body>
 </html>
