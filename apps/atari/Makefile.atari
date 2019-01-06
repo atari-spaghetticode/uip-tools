@@ -6,7 +6,7 @@ index.h: webinterface.html
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
 
-icons: loader.h close.h
+icons: close.h
 
 %.h: %.png
 	xxd -i $< > $@

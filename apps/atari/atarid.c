@@ -71,7 +71,6 @@
 
 // static content
 #include "index.h"
-#include "loader.h"
 #include "close.h"
 
 #define ISO_nl      0x0a
@@ -83,7 +82,6 @@
 #define ISO_colon   0x3a
 
 #define LOG(x) ((void)Cconws(x))
-//#define LOG(x)
 
 /*---------------------------------------------------------------------------*/
 int ensureFolderExists(const char* path, int stripFileName)
@@ -679,7 +677,6 @@ static void parse_get(struct atarid_state *s)
   } static_url_mapping [] = {
     { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
     { "images/close.png", close_png,close_png_len,"image/png", "identity"},
-    { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},
     { NULL,NULL,0 }
   };
 

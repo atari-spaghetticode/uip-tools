@@ -7,13 +7,39 @@
 
     <script type="text/javascript">
 
-        // This returns at least 32bit int with date encoded for DOSTIME struct
-        // typedef struct
-        // {
-        //      uint16_t     time;  /* Time like Tgettime */
-        //      uint16_t     date;  /* Date like Tgetdate */
-        // } DOSTIME;
-        var convertDateToAtariTOSFormat = function(date) {
+
+
+        function processDirectoryReq(e) {
+ 
+        }
+
+
+        function sendHttpReq(addr, params, requestType, isAsync, requestHandler){
+
+            var xhr = new XMLHttpRequest();
+            xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
+
+            if(isAsync!=true){
+                xhr.send();
+                return xhr.responseText; 
+            }else{
+                xhr.addEventListener("readystatechange", requestHandler, false);
+            }
+        }
+
+        function getDriveList(){
+            var requestResult = sendHttpReq(location.host,'dir', 'GET', false, null);
+            alert(requestResult);
+        }
+
+
+// This returns at least 32bit int with date encoded for DOSTIME struct
+// typedef struct
+// {
+//      uint16_t     time;  /* Time like Tgettime */
+//      uint16_t     date;  /* Date like Tgetdate */
+// } DOSTIME;
+        function convertDateToAtariTOSFormat(date) {
             var tosYear = (date.getFullYear() - 1980);
             tosYear = tosYear < 0 ? 0 : tosYear;
             tosYear = tosYear > 119 ? 119 : tosYear;
@@ -27,91 +53,7 @@
             return ((tosTime<<16) | tosDate) >>> 0;
         }
 
-
-        function allowDrop(event) {
-            event.preventDefault();
-        }
-
-        function fileListDrop(event){
-            if (event.preventDefault) {
-                event.preventDefault(); // Necessary. Allows us to drop.
-            }
-            
-            console.log( event.type + " event" );
-        }
-
-        var fetchDirectory = function (path,query)
-        {
-            var my_data;
-            $.ajax({
-                type: 'GET',
-                url: path + query,
-                success: function(result) { my_data = result; },
-                data: { },
-                async: false
-            });
-
-            var arr = $.parseJSON( my_data );
-
-            for (i = 0; i < arr.length; i++) { 
-                // prepare full host path
-                arr[i]["path"] = path + "/" + arr[i]["name"];
-                // prepare string to sort with
-                arr[i]["zort"] = arr[i]["type"] + path + "/" + arr[i]["name"];
-            }
-
-            return arr;
-        }
-
-        var populateGridList = function(items) {
-            if ( items != null ) {
-
-                for (i = 0; i < items.length; i++) {
-                    var item = items[i];
-                    item.name = "<a href=" + item.path + ">" + item.name + "</a>"; 
-                }
-
-            }
-        }
-
-        var fetchAndParseDir = function(path,query) {
-
-            current_path = path;
-
-            var items = [];
-            var files = [];
-
-            var dirtree = fetchDirectory(path,query);
-            var item_index = 0;
-
-            for (i = 0; i < dirtree.length; i++) {
-                // prepare full host path
-                if ( dirtree[i].type == "d") {
-                    items[item_index] = {};
-                    items[item_index]["value"] = dirtree[i];
-                    items[item_index]["label"] =  dirtree[i]["name"];
-                    items[item_index]["expanded"] =  false;
-                    items[item_index]["items"] =  [{ "value": "ajax1.htm", "label": "Loading..." }];
-                    item_index++;
-                } else {
-                    if ( dirtree[i]["size"] < 0x80000000 ) {
-                        var row = { "name": dirtree[i]["name"] , "size": dirtree[i]["size"], "path": path+'/'+dirtree[i]["name"] };
-                        files.push(row);
-                    }
-                }
-            }
-
-            return [items,files];
-        }
-
-        $(document).ready(function () {
-
-            var current_path = '/';
-
-        });
-
-    function openLogTab(evt, tabName) 
-    {
+    function openLogTab(evt, tabName) {
         var i, tabcontent, tablinks;
 
         tabcontent = document.getElementsByClassName("tabcontent");
@@ -319,6 +261,16 @@
         </table> 
     </div>
 </div> 
+<script>
+
+(function() {
+   // your page initialization code here
+   // the DOM will be available here
+            var current_path = '/';
+            getDriveList();
+
+})();
+</script>
 
 </body>
 </html>
