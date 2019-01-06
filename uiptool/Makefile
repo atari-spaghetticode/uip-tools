@@ -34,10 +34,16 @@ all: uip
 
 version:=$(shell git rev-list --count master)
 
-CC     = /opt/cross-mint/bin/m68k-atari-mint-gcc
-LD     = /opt/cross-mint/bin/m68k-atari-mint-gcc
-AR     = /opt/cross-mint/bin/m68k-atari-mint-ar
-CPP     = /opt/cross-mint/bin/m68k-atari-mint-cpp
+# Cygwin prefix
+PREFIX = /opt/cross-mint/bin
+
+#Linux prefix
+PREFIX = /usr/bin
+
+CC     = $(PREFIX)/m68k-atari-mint-gcc
+LD     = $(PREFIX)/m68k-atari-mint-gcc
+AR     = $(PREFIX)/m68k-atari-mint-ar
+CPP     = $(PREFIX)/m68k-atari-mint-cpp
 APPS   = atari dhcpc
 CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-I$(abspath ../uip) \
