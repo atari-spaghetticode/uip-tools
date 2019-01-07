@@ -14,6 +14,10 @@
 
     <script type="text/javascript">
         
+        function requestChangeCurrentDirectory(btn){
+            alert(btn.name);
+        }
+
         function updateDriveListUI(DriveArray){
 
           var div = document.createElement("div");
@@ -22,22 +26,39 @@
           div.style.background = "black";
           div.style.color = "white";
           div.innerHTML = 'Drives: ';
-            
-          for(var i=0;i<DriveArray.length;++i){
-             //div.innerHTML += 'type:' + DriveArray[i].type;
-             div.innerHTML += DriveArray[i].name.toUpperCase();
-             div.innerHTML +=': ';
-          };
+
+          createDriveButtons(div, DriveArray);            
 
           document.getElementById("DriveButtonListTab").appendChild(div);
         }
 
         function processDriveListReq(responseText) {
-                var DriveArray = JSON.parse(responseText);
-                updateDriveListUI(DriveArray);  
+          var DriveArray = JSON.parse(responseText);
+          updateDriveListUI(DriveArray);  
         }
 
-        
+        function createDriveButtons(rootElement, DriveArray){
+          var buttonStr = null;
+          
+          for(var i=0;i<DriveArray.length;++i){
+
+             buttonStr = DriveArray[i].name.toUpperCase();
+             var button = document.createElement("button");
+             var textNode = document.createTextNode(buttonStr + ':');
+             button.appendChild(textNode);
+             button.type='button';
+             button.name = 'SetCurrentDir' + buttonStr;
+             
+             button.onclick = function(){
+                requestChangeCurrentDirectory(button);
+            }
+
+             rootElement.appendChild(button);
+          };
+
+        }
+
+
         // send http request 
         function sendHttpReq(addr, params, requestType, isAsync, requestHandler){
 
@@ -125,23 +146,7 @@
             overflow: hidden;
           clear:both;
         }
-
-        #Container {
-             margin: 2px;
-             width: 100%;
-             height: 7%;
-             }
-
-        #Container2 {
-            float:left;
-             }
-        #Container3 {
-            float:right;
-             }
-        #Container4 {
-             width: 100%;
-            float:bottom;
-             }
+       
 
     <!-- log tab style -->
     /* Style the tab */
@@ -183,27 +188,24 @@
 </head>
 <body>
 
-    <div id="Container" >
-        <div id="Container2" >
-                <font size="6">uIPTool</font> ver. VERSION
-        </div>
-        <div id="DriveButtonListTab">
-        <!-- Drive button list here -->
-        </div>
-        <div id="Container4" style="clear:both;float:bottom;">
-               <b>Location:</b> <input type="text" id="navigationBar"/>
-        </div>
-    </div>
+<header>
+<font size="6">uIPTool</font> ver. VERSION    
+</header>
+<!-- Navigation interface -->
+<nav>
+<div id="DriveButtonListTab"> <div/>
+<div id="CurrentDirPath" style="clear:both;float:bottom;">
+<b>Current GEMDOS path:</b> <input type="text" id="navigationBar"/>
+</div>
+</nav>
 
-    <div id="mainSplitter" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
-        <div id="folderListTree"></div>
-        <div>
-            <div id="rightSplitter">
-                <div id="FileListTreeGrid"></div>
-                <div id="FileQueueTreeGrid"> </div>
-            </div>
-        </div>
-    </div>
+<div id="mainSection" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
+  <div id="folderListView"></div>
+  <div id="directoryView">
+    <div id="fileView"></div>
+    <div id="fileActionsView"></div>
+  </div>
+ </div>
 
  <!-- Tab links -->
  <div class="tab">
@@ -296,16 +298,15 @@
         </table> 
     </div>
 </div> 
-<div id="footer">
+<footer>
 Mystic Bytes &copy;2019
-</div>
+</footer>
 
 <script>
 (function() {
             // your page initialization code here
             // the DOM will be available here
             updateDriveListReq();
-
 })();
 </script>
 
