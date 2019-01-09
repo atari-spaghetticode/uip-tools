@@ -57,7 +57,7 @@
             alert(btn.name);
         }
 
-        function updateDriveListUI(DriveArray){
+        function updateDriveViewUI(DriveArray){
 
           var div = document.createElement("div");
           div.style.width = "100%";
@@ -71,9 +71,18 @@
           document.getElementById("DriveButtonListTab").appendChild(div);
         }
 
+        function updateDirectoryViewUI(DirJsonArray){
+        
+        }
+
+        function updateFileViewUI(FileJsonArray){
+        
+        }
+
+
         function processDriveListReq(responseText) {
           var DriveArray = JSON.parse(responseText);
-          updateDriveListUI(DriveArray);  
+          updateDriveViewUI(DriveArray);  
         }
 
         function createDriveButtons(rootElement, DriveArray){
@@ -343,8 +352,13 @@ Mystic Bytes &copy;2019
 
 <script>
 (function() {
-             initSampleData();
-            updateDriveListUI(driveDummyData);
+            // test display
+
+            initSampleData();
+            updateDriveViewUI(driveDummyData);
+            updateDirectoryViewUI(directoryDummyData);
+            updateFileViewUI(fileDummyData);        
+        
             // your page initialization code here
             // the DOM will be available here
 
