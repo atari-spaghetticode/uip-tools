@@ -13,7 +13,46 @@
 #include "icon.inc"
 
     <script type="text/javascript">
-        
+
+        var driveDummyData = [];         
+        var directoryDummyData = []; 
+        var fileDummyData = []; 
+
+        function initSampleData(){
+            // sample drive data
+
+            driveDummyData.push({ name: 'A', type: 'd' });
+            driveDummyData.push({ name: 'B', type: 'd' });
+            driveDummyData.push({ name: 'C', type: 'd' });
+            driveDummyData.push({ name: 'D', type: 'd' });
+            driveDummyData.push({ name: 'E', type: 'd' });
+            driveDummyData.push({ name: 'F', type: 'd' });
+            driveDummyData.push({ name: 'G', type: 'd' });
+            driveDummyData.push({ name: 'H', type: 'd' });
+            driveDummyData.push({ name: 'I', type: 'd' });
+            driveDummyData.push({ name: 'J', type: 'd' });
+            driveDummyData.push({ name: 'K', type: 'd' });
+            driveDummyData.push({ name: 'L', type: 'd' });
+            driveDummyData.push({ name: 'M', type: 'd' });
+            driveDummyData.push({ name: 'N', type: 'd' });
+            driveDummyData.push({ name: 'O', type: 'd' });
+            driveDummyData.push({ name: 'P', type: 'd' });
+
+            // sample current dir data
+            directoryDummyData.push({ name: 'root', type: 'd' });
+            directoryDummyData.push({ name: 'AUTO', type: 'd' });
+            directoryDummyData.push({ name: 'NVDI', type: 'd' });
+            directoryDummyData.push({ name: 'CPX', type: 'd' });
+            directoryDummyData.push({ name: 'CPX', type: 'd' });
+
+            // sample file data
+            fileDummyData.push({ name: 'DESKTOP.INF', type: 'f', date: 'f', size:12234 });
+            fileDummyData.push({ name: 'ZENON.ACC', type: 'f', date: 'f', size:3434 });
+            fileDummyData.push({ name: 'DEMO.TOS', type: 'f', date: 'f', size:32000 });
+            fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: 'f', size:32000 });
+            fileDummyData.push({ name: 'README.TXT', type: 'f', date: 'f', size:1312322 });
+        }
+
         function requestChangeCurrentDirectory(btn){
             alert(btn.name);
         }
@@ -225,7 +264,7 @@
     <th>Source path</th>
     <th>Destination path</th>
     <th>Size</th>
-    <th>Status</th>
+    <th>Progress</th>
   </tr>
   <tr>
     <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
@@ -304,11 +343,15 @@ Mystic Bytes &copy;2019
 
 <script>
 (function() {
+             initSampleData();
+            updateDriveListUI(driveDummyData);
             // your page initialization code here
             // the DOM will be available here
-            updateDriveListReq();
+
+            //updateDriveListReq();
 })();
 </script>
 
 </body>
 </html>
+a
