@@ -57,33 +57,6 @@
             alert(btn.name);
         }
 
-        function updateDriveViewUI(DriveArray){
-
-          var div = document.createElement("div");
-          div.style.width = "100%";
-          div.style.height = "100px";
-          div.style.background = "black";
-          div.style.color = "white";
-          div.innerHTML = 'Drives: ';
-
-          createDriveButtons(div, DriveArray);            
-
-          document.getElementById("DriveButtonListTab").appendChild(div);
-        }
-
-        function updateDirectoryViewUI(DirJsonArray){
-        
-        }
-
-        function updateFileViewUI(FileJsonArray){
-        
-        }
-
-
-        function processDriveListReq(responseText) {
-          var DriveArray = JSON.parse(responseText);
-          updateDriveViewUI(DriveArray);  
-        }
 
         function createDriveButtons(rootElement, DriveArray){
           var buttonStr = null;
@@ -105,6 +78,69 @@
           };
 
         }
+
+        function updateDriveViewUI(DriveArray){
+
+          var div = document.createElement("div");
+          div.style.width = "100%";
+          div.style.height = "100px";
+          div.style.background = "black";
+          div.style.color = "white";
+          div.innerHTML = 'Drives: ';
+
+          createDriveButtons(div, DriveArray);            
+
+          document.getElementById("DriveButtonListTab").appendChild(div);
+        }
+
+
+        function createDirectoryEntries(rootElement, DirectoryArray){
+
+
+        }
+
+        function updateDirectoryViewUI(DirJsonArray){
+        
+          var div = document.createElement("div");
+          div.style.width = "20%";
+          div.style.height = "80%";
+          div.style.background = "black";
+          div.style.color = "white";
+          div.innerHTML = 'Directories: ';
+
+          createDirectoryEntries(div,DirJsonArray);
+
+          document.getElementById("directoryListView").appendChild(div);
+
+        }
+
+
+        function createFileEntries(rootElement, DirectoryArray){
+
+
+        }
+
+
+        function updateFileViewUI(FileJsonArray){
+            var div = document.createElement("div");
+          div.style.width = "80%";
+          div.style.height = "80%";
+          div.style.background = "black";
+          div.style.color = "white";
+          div.innerHTML = 'File list: ';
+
+          createFileEntries(div, DirectoryArray)
+          
+          document.getElementById("directoryView").appendChild(div);        
+        }
+
+
+        function processDriveListReq(FileJsonArray) {
+          var DriveArray = JSON.parse(responseText);
+          updateDriveViewUI(DriveArray);  
+        }
+
+        
 
 
         // send http request 
@@ -248,7 +284,7 @@
 </nav>
 
 <div id="mainSection" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
-  <div id="folderListView"></div>
+  <div id="directoryListView"></div>
   <div id="directoryView">
     <div id="fileView"></div>
     <div id="fileActionsView"></div>
