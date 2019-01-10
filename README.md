@@ -9,10 +9,11 @@ It is a self contained binary, including a TCP/IP based on uIP embedded stack wi
 
 Project requires Scons and m68k-atari-mint toolchain. It's simply built with this commands:
 
-`bash# mkdir uip-tools.build  
+```
+bash# mkdir uip-tools.build  
 bash# cd uip-tools.build
 bash# scons -C ../uip-tools
-`
+```
 
 # User Interface
  
@@ -24,28 +25,41 @@ In addition to the HTML based user interface, uiptool allows you to use a simple
 
 * Upload a file:
 
-		`curl -0T filename.tos 192.168.1.1/d/filename.tos`
+		```
+		curl -0T filename.tos 192.168.1.1/d/filename.tos
+		```
 
 	Note that you need to specify not only destination folder but also a file name!
 
 * Download a file:
 
-		`curl -0 192.168.1.1/c/filename.tos`
+		```
+		curl -0 192.168.1.1/c/filename.tos
+		```
 
 * Run an executable:
 
-		`curl -0 192.168.1.1/c/filename.tos?run="command line"`
+		```
+		curl -0 192.168.1.1/c/filename.tos?run="command line"
+		```
+
 	The executable needs to be already present on the recent machine.
 
 * Delete a file:
 
-		`curl -0X DELETE 192.168.1.1/c/filename.tos`
+		```
+		curl -0X DELETE 192.168.1.1/c/filename.tos
+		```
 
 * Create a folder
 
-		`curl -0 192.168.1.1/c/foldername?newfolder`
+		```
+		curl -0 192.168.1.1/c/foldername?newfolder
+		```
 
 * Request file info or directory listing in json format
 
-		`curl -0 192.168.1.1/c/filename.tos?dir`
-		`curl -0 192.168.1.1/c/foldername?dir`
+		```
+		curl -0 192.168.1.1/c/filename.tos?dir
+		curl -0 192.168.1.1/c/foldername?dir
+		```
