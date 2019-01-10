@@ -71,8 +71,8 @@
              button.name = 'SetCurrentDir' + buttonStr;
              
              button.onclick = function(){
-                requestChangeCurrentDirectory(button);
-            }
+                requestChangeCurrentDirectory(this);            
+             }
 
              rootElement.appendChild(button);
           };
@@ -129,7 +129,7 @@
           div.style.color = "white";
           div.innerHTML = 'File list: ';
 
-          createFileEntries(div, DirectoryArray)
+          createFileEntries(div, FileJsonArray)
           
           document.getElementById("directoryView").appendChild(div);        
         }
@@ -279,7 +279,7 @@
 <nav>
 <div id="DriveButtonListTab"> <div/>
 <div id="CurrentDirPath" style="clear:both;float:bottom;">
-<b>Current GEMDOS path:</b> <input type="text" id="navigationBar"/>
+<b>Current path:</b> <input type="text" id="navigationBar"/>
 </div>
 </nav>
 
