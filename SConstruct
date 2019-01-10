@@ -18,8 +18,8 @@ def setupToolchain(targetEnv):
 	targetEnv['VASM_FLAGS'] = '-Faout -quiet'
 
 	targetEnv['CXXFLAGS'] = '-fno-rtti -fno-exceptions -fomit-frame-pointer -ffast-math -I${TARGET.dir}' #-Werror -Wall
-	targetEnv['CCFLAGS'] = '-std=gnu99 -fomit-frame-pointer -m68030 -m68881 -ffast-math -I${TARGET.dir}' #-Werror -Wall
-	targetEnv['LINKFLAGS'] = '-fno-exceptions -fno-rtti -fomit-frame-pointer'
+	targetEnv['CCFLAGS'] = '-O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir}' #-Werror -Wall
+	targetEnv['LINKFLAGS'] = '-O3 -fno-exceptions -fno-rtti -fomit-frame-pointer'
 
 	# Add sensible toolchain detection?
 	targetEnv['ENV']['PATH'] = "/opt/cross-mint/bin:" + targetEnv['ENV']['PATH']
