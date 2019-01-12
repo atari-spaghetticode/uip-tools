@@ -43,20 +43,34 @@
             directoryDummyData.push({ name: 'AUTO', type: 'd' });
             directoryDummyData.push({ name: 'NVDI', type: 'd' });
             directoryDummyData.push({ name: 'CPX', type: 'd' });
-            directoryDummyData.push({ name: 'CPX', type: 'd' });
+            directoryDummyData.push({ name: 'NEW.FLD', type: 'd' });
 
             // sample file data
-            fileDummyData.push({ name: 'DESKTOP.INF', type: 'f', date: 'f', size:12234 });
-            fileDummyData.push({ name: 'ZENON.ACC', type: 'f', date: 'f', size:3434 });
-            fileDummyData.push({ name: 'DEMO.TOS', type: 'f', date: 'f', size:32000 });
-            fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: 'f', size:32000 });
-            fileDummyData.push({ name: 'README.TXT', type: 'f', date: 'f', size:1312322 });
+            fileDummyData.push({ name: 'DESKTOP.INF', type: 'f', date: '29-03-80', size: 12234 });
+            fileDummyData.push({ name: 'ZENON.ACC', type: 'f', date: '29-03-80', size: 3434 });
+            fileDummyData.push({ name: 'DEMO.TOS', type: 'f', date: '29-03-80', size: 32000 });
+            fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
+            fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
 
         function requestChangeCurrentDirectory(btn){
+            //request dir status
             alert(btn.name);
+
+            //update current path input string
+            var InputElem = document.getElementsById("currentPathInput");
+            
+            if(InputElem!=null){
+                InputElem.value=btn.name;
+            }else{
+                 InputElem.value='';
+
+            }
         }
 
+        function requestChDir(source){
+
+        }
 
         function createDriveButtons(rootElement, DriveArray){
           var buttonStr = null;
@@ -90,39 +104,55 @@
 
           createDriveButtons(div, DriveArray);            
 
-          document.getElementById("DriveButtonListTab").appendChild(div);
+          var elem = document.getElementById("DriveButtonListTab");
+          elem.appendChild(div);
         }
 
-
+        // directory view generation
         function createDirectoryEntries(rootElement, DirectoryArray){
+          var directoryStr = null;
+          
+          for(var i=0;i<DirectoryArray.length;++i){
+             directoryStr = DirectoryArray[i].name.toUpperCase();
+             if(directoryStr=='ROOT') directoryStr='..';
 
+             rootElement.innerHTML+=directoryStr + '<br/>'
+             rootElement.onclick = function(){
+                requestChDir(this);            
+             }
 
+          };
+
+            rootElement.innerHTML+='<br/>'
         }
 
         function updateDirectoryViewUI(DirJsonArray){
         
           var div = document.createElement("div");
+          div.id="DirectoryList";
           div.style.width = "20%";
           div.style.height = "80%";
-          div.style.background = "black";
-          div.style.color = "white";
-          div.innerHTML = 'Directories: ';
+          div.style.background = "pink";
+          div.style.color = "black";
+          div.innerHTML = 'Directories:<br/>';
 
           createDirectoryEntries(div,DirJsonArray);
 
-          document.getElementById("directoryListView").appendChild(div);
+          var elem = document.getElementById("directoryListView")
+          elem.appendChild(div);
 
         }
 
-
-        function createFileEntries(rootElement, DirectoryArray){
+        // file view generation 
+        function createFileEntries(rootElement, FileArray){
 
 
         }
 
 
         function updateFileViewUI(FileJsonArray){
-            var div = document.createElement("div");
+          var div = document.createElement("div");
+          div.id="FileList"
           div.style.width = "80%";
           div.style.height = "80%";
           div.style.background = "black";
@@ -131,7 +161,8 @@
 
           createFileEntries(div, FileJsonArray)
           
-          document.getElementById("directoryView").appendChild(div);        
+          var elem = document.getElementById("directoryView");        
+          elem.appendChild(div);
         }
 
 
@@ -139,8 +170,6 @@
           var DriveArray = JSON.parse(responseText);
           updateDriveViewUI(DriveArray);  
         }
-
-        
 
 
         // send http request 
@@ -279,7 +308,7 @@
 <nav>
 <div id="DriveButtonListTab"> <div/>
 <div id="CurrentDirPath" style="clear:both;float:bottom;">
-<b>Current path:</b> <input type="text" id="navigationBar"/>
+<b>Current path:</b> <input type="text" id="currentPathInput"/>
 </div>
 </nav>
 
@@ -388,8 +417,8 @@ Mystic Bytes &copy;2019
 
 <script>
 (function() {
-            // test display
 
+            // test display
             initSampleData();
             updateDriveViewUI(driveDummyData);
             updateDirectoryViewUI(directoryDummyData);
