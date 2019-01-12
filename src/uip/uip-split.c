@@ -66,7 +66,7 @@ uip_split_output(void)
 
     /* Create the first packet. This is done by altering the length
        field of the IP header and updating the checksums. */
-    uip_len = len1 + UIP_TCPIP_HLEN + 54;
+    uip_len = len1 + UIP_TCPIP_HLEN;
 #if UIP_CONF_IPV6
     /* For IPv6, the IP length field does not include the IPv6 IP header
        length. */
