@@ -35,20 +35,19 @@
 </div>
 </nav>
 
-<div id="mainSection" 
-    ondrop="event.preventDefault()" 
-    ondragover="event.preventDefault()" 
-    ondragenter="event.preventDefault()">
+<div id="mainSection" ondrop="event.preventDefault()" 
+                      ondragover="event.preventDefault()" 
+                      ondragenter="event.preventDefault()" class="clearfix">
 
   <div id="fileManagementBlock">
-  <div id="directoryListView"></div>
+  <div id="directoryListView" class="column menu"></div>
   
-  <div id="directoryView">
-    <div class="fileView" id="fileView"><div/>
+  <div id="directoryView" class="column content">
+    <div class="fileView" id="fileView"/>
     <div class="fileActionsView" id="fileActionsView"/>
   </div>
 
-</div>
+  </div>
 
  <!-- Tab links -->
  <div id="TransferTabs">
@@ -86,10 +85,11 @@
 </table> 
 </div>
 </div>
+</div> <!-- end main section -->
 
 <div id="TransfersOkTab" class="tabcontent">
     <div id=TransferOkGrid>
-    <div id="TabActionSection"><button class="button" id="ClearTransferOkButton">Clear Completed Transfers</button></div>
+    <div id="TabActionSection"><button class="button" id="ClearTransferOkTabButton">Clear Completed Transfers</button></div>
     <table>
     <tr>
         <th>Source path</th>
@@ -116,7 +116,6 @@
     <div id="TransferFailedGrid">
         <div id="TabActionSection">
             <button class="button" id="ClearTransfersFailedTabButton">Clear failed transfers</button>
-            <button class="button" id="RequeFailedTransfersTabButton">Reque failed transfers</button>
         </div>
         <table>
         <tr>
@@ -140,10 +139,9 @@
         </table> 
     </div>
 </div>
+
 </div> 
 <!-- end tab content -->
-
-</div> <!-- end main section -->
 
 <footer>
 Mystic Bytes &copy;2019

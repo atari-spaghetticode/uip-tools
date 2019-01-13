@@ -6,6 +6,11 @@
             overflow: hidden;
             clear:both;
     }
+
+* {
+  box-sizing: border-box;
+}
+
  
     nav{
         background-color: black;
@@ -24,72 +29,90 @@
         clear:both;
     }
 
-    input#currentPathInput{
+    input #currentPathInput{
         width:200px;
     }
 
-    input#currentPathInput.pathInputControl{
+    .pathInputControl input #currentPathInput{
         width:20%;
         overflow:hidden;
         border:0px;
         margin:0px;
     }
 
-    div#CurrentDirPath{
+    div #CurrentDirPath{
         width:200px;
         border:0px;
         margin:0px;
     }
 
-    div#DriveButtonGroup{
-        width:100%;
-    };
 
-
-    div#mainSection{
+    div #mainSection{
         width:100%;
         height:80%;
     }
 
 
-    div#fileManagementBlock{
+    div #fileManagementBlock{
         width:100%;
         height:80%;
     }
 
-    div#directoryListView{
+    div #directoryListView{
         width:20%;
         overflow:hidden;
     }
 
-    div#fileListView{
+    div #fileListView{
         width:80%;
         overflow:hidden;
     }
 
-    div#DirectoryList{
+div #TransferTabs{
+
+    float:none;
+}
+/*    div #DirectoryList{
      width : 20%;
      height : 80%;
      background-color: pink;
      color : black;
     };
 
-    div#DriveButtonListTab{
+    div #DriveButtonGroup{
+
+    };*/
+
+    div #DriveButtonListTab{
         width:80%;
         float:right;
         overflow:hidden;
     }
 
+    .column {
+        float: left;
+        padding: 15px;
+    }
+
+    .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+     }
+
+    .menu {
+        width: 25%;
+    }
+
+    .content {
+        width: 75%;
+    }
+
+
    .directoryView {
             height: 80%;
-            width: 200px;
-            margin: 0px;
-            padding: 0px;
-            overflow: hidden;
    }
 
-
-    <!-- log tab style -->
     /* Style the tab */
     .tab {
         overflow: hidden;
@@ -116,7 +139,7 @@
     }
 
     /* Create an active/current tablink class */
-    .tab button.active {
+    .tab button:active {
         background-color: #ccc;
     }
 

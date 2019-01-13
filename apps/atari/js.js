@@ -61,7 +61,7 @@
 
         } 
 
-        function createDriveButtons(rootElement, DriveArray){
+        function createDriveButtons(node, DriveArray){
           var buttonStr = null;
           
           for(var i=0;i<DriveArray.length;++i){
@@ -77,7 +77,7 @@
                 requestChangeCurrentDirectory(this);            
              }
 
-             rootElement.appendChild(button);
+             node.appendChild(button);
           };
 
         }
@@ -123,15 +123,15 @@
         }
 
         // file view generation 
-        function createFileEntries(rootElement, FileArray){
+        function createFileEntries(node, FileArray){
           var fileStr = null;
           
           for(var i=0;i<FileArray.length;++i){
              fileStr = FileArray[i].name.toUpperCase();
-             rootElement.innerHTML += fileStr + '<br/>'
+             node.innerHTML += fileStr + '<br/>'
           };
 
-            rootElement.innerHTML+='<br/>'
+            node.innerHTML+='<br/>'
         }
 
 
@@ -225,7 +225,16 @@
         }
 
         // Show the current tab, and add an "active" class to the button that opened the tab
-        document.getElementById(tabName).style.display = "block";
-        document.getElementById("Clear" + tabName + "Button").style.visibility = 'visible';       
-        evt.currentTarget.className += " active";
+        var elem=document.getElementById(tabName)
+        
+        if(elem!=null){
+            elem.style.display = "block";
+        }
+
+        elem = document.getElementById("Clear" + tabName + "Button")
+        if(elem!=null){
+          elem.style.visibility = 'visible';       
+          evt.currentTarget.className += " active";
+        }
+        
     } 
