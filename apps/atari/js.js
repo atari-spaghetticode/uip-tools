@@ -37,7 +37,7 @@
             fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
-        <!-- ----------------------------------------------------------------------------------------- -->
+<!-- ----------------------------------------------------------------------------------------- -->
 
         function requestChangeCurrentDirectory(btn){
             //request dir status
@@ -127,14 +127,8 @@
           var fileStr = null;
           
           for(var i=0;i<FileArray.length;++i){
-             FileArray = FileArray[i].name.toUpperCase();
-
-             rootElement.innerHTML+=FileArray + '<br/>'
-             
-             rootElement.onclick = function(){
-                requestFileAction(this);            
-             }
-
+             fileStr = FileArray[i].name.toUpperCase();
+             rootElement.innerHTML += fileStr + '<br/>'
           };
 
             rootElement.innerHTML+='<br/>'
@@ -149,7 +143,7 @@
 
           createFileEntries(div, FileJsonArray)
           
-          var elem = document.getElementById("directoryView");        
+          var elem = document.getElementById("fileView");        
           elem.appendChild(div);
         }
 

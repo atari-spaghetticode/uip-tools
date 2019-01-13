@@ -9,7 +9,9 @@
 <meta name="generator" content="Atari ST/STe/TT/F030/F060">
 <title id='Description'>uIPtool</title>
  
-#include "favicon.inc"
+<link href=" 
+#include "favicon.dat"
+" rel="icon" type="image/x-icon">
 
 <script type="text/javascript">
 #include "js.js"
@@ -29,7 +31,7 @@
 <nav>
 <div id="DriveButtonListTab"/>
 <div class="pathInputControl" id="CurrentDirPath">
-<input type="text" id="currentPathInput" maxlength=128/>
+<input type="text" id="currentPathInput" maxlength=128 pattern="^(?:[\w]\)(\\[A-Z_\-\s0-9\.]+)"/>
 </div>
 </nav>
 
@@ -42,7 +44,7 @@
   <div id="directoryListView"></div>
   
   <div id="directoryView">
-    <div class="fileView" id="fileView"/>
+    <div class="fileView" id="fileView"><div/>
     <div class="fileActionsView" id="fileActionsView"/>
   </div>
 
@@ -60,7 +62,7 @@
 <div id="UploadQueTab" class="tabcontent">
 <div id=UploadGrid>
  <div id="TabActionSection">
-    <button class="button" id="ClearUploadQueTabButton">Clear</button>
+    <button class="button" id="ClearUploadQueTabButton">Clear Upload Que</button>
  </div> 
  <table>
   <tr>
@@ -87,7 +89,7 @@
 
 <div id="TransfersOkTab" class="tabcontent">
     <div id=TransferOkGrid>
-    <div id="TabActionSection"><button class="button" id="ClearTransferOkButton">Clear</button></div>
+    <div id="TabActionSection"><button class="button" id="ClearTransferOkButton">Clear Completed Transfers</button></div>
     <table>
     <tr>
         <th>Source path</th>
@@ -112,7 +114,10 @@
 </div>
 <div id="TransfersFailedTab" class="tabcontent">
     <div id="TransferFailedGrid">
-        <div id="TabActionSection"><button class="button" id="ClearTransfersFailedTabButton">Clear</button></div>
+        <div id="TabActionSection">
+            <button class="button" id="ClearTransfersFailedTabButton">Clear failed transfers</button>
+            <button class="button" id="RequeFailedTransfersTabButton">Reque failed transfers</button>
+        </div>
         <table>
         <tr>
             <th>Source path</th>

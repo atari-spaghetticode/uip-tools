@@ -1,11 +1,11 @@
-     html, body {
+   html, body {
             height: 100%;
             width: 100%;
             margin: 0px;
             padding: 0px;
             overflow: hidden;
             clear:both;
-      }
+    }
  
     nav{
         background-color: black;
@@ -59,11 +59,17 @@
 
     div#directoryListView{
         width:20%;
+        overflow:hidden;
+    }
+
+    div#fileListView{
+        width:80%;
+        overflow:hidden;
     }
 
     div#DirectoryList{
-     width : "20%";
-     height : "80%";
+     width : 20%;
+     height : 80%;
      background-color: pink;
      color : black;
     };
@@ -126,6 +132,6 @@
         width:100%;
      }
 
-     .tabcontent div#TabActionSection{
+     .tabcontent #TabActionSection{
         clear:both;
      }
