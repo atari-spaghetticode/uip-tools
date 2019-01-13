@@ -22,7 +22,7 @@ def detectLibCMini(targetEnv):
     else:
         print "Libcmini not found, using default libs."
 
-def CompressedProgramMaybe(env, target):
+def CompressProgramMaybe(env, target):
     upx = env.WhereIs('upx')
     if upx:
         print "UPX detected, compressing target."
@@ -54,7 +54,7 @@ target = hostEnv.SConscript(
     src_dir = "../" )
 
 # Optionally compress the binary with UPX
-CompressedProgramMaybe(targetEnv, target)
+CompressProgramMaybe(targetEnv, target)
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))
 SetOption('num_jobs', num_cpu)
