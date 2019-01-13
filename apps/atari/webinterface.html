@@ -6,14 +6,14 @@
 <meta name="keywords" content="HTML,CSS,XML,JavaScript">
 <meta name="author" content="Mystic Bytes">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="human">
-
+<meta name="generator" content="Atari ST/STe/TT/F030/F060">
 <title id='Description'>uIPtool</title>
  
 #include "icon.inc"
 
     <script type="text/javascript">
 
+        <!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
         var directoryDummyData = []; 
         var fileDummyData = []; 
@@ -52,6 +52,7 @@
             fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
+        <!-- ----------------------------------------------------------------------------------------- -->
 
         function requestChangeCurrentDirectory(btn){
             //request dir status
@@ -64,13 +65,16 @@
                 InputElem.value=btn.name;
             }else{
                  InputElem.value='';
-
             }
         }
 
         function requestChDir(source){
 
         }
+
+        function requestFileAction(source){
+
+        } 
 
         function createDriveButtons(rootElement, DriveArray){
           var buttonStr = null;
@@ -96,10 +100,6 @@
         function updateDriveViewUI(DriveArray){
 
           var div = document.createElement("div");
-          div.style.width = "100%";
-          div.style.height = "100px";
-          div.style.background = "black";
-          div.style.color = "white";
           div.innerHTML = 'Drives: ';
 
           createDriveButtons(div, DriveArray);            
@@ -130,34 +130,42 @@
         
           var div = document.createElement("div");
           div.id="DirectoryList";
-          div.style.width = "20%";
-          div.style.height = "80%";
-          div.style.background = "pink";
-          div.style.color = "black";
           div.innerHTML = 'Directories:<br/>';
 
           createDirectoryEntries(div,DirJsonArray);
 
           var elem = document.getElementById("directoryListView")
           elem.appendChild(div);
-
         }
 
         // file view generation 
         function createFileEntries(rootElement, FileArray){
+          var fileStr = null;
+          
+          for(var i=0;i<FileArray.length;++i){
+             FileArray = FileArray[i].name.toUpperCase();
 
+             rootElement.innerHTML+=FileArray + '<br/>'
+             
+             rootElement.onclick = function(){
+                requestFileAction(this);            
+             }
 
+          };
+
+            rootElement.innerHTML+='<br/>'
         }
 
 
         function updateFileViewUI(FileJsonArray){
+
           var div = document.createElement("div");
           div.id="FileList"
           div.style.width = "80%";
           div.style.height = "80%";
           div.style.background = "black";
-          div.style.color = "white";
-          div.innerHTML = 'File list: ';
+          div.style.color = "red";
+          div.innerHTML = 'File list:<br/>';
 
           createFileEntries(div, FileJsonArray)
           
@@ -179,7 +187,6 @@
             
             if(isAsync!=true){
                 xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
-
                 xhr.send();
                 return xhr.responseText; 
             }else{
@@ -201,13 +208,14 @@
         }
 
 
-// This returns at least 32bit int with date encoded for DOSTIME struct
-// typedef struct
-// {
-//      uint16_t     time;  /* Time like Tgettime */
-//      uint16_t     date;  /* Date like Tgetdate */
-// } DOSTIME;
-     function convertDateToAtariTOSFormat(date) {
+    // This returns at least 32bit int with date encoded for DOSTIME struct
+    // typedef struct
+    // {
+    //      uint16_t     time;  /* Time like Tgettime */
+    //      uint16_t     date;  /* Date like Tgetdate */
+    // } DOSTIME;
+    
+    function convertDateToAtariTOSFormat(date) {
         var tosYear = (date.getFullYear() - 1980);
         tosYear = tosYear < 0 ? 0 : tosYear;
         tosYear = tosYear > 119 ? 119 : tosYear;
@@ -250,16 +258,63 @@
 
     </script>
     <style type="text/css">
-        html, body
-        {
+     
+     html, body {
             height: 100%;
             width: 100%;
             margin: 0px;
             padding: 0px;
             overflow: hidden;
-          clear:both;
-        }
-       
+            clear:both;
+      }
+ 
+    nav {
+        width:100%;
+        border: 0px;
+    }   
+
+    footer {
+        width:100%;
+        float:none;    
+        border:0px;
+        clear:both;
+    }
+
+    input#currentPathInput{
+        width:200px;
+    }
+
+    input#currentPathInput.pathInputControl{
+        width:20%;
+        overflow:hidden;
+        float:right;
+    }
+
+    div#mainSection{
+        width:100%;
+        height:80%;
+    }
+    div#DirectoryList{
+     width = "20%";
+     height = "80%";
+     background = "pink";
+     color = "black";
+    };
+
+    div#DriveButtonListTab{
+        width:80%;
+        float:left;
+        overflow:hidden;
+    }
+
+   .directoryView {
+            height: 80%;
+            width: 200px;
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+   }
+
 
     <!-- log tab style -->
     /* Style the tab */
@@ -267,6 +322,8 @@
         overflow: hidden;
         border: 1px solid #ccc;
         background-color: #f1f1f1;
+        width:100%;
+        clear:both;
     }
 
     /* Style the buttons that are used to open the tab content */
@@ -306,21 +363,22 @@
 </header>
 <!-- Navigation interface -->
 <nav>
-<div id="DriveButtonListTab"> <div/>
-<div id="CurrentDirPath" style="clear:both;float:bottom;">
-<b>Current path:</b> <input type="text" id="currentPathInput"/>
+<div id="DriveButtonListTab"/>
+<div class="pathInputControl" id="CurrentDirPath">
+<input type="text" id="currentPathInput" maxlength=128/>
 </div>
 </nav>
 
 <div id="mainSection" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
-  <div id="directoryListView"></div>
+  <div id="fileManagementBlock">
+  <div id="directoryListView"/>
   <div id="directoryView">
-    <div id="fileView"></div>
-    <div id="fileActionsView"></div>
+    <div class="fileView" id="fileView"></div>
+    <div class="fileActionsView" id="fileActionsView"></div>
   </div>
- </div>
-
+</div>
  <!-- Tab links -->
+ <div id="TransferTabs">
  <div class="tab">
   <button class="tablinks" onclick="openLogTab(event, 'UploadQueTab')">Upload Que</button>
   <button class="tablinks" onclick="openLogTab(event, 'TransfersOkTab')">Successfull transfers</button>
@@ -333,7 +391,7 @@
  <div>
     <button class="button" id="ClearUploadQueTabButton">Clear</button>
  </div> 
- <table style="width:100%">
+ <table>
   <tr>
     <th>Source path</th>
     <th>Destination path</th>
@@ -358,10 +416,8 @@
 
 <div id="TransfersOkTab" class="tabcontent">
     <div id=TransferOkGrid>
-    <div> 
-        <button class="button" id="ClearTransferOkButton">Clear</button> 
-    </div>
-    <table style="width:100%">
+    <div><button class="button" id="ClearTransferOkButton">Clear</button></div>
+    <table>
     <tr>
         <th>Source path</th>
         <th>Destination path</th>
@@ -383,13 +439,10 @@
     </table> 
     </div>
 </div>
-
 <div id="TransfersFailedTab" class="tabcontent">
-    <div id=TransferFailedGrid>
-        <div>
-            <button class="button" id="ClearTransfersFailedTabButton">Clear</button>
-        </div>
-        <table style="width:100%">
+    <div id="TransferFailedGrid">
+        <div><button class="button" id="ClearTransfersFailedTabButton">Clear</button></div>
+        <table>
         <tr>
             <th>Source path</th>
             <th>Destination path</th>
@@ -410,7 +463,12 @@
         </tr>
         </table> 
     </div>
+</div>
 </div> 
+<!-- end tab content -->
+
+ </div>
+
 <footer>
 Mystic Bytes &copy;2019
 </footer>
@@ -433,4 +491,3 @@ Mystic Bytes &copy;2019
 
 </body>
 </html>
-a
