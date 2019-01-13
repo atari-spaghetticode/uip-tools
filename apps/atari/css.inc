@@ -1,5 +1,3 @@
-    <style type="text/css">
-     
      html, body {
             height: 100%;
             width: 100%;
@@ -131,4 +129,3 @@
      .tabcontent div#TabActionSection{
         clear:both;
      }
-    </style>

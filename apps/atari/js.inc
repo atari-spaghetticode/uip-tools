@@ -1,6 +1,4 @@
-    <script type="text/javascript">
-
-        <!-- this will be gone after http interfaces resurrection -->
+<!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
         var directoryDummyData = []; 
         var fileDummyData = []; 
@@ -237,5 +235,3 @@
         document.getElementById("Clear" + tabName + "Button").style.visibility = 'visible';       
         evt.currentTarget.className += " active";
     } 
-
-    </script>
