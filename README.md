@@ -15,6 +15,16 @@ bash# cd uip-tools.build
 bash# scons -C ../uip-tools
 ```
 
+It's possible to build the project with libcmini like follows:
+
+```
+bash#  LIBCMINI=/path/libcmini/libcmini/build/ scons -C ../uip-tools
+```
+
+This cuts about 100KB of the executable size.
+
+If UPX is detected during the build then it will be used to compress the resulting in even smaller binary.
+
 # User Interface
  
 TBD
