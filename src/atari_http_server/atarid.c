@@ -143,7 +143,7 @@ size_t file_size(const char* path)
 }
 
 static
-PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* filename,const size_t filelen))
+PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* filename, const size_t filelen))
 {
   PT_BEGIN(worker);
 
@@ -173,7 +173,7 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
       s->temp_file_length > s->inputbuf_size ?
         s->inputbuf_size : s->temp_file_length);
 
-    Fwrite(s->fd,PSOCK_DATALEN(&s->sin), s->inputbuf);
+    Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
@@ -193,7 +193,7 @@ PT_THREAD(receive_file(struct pt* worker,struct atarid_state *s,const char* file
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(handle_post(struct pt* worker,struct atarid_state *s))
+PT_THREAD(handle_post(struct pt* worker, struct atarid_state *s))
 {
   PT_BEGIN(worker);
 
@@ -249,11 +249,14 @@ static void file_stat_single(struct Repsonse* response)
   fstrcat(response," {\r\n"
     "    \"type\" : \"%s\",\r\n",
     dta.dta_attribute&FA_DIR ? "d" : "f");
+
   if (!(dta.dta_attribute&FA_DIR)) {
     fstrcat(response, "    \"size\" : \"%u\",\r\n", dta.dta_size);
   }
-  strncpy (json_name, dta.dta_name,sizeof(json_name));
-  for(size_t i=0;json_name[i] != 0; i++)
+
+  strncpy (json_name, dta.dta_name, sizeof(json_name));
+
+  for(size_t i=0; json_name[i] != 0; i++)
   {
     if (json_name[i] == '\\') {
       json_name[i] = '_';
@@ -300,7 +303,7 @@ const char* file_stat_json(const char* path)
     while (drv_map) {
       if (drv_map&1) {
         if (!first){
-          fstrcat(&response,",\r\n");
+          fstrcat(&response, ",\r\n");
         }
         first = 0;
         fstrcat(&response, " {\r\n"
@@ -314,14 +317,14 @@ const char* file_stat_json(const char* path)
     }
   }
     /* if we're at the root of the drive or at a folder */
-  else if (strlen(dos_path) == 3 || 0 == Fsfirst(dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
+  else if (strlen(dos_path) == 3 || 0 == Fsfirst(dos_path, FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
     // ok so this is a folder
     if (strlen(dos_path) == 3 || (dta.dta_attribute&FA_DIR)) {
       if (dos_path[strlen(dos_path)-1] != '\\') {
         strcat(dos_path,"\\");
       }
       strcat(dos_path,"*.*");
-      if (0 == Fsfirst(dos_path,FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
+      if (0 == Fsfirst(dos_path, FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
         int first = 1;
         do {
           // skip .. and . pseudo folders
@@ -349,7 +352,7 @@ const char* file_stat_json(const char* path)
       LOG("path not found\r\n");
   }
 
-  fstrcat(&response,"]\r\n");
+  fstrcat(&response, "]\r\n");
 
   return response.malloc_block;
 }
@@ -378,7 +381,7 @@ int fileSourceSize(struct DataSource* ds)
   return fs->size;
 }
 
-size_t fileSourceRead(struct DataSource* ds,  size_t size, void* ptr)
+size_t fileSourceRead(struct DataSource* ds, size_t size, void* ptr)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   return (size_t)Fread(fs->fd, size, ptr);
@@ -422,7 +425,7 @@ struct MemSource
   char ownership;
 };
 
-int memSourceRead(struct DataSource* ds,  size_t size, void* ptr)
+int memSourceRead(struct DataSource* ds, size_t size, void* ptr)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   size_t actual_size = size + mem->current > mem->size ? mem->size-mem->current : size;
@@ -482,7 +485,7 @@ struct GetState {
 };
 
 static
-PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
+PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 {
   struct GetState* this = (struct GetState*)s->heap;
   struct DataSource* src = s->handler_datasrc;
@@ -512,7 +515,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
   }
 
   while (1) {
-    this->bytes_read = src->read(src,UIP_TCP_MSS-this->buffer_start_offset,
+    this->bytes_read = src->read(src, UIP_TCP_MSS-this->buffer_start_offset,
             &s->inputbuf[this->buffer_start_offset]);
     if (this->bytes_read == 0)
       break;
@@ -521,7 +524,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 
     }
 
-    PSOCK_SEND2(worker, &s->sin,  s->inputbuf, this->bytes_read+this->buffer_start_offset);
+    PSOCK_SEND2(worker, &s->sin, s->inputbuf, this->bytes_read+this->buffer_start_offset);
     this->buffer_start_offset = 0;
   }
 
@@ -534,7 +537,7 @@ PT_THREAD(handle_get(struct pt* worker,struct atarid_state *s))
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
+PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 {
   char temp_path[256];
   size_t len;
@@ -558,9 +561,9 @@ PT_THREAD(handle_run(struct pt* worker,struct atarid_state *s))
   // set cwd
   Dsetpath(temp_path);
   // Bconmap(7);
-  void* basepage = Pexec(PE_LOAD,s->filename,"","");
-  Fforce(1,2);
-  Pexec(PE_GO,0,basepage,0);
+  void* basepage = Pexec(PE_LOAD, s->filename, "", "");
+  Fforce(1, 2);
+  Pexec(PE_GO, 0, basepage, 0);
 
   PT_END(worker);
 }
@@ -580,7 +583,7 @@ void parse_url(struct atarid_state *s)
   *fn_end = 0;
 
   /* store original path */
-  strncpy(s->original_filename,fn, sizeof(s->original_filename));
+  strncpy(s->original_filename, fn, sizeof(s->original_filename));
 
   /* extract query string */
 
@@ -592,7 +595,6 @@ void parse_url(struct atarid_state *s)
   if (fn2 != fn_end) {
     /* got query string */
     strncpy (s->query, &fn2[1], sizeof(s->query));
-//    printf("query \'%s\'\r\n", fn);
     *fn2=0;
   }
 
@@ -606,13 +608,12 @@ void parse_url(struct atarid_state *s)
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
   strncpy(&s->filename[2],++fn, sizeof(s->filename)-2);
-//  printf("parse_url \'%s\' query \'%s\'\r\n",s->original_filename, s->query);
 }
 
 static void query_dir(struct atarid_state *s)
 {
   char* dir_json = file_stat_json(s->filename);
-  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json),"text/javascript","identity",1);
+  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json), "text/javascript", "identity",1);
 }
 
 static void query_run(struct atarid_state *s)
@@ -645,10 +646,10 @@ static int parse_query(struct atarid_state *s)
     const char* query_string;
     void (*query_func)(struct atarid_state *s);
   } query_mapping [] = {
-    {"dir",query_dir},
-    {"run",query_run},
-    {"newfolder",query_newfolder},
-    {"setfiledate",query_setfiledate},
+    {"dir", query_dir},
+    {"run", query_run},
+    {"newfolder", query_newfolder},
+    {"setfiledate", query_setfiledate},
     {NULL,NULL}
   };
 
@@ -796,7 +797,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
       }
 
       for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i) {
-        if (0 == memcmp(s->inputbuf,commands[i].entry,commands[i].entry_len - 1)) {
+        if (0 == memcmp(s->inputbuf, commands[i].entry, commands[i].entry_len - 1)) {
           if (commands[i].request_type) {
             LOG(commands[i].entry);
             LOG(": ");
@@ -814,7 +815,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
     /* if handler function was set execute it */
     if (s->handler_func) {
       PT_INIT(&s->worker[0]);
-      PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0],s));
+      PSOCK_WAIT_THREAD(&s->sin, s->handler_func(&s->worker[0], s));
     }
 
     LOG("\r\n");
