@@ -10,351 +10,9 @@
 <title id='Description'>uIPtool</title>
  
 #include "icon.inc"
+#include "js.inc"
+#include "css.inc"
 
-    <script type="text/javascript">
-
-        <!-- this will be gone after http interfaces resurrection -->
-        var driveDummyData = [];         
-        var directoryDummyData = []; 
-        var fileDummyData = []; 
-
-        function initSampleData(){
-            // sample drive data
-
-            driveDummyData.push({ name: 'A', type: 'd' });
-            driveDummyData.push({ name: 'B', type: 'd' });
-            driveDummyData.push({ name: 'C', type: 'd' });
-            driveDummyData.push({ name: 'D', type: 'd' });
-            driveDummyData.push({ name: 'E', type: 'd' });
-            driveDummyData.push({ name: 'F', type: 'd' });
-            driveDummyData.push({ name: 'G', type: 'd' });
-            driveDummyData.push({ name: 'H', type: 'd' });
-            driveDummyData.push({ name: 'I', type: 'd' });
-            driveDummyData.push({ name: 'J', type: 'd' });
-            driveDummyData.push({ name: 'K', type: 'd' });
-            driveDummyData.push({ name: 'L', type: 'd' });
-            driveDummyData.push({ name: 'M', type: 'd' });
-            driveDummyData.push({ name: 'N', type: 'd' });
-            driveDummyData.push({ name: 'O', type: 'd' });
-            driveDummyData.push({ name: 'P', type: 'd' });
-
-            // sample current dir data
-            directoryDummyData.push({ name: 'root', type: 'd' });
-            directoryDummyData.push({ name: 'AUTO', type: 'd' });
-            directoryDummyData.push({ name: 'NVDI', type: 'd' });
-            directoryDummyData.push({ name: 'CPX', type: 'd' });
-            directoryDummyData.push({ name: 'NEW.FLD', type: 'd' });
-
-            // sample file data
-            fileDummyData.push({ name: 'DESKTOP.INF', type: 'f', date: '29-03-80', size: 12234 });
-            fileDummyData.push({ name: 'ZENON.ACC', type: 'f', date: '29-03-80', size: 3434 });
-            fileDummyData.push({ name: 'DEMO.TOS', type: 'f', date: '29-03-80', size: 32000 });
-            fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
-            fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
-        }
-        <!-- ----------------------------------------------------------------------------------------- -->
-
-        function requestChangeCurrentDirectory(btn){
-            //request dir status
-            alert(btn.name);
-
-            //update current path input string
-            var InputElem = document.getElementsById("currentPathInput");
-            
-            if(InputElem!=null){
-                InputElem.value=btn.name;
-            }else{
-                 InputElem.value='';
-            }
-        }
-
-        function requestChDir(source){
-
-        }
-
-        function requestFileAction(source){
-
-        } 
-
-        function createDriveButtons(rootElement, DriveArray){
-          var buttonStr = null;
-          
-          for(var i=0;i<DriveArray.length;++i){
-
-             buttonStr = DriveArray[i].name.toUpperCase();
-             var button = document.createElement("button");
-             var textNode = document.createTextNode(buttonStr + ':');
-             button.appendChild(textNode);
-             button.type='button';
-             button.name = 'SetCurrentDir' + buttonStr;
-             
-             button.onclick = function(){
-                requestChangeCurrentDirectory(this);            
-             }
-
-             rootElement.appendChild(button);
-          };
-
-        }
-
-        function updateDriveViewUI(DriveArray){
-
-          var div = document.createElement("div");
-          div.innerHTML = 'Drives: ';
-
-          createDriveButtons(div, DriveArray);            
-
-          var elem = document.getElementById("DriveButtonListTab");
-          elem.appendChild(div);
-        }
-
-        // directory view generation
-        function createDirectoryEntries(rootElement, DirectoryArray){
-          var directoryStr = null;
-          
-          for(var i=0;i<DirectoryArray.length;++i){
-             directoryStr = DirectoryArray[i].name.toUpperCase();
-             if(directoryStr=='ROOT') directoryStr='..';
-
-             rootElement.innerHTML+=directoryStr + '<br/>'
-             rootElement.onclick = function(){
-                requestChDir(this);            
-             }
-
-          };
-
-            rootElement.innerHTML+='<br/>'
-        }
-
-        function updateDirectoryViewUI(DirJsonArray){
-        
-          var div = document.createElement("div");
-          div.id="DirectoryList";
-          div.innerHTML = 'Directories:<br/>';
-
-          createDirectoryEntries(div,DirJsonArray);
-
-          var elem = document.getElementById("directoryListView")
-          elem.appendChild(div);
-        }
-
-        // file view generation 
-        function createFileEntries(rootElement, FileArray){
-          var fileStr = null;
-          
-          for(var i=0;i<FileArray.length;++i){
-             FileArray = FileArray[i].name.toUpperCase();
-
-             rootElement.innerHTML+=FileArray + '<br/>'
-             
-             rootElement.onclick = function(){
-                requestFileAction(this);            
-             }
-
-          };
-
-            rootElement.innerHTML+='<br/>'
-        }
-
-
-        function updateFileViewUI(FileJsonArray){
-
-          var div = document.createElement("div");
-          div.id="FileList"
-          div.style.width = "80%";
-          div.style.height = "80%";
-          div.style.background = "black";
-          div.style.color = "red";
-          div.innerHTML = 'File list:<br/>';
-
-          createFileEntries(div, FileJsonArray)
-          
-          var elem = document.getElementById("directoryView");        
-          elem.appendChild(div);
-        }
-
-
-        function processDriveListReq(FileJsonArray) {
-          var DriveArray = JSON.parse(responseText);
-          updateDriveViewUI(DriveArray);  
-        }
-
-
-        // send http request 
-        function sendHttpReq(addr, params, requestType, isAsync, requestHandler){
-
-            var xhr = new XMLHttpRequest();
-            
-            if(isAsync!=true){
-                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
-                xhr.send();
-                return xhr.responseText; 
-            }else{
-                xhr.onreadystatechange = function() { 
-                    if (xhr.readyState == 4 && xhr.status == 200)
-                       requestHandler(xhr.responseText);
-                    }
-
-                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
-                xhr.send();
-            }
-
-            return null;
-        }
-
-        function updateDriveListReq(){
-            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);
-            
-        }
-
-
-    // This returns at least 32bit int with date encoded for DOSTIME struct
-    // typedef struct
-    // {
-    //      uint16_t     time;  /* Time like Tgettime */
-    //      uint16_t     date;  /* Date like Tgetdate */
-    // } DOSTIME;
-    
-    function convertDateToAtariTOSFormat(date) {
-        var tosYear = (date.getFullYear() - 1980);
-        tosYear = tosYear < 0 ? 0 : tosYear;
-        tosYear = tosYear > 119 ? 119 : tosYear;
-        var tosDay = date.getDate();
-        var tosMonth = date.getMonth() + 1;
-        var tosDate = (tosYear) << 9 | (tosMonth << 5) | tosDay;
-        var tosSeconds = date.getSeconds() / 2;
-        var tosMinutes = date.getMinutes();
-        var tosHours = date.getHours();
-        var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
-        return ((tosTime<<16) | tosDate) >>> 0;
-     }
-
-    function openLogTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-
-        tabcontent = document.getElementsByClassName("tabcontent");
-        tablinks = document.getElementsByClassName("tablinks");
-        buttoncontent = document.getElementsByClassName("button");
-        
-        // Get all elements with class="tabcontent" and hide them
-        for (i = 0; i < tabcontent.length; ++i) {
-            tabcontent[i].style.display = "none";
-        }
-
-        // Get all elements with class="tablinks" and remove the class "active"
-        for (i = 0; i < tablinks.length; ++i) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-
-       for (i = 0; i < buttoncontent.length; ++i) {
-            buttoncontent[i].style.visibility = 'hidden';
-        }
-
-        // Show the current tab, and add an "active" class to the button that opened the tab
-        document.getElementById(tabName).style.display = "block";
-        document.getElementById("Clear" + tabName + "Button").style.visibility = 'visible';       
-        evt.currentTarget.className += " active";
-    } 
-
-    </script>
-    <style type="text/css">
-     
-     html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0px;
-            padding: 0px;
-            overflow: hidden;
-            clear:both;
-      }
- 
-    nav {
-        width:100%;
-        border: 0px;
-    }   
-
-    footer {
-        width:100%;
-        float:none;    
-        border:0px;
-        clear:both;
-    }
-
-    input#currentPathInput{
-        width:200px;
-    }
-
-    input#currentPathInput.pathInputControl{
-        width:20%;
-        overflow:hidden;
-        float:right;
-    }
-
-    div#mainSection{
-        width:100%;
-        height:80%;
-    }
-    div#DirectoryList{
-     width = "20%";
-     height = "80%";
-     background = "pink";
-     color = "black";
-    };
-
-    div#DriveButtonListTab{
-        width:80%;
-        float:left;
-        overflow:hidden;
-    }
-
-   .directoryView {
-            height: 80%;
-            width: 200px;
-            margin: 0px;
-            padding: 0px;
-            overflow: hidden;
-   }
-
-
-    <!-- log tab style -->
-    /* Style the tab */
-    .tab {
-        overflow: hidden;
-        border: 1px solid #ccc;
-        background-color: #f1f1f1;
-        width:100%;
-        clear:both;
-    }
-
-    /* Style the buttons that are used to open the tab content */
-    .tab button {
-        background-color: inherit;
-        float: left;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        padding: 14px 16px;
-        transition: 0.3s;
-    }
-
-    /* Change background color of buttons on hover */
-    .tab button:hover {
-        background-color: #ddd;
-    }
-
-    /* Create an active/current tablink class */
-    .tab button.active {
-        background-color: #ccc;
-    }
-
-    /* Style the tab content */
-    .tabcontent {
-        display: none;
-        padding: 6px 12px;
-        border: 1px solid #ccc;
-        border-top: none;
-     } 
-    </style>
 </head>
 <body>
 
@@ -369,26 +27,33 @@
 </div>
 </nav>
 
-<div id="mainSection" ondrop="event.preventDefault()" ondragover="event.preventDefault()" ondragenter="event.preventDefault()">
+<div id="mainSection" 
+    ondrop="event.preventDefault()" 
+    ondragover="event.preventDefault()" 
+    ondragenter="event.preventDefault()">
+
   <div id="fileManagementBlock">
-  <div id="directoryListView"/>
+  <div id="directoryListView"></div>
+  
   <div id="directoryView">
-    <div class="fileView" id="fileView"></div>
-    <div class="fileActionsView" id="fileActionsView"></div>
+    <div class="fileView" id="fileView"/>
+    <div class="fileActionsView" id="fileActionsView"/>
   </div>
+
 </div>
+
  <!-- Tab links -->
  <div id="TransferTabs">
  <div class="tab">
-  <button class="tablinks" onclick="openLogTab(event, 'UploadQueTab')">Upload Que</button>
-  <button class="tablinks" onclick="openLogTab(event, 'TransfersOkTab')">Successfull transfers</button>
-  <button class="tablinks" onclick="openLogTab(event, 'TransfersFailedTab')">Failed transfers</button>
+  <button class="tablinks" onclick="openLogTab(event,'UploadQueTab')">Upload Que</button>
+  <button class="tablinks" onclick="openLogTab(event,'TransfersOkTab')">Successfull transfers</button>
+  <button class="tablinks" onclick="openLogTab(event,'TransfersFailedTab')">Failed transfers</button>
 </div>
 
 <!-- Tab content -->
 <div id="UploadQueTab" class="tabcontent">
 <div id=UploadGrid>
- <div>
+ <div id="TabActionSection">
     <button class="button" id="ClearUploadQueTabButton">Clear</button>
  </div> 
  <table>
@@ -416,7 +81,7 @@
 
 <div id="TransfersOkTab" class="tabcontent">
     <div id=TransferOkGrid>
-    <div><button class="button" id="ClearTransferOkButton">Clear</button></div>
+    <div id="TabActionSection"><button class="button" id="ClearTransferOkButton">Clear</button></div>
     <table>
     <tr>
         <th>Source path</th>
@@ -441,7 +106,7 @@
 </div>
 <div id="TransfersFailedTab" class="tabcontent">
     <div id="TransferFailedGrid">
-        <div><button class="button" id="ClearTransfersFailedTabButton">Clear</button></div>
+        <div id="TabActionSection"><button class="button" id="ClearTransfersFailedTabButton">Clear</button></div>
         <table>
         <tr>
             <th>Source path</th>
@@ -467,15 +132,14 @@
 </div> 
 <!-- end tab content -->
 
- </div>
+</div> <!-- end main section -->
 
 <footer>
 Mystic Bytes &copy;2019
 </footer>
 
 <script>
-(function() {
-
+    (function() {
             // test display
             initSampleData();
             updateDriveViewUI(driveDummyData);
@@ -488,6 +152,5 @@ Mystic Bytes &copy;2019
             //updateDriveListReq();
 })();
 </script>
-
 </body>
 </html>
