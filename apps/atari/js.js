@@ -1,4 +1,4 @@
-<!-- this will be gone after http interfaces resurrection -->
+// <!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
         var directoryDummyData = []; 
         var fileDummyData = []; 
@@ -37,17 +37,26 @@
             fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
-<!-- ----------------------------------------------------------------------------------------- -->
+// <!-- ----------------------------------------------------------------------------------------- -->
 
         function requestChangeCurrentDirectory(btn){
             //request dir status
-            alert(btn.name);
-
-            //update current path input string
-            var InputElem = document.getElementsById("currentPathInput");
             
+            //update current path input string
+            var InputElem = document.getElementById("currentPathInput");
+            // TOS drives: A/B(floppy), C-P
+            // MultiTOS: A/B,C-Z + U 
+            // files/directories 8+3
+            // valid GEMDOS characters:  
+            // A-Z, a-z, 0-9
+            // ! @ # $ % ^ & ( )
+            // + - = ~ ` ; ' " ,
+            // < > | [ ] ( ) _ 
+            // . - current dir
+            // .. parent dir
+
             if(InputElem!=null){
-                InputElem.value=btn.name;
+                InputElem.value=btn.name+':'+'\\';
             }else{
                  InputElem.value='';
             }
@@ -71,7 +80,7 @@
              var textNode = document.createTextNode(buttonStr + ':');
              button.appendChild(textNode);
              button.type='button';
-             button.name = 'SetCurrentDir' + buttonStr;
+             button.name = buttonStr;
              
              button.onclick = function(){
                 requestChangeCurrentDirectory(this);            
@@ -93,21 +102,22 @@
         }
 
         // directory view generation
-        function createDirectoryEntries(rootElement, DirectoryArray){
+        function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
           
           for(var i=0;i<DirectoryArray.length;++i){
-             directoryStr = DirectoryArray[i].name.toUpperCase();
-             if(directoryStr=='ROOT') directoryStr='..';
+                
+                directoryStr = DirectoryArray[i].name.toUpperCase();
+                if(directoryStr=='ROOT') directoryStr='..';
 
-             rootElement.innerHTML += directoryStr + '<br/>'
-             rootElement.onclick = function(){
+                node.innerHTML += directoryStr + '<br/>'
+                node.onclick = function(){
                 requestChDir(this);            
              }
 
           };
 
-            rootElement.innerHTML+='<br/>'
+            node.innerHTML+='<br/>'
         }
 
         function updateDirectoryViewUI(DirJsonArray){
@@ -139,7 +149,7 @@
 
           var div = document.createElement("div");
           div.id="FileList"
-          div.innerHTML = '<br/>';
+          div.innerHTML = '<br/><br/>';
 
           createFileEntries(div, FileJsonArray)
           
