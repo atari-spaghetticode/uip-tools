@@ -39,10 +39,18 @@
         }
 // <!-- ----------------------------------------------------------------------------------------- -->
 
+        function processDirectoryListReq(responseText){
+          var DirListArray = JSON.parse(responseText);
+
+          updateDirectoryViewUI(DirListArray);
+          updateFileViewUI(DirListArray);
+        }
+
         function requestChangeCurrentDirectory(btn){
             //request dir status
-            
-            //update current path input string
+            var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name + '/','dir', 'GET', true, processDirectoryListReq);
+
+          //update current path input string
             var InputElem = document.getElementById("currentPathInput");
             // TOS drives: A/B(floppy), C-P
             // MultiTOS: A/B,C-Z + U 
@@ -59,7 +67,8 @@
                 InputElem.value=btn.name+':'+'\\';
             }else{
                  InputElem.value='';
-            }
+            }  
+            
         }
 
         function requestChDir(source){
@@ -106,7 +115,7 @@
           var directoryStr = null;
           
           for(var i=0;i<DirectoryArray.length;++i){
-                
+             if(DirectoryArray[i].type.toLowerCase()=='d'){
                 directoryStr = DirectoryArray[i].name.toUpperCase();
                 if(directoryStr=='ROOT') directoryStr='..';
 
@@ -114,6 +123,7 @@
                 node.onclick = function(){
                 requestChDir(this);            
              }
+           }
 
           };
 
@@ -127,8 +137,13 @@
           div.innerHTML = '<br/>';
 
           createDirectoryEntries(div,DirJsonArray);
+          var elem = document.getElementById("directoryListView");
+          var oldElem = document.getElementById("DirectoryList");
+          
+          if(oldElem!=null){
+            oldElem.parentNode.removeChild(oldElem);
+          }
 
-          var elem = document.getElementById("directoryListView")
           elem.appendChild(div);
         }
 
@@ -137,8 +152,12 @@
           var fileStr = null;
           
           for(var i=0;i<FileArray.length;++i){
+           
+            if(FileArray[i].type.toLowerCase()=='f'){
              fileStr = FileArray[i].name.toUpperCase();
              node.innerHTML += fileStr + '<br/>'
+           }
+
           };
 
             node.innerHTML+='<br/>'
@@ -153,12 +172,18 @@
 
           createFileEntries(div, FileJsonArray)
           
-          var elem = document.getElementById("fileView");        
+          var elem = document.getElementById("fileView");
+          var oldElem = document.getElementById("FileList");
+          
+          if(oldElem!=null){
+            oldElem.parentNode.removeChild(oldElem);
+          }
+
           elem.appendChild(div);
         }
 
 
-        function processDriveListReq(FileJsonArray) {
+        function processDriveListReq(responseText) {
           var DriveArray = JSON.parse(responseText);
           updateDriveViewUI(DriveArray);  
         }
