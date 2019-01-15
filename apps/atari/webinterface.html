@@ -30,10 +30,8 @@
 <!-- Navigation interface -->
 <nav>
 <div id="DriveButtonListTab"/>
-<div class="pathInputControl" id="CurrentDirPath">
-
-<input type="text" id="currentPathInput" maxlength=128 pattern="[a-pA-P][:][\\][\!\@\#\$\%\^\&\(\)\+\-\=\~\`\;\'\,\<"/>
-
+<div id="CurrentDirPath">
+<input type="text" class="currentPathInput" id="currentPathInput" placeholder="Current GEMDOS path input" alt="Current GEMDOS path" size=128 maxlength=255 autofocus required pattern="[a-pA-P][:][\\][\!\@\#\$\%\^\&\(\)\+\-\=\~\`\;\'\,\<"/>
 </div>
 </nav>
 
@@ -151,16 +149,21 @@ Mystic Bytes &copy;2019
 
 <script>
     (function() {
+            
+            //init all elements
+            initMainView();
+
             // test display
-            // initSampleData();
-            //updateDriveViewUI(driveDummyData);
-            // updateDirectoryViewUI(directoryDummyData);
-            // updateFileViewUI(fileDummyData);        
+             initSampleData();
+             updateDriveViewUI(driveDummyData);
+             updateDirectoryViewUI(directoryDummyData);
+             updateFileViewUI(fileDummyData);        
         
+            
             // your page initialization code here
             // the DOM will be available here
 
-            updateDriveListReq();
+            //updateDriveListReq();
 })();
 </script>
 </body>

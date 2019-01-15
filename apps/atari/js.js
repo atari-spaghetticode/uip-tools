@@ -39,6 +39,27 @@
         }
 // <!-- ----------------------------------------------------------------------------------------- -->
 
+
+        // view cleanup on reload
+        function initMainView(){
+
+          var oldElem = document.getElementById("DirectoryList");
+          
+          if(oldElem!=null){
+            oldElem.parentNode.removeChild(oldElem);
+          }
+
+          oldElem = document.getElementById("FileList");
+          
+          if(oldElem!=null){
+            oldElem.parentNode.removeChild(oldElem);
+          }
+
+          oldElem = document.getElementById("currentPathInput");
+          oldElem.value='';
+
+        }
+
         function processDirectoryListReq(responseText){
           var DirListArray = JSON.parse(responseText);
 
@@ -214,8 +235,7 @@
         }
 
         function updateDriveListReq(){
-            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);
-            
+            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);            
         }
 
 
@@ -272,6 +292,5 @@
         if(elem!=null){
           elem.style.visibility = 'visible';       
           evt.currentTarget.className += " active";
-        }
-        
+        }        
     } 

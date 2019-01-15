@@ -12,12 +12,13 @@
 }
 
  
-    nav{
+    nav {
         background-color: black;
         color: white;
         width:100%;
         border: 0px;
         margin-right:10px;
+        padding-left:10px;
     }   
 
     footer {
@@ -29,29 +30,32 @@
         clear:both;
     }
 
-    input #currentPathInput{
-        width:200px;
-    }
-
-    .pathInputControl input #currentPathInput{
-        width:20%;
-        overflow:hidden;
-        border:0px;
-        margin:0px;
-    }
-
     div #CurrentDirPath{
-        width:200px;
+        width:100%;
         border:0px;
         margin:0px;
+        padding:2px;
+        clear:both;
     }
 
+    div #currentPathInput{
+        width:100%;
+        border:0px;
+        margin:0px;
+        padding:2px;
+        clear:both;
+    };
+
+    input #currentPathInput{
+        width:80%;
+        overflow:hidden;
+        border:1px;
+    }
 
     div #mainSection{
         width:100%;
-        height:80%;
+        height:600px;
     }
-
 
     div #fileManagementBlock{
         width:100%;
@@ -68,20 +72,10 @@
         overflow:hidden;
     }
 
-div #TransferTabs{
+    div #TransferTabs{
+        float:none;
+    }
 
-    float:none;
-}
-/*    div #DirectoryList{
-     width : 20%;
-     height : 80%;
-     background-color: pink;
-     color : black;
-    };
-
-    div #DriveButtonGroup{
-
-    };*/
 
     div #DriveButtonListTab{
         width:80%;
@@ -117,7 +111,7 @@ div #TransferTabs{
     .tab {
         overflow: hidden;
         border: 1px solid #ccc;
-        background-color: #f1f1f1;
+        background-color: #404522;
         width:100%;
         clear:both;
     }
@@ -131,11 +125,13 @@ div #TransferTabs{
         cursor: pointer;
         padding: 14px 16px;
         transition: 0.3s;
+
     }
 
     /* Change background color of buttons on hover */
     .tab button:hover {
         background-color: #ddd;
+        color:black;
     }
 
     /* Create an active/current tablink class */
