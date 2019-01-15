@@ -65,18 +65,21 @@
  </div> 
  <table>
   <tr>
+    <th>Timestamp</th>
     <th>Source path</th>
     <th>Destination path</th>
     <th>Size</th>
     <th>Progress</th>
   </tr>
   <tr>
+    <td>[insert date/time]</td>
     <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
     <td>C:\AUTO\DUMMY.PRG</td>
     <td>222323 bytes</td>
     <td>Upload</td>
   </tr>
   <tr>
+    <td>[insert date/time]</td>
     <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
     <td>C:\FOLDER\FOLDER\PIC.PNG</td>
     <td>3434 bytes</td>
@@ -92,18 +95,21 @@
     <div id="TabActionSection"><button class="button" id="ClearTransferOkTabButton">Clear Completed Transfers</button></div>
     <table>
     <tr>
+        <th>Timestamp</th>
         <th>Source path</th>
         <th>Destination path</th>
         <th>Size</th>
         <th>Status</th>
     </tr>
     <tr>
+        <td>[insert date/time]</td>
         <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
         <td>C:\AUTO\DUMMY.PRG</td>
         <td>222323 bytes</td>
         <td>Upload</td>
     </tr>
     <tr>
+        <td>[insert date/time]</td>
         <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
         <td>C:\FOLDER\FOLDER\PIC.PNG</td>
         <td>3434 bytes</td>
@@ -119,19 +125,22 @@
         </div>
         <table>
         <tr>
+            <th>Failed timestamp</th>
             <th>Source path</th>
             <th>Destination path</th>
             <th>Size</th>
             <th>Status</th>
         </tr>
         <tr>
+            <td>[insert date/time]</td>
             <td>K:\Repos\uiptools\uiptool\DUMMY.PRG</td>
             <td>C:\AUTO\DUMMY.PRG</td>
             <td>222323 bytes</td>
             <td>Failed</td>
         </tr>
         <tr>
-        <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
+            <td>[insert date/time]</td>
+            <td>K:\Repos\uiptools\uiptool\PIC.PNG</td>
             <td>C:\FOLDER\FOLDER\PIC.PNG</td>
             <td>3434 bytes</td>
             <td>Failed</td>
@@ -154,11 +163,10 @@ Mystic Bytes &copy;2019
             initMainView();
 
             // test display
-             initSampleData();
-             updateDriveViewUI(driveDummyData);
-             updateDirectoryViewUI(directoryDummyData);
-             updateFileViewUI(fileDummyData);        
-        
+            initSampleData();
+            updateDriveViewUI(driveDummyData);
+            updateDirectoryViewUI(directoryDummyData);
+            updateFileViewUI(fileDummyData);        
             
             // your page initialization code here
             // the DOM will be available here
