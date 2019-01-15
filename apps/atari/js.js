@@ -113,9 +113,11 @@
         // directory view generation
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
-          
+          var entriesFound=0;
+
           for(var i=0;i<DirectoryArray.length;++i){
              if(DirectoryArray[i].type.toLowerCase()=='d'){
+                ++entriesFound;
                 directoryStr = DirectoryArray[i].name.toUpperCase();
                 if(directoryStr=='ROOT') directoryStr='..';
 
@@ -124,10 +126,9 @@
                 requestChDir(this);            
              }
            }
-
           };
-
-            node.innerHTML+='<br/>'
+            if(entriesFound>0) node.innerHTML+='<br/>'
+            else node.innerHTML+='No directories found!<br/>'       
         }
 
         function updateDirectoryViewUI(DirJsonArray){
@@ -150,17 +151,18 @@
         // file view generation 
         function createFileEntries(node, FileArray){
           var fileStr = null;
-          
+          var entriesFound=0;
           for(var i=0;i<FileArray.length;++i){
            
             if(FileArray[i].type.toLowerCase()=='f'){
+             ++entriesFound;
              fileStr = FileArray[i].name.toUpperCase();
              node.innerHTML += fileStr + '<br/>'
            }
 
           };
-
-            node.innerHTML+='<br/>'
+            if(entriesFound>0) node.innerHTML+='<br/>';
+              else node.innerHTML+='No files found!<br/>';
         }
 
 
