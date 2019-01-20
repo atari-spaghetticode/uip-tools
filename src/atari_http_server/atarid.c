@@ -673,32 +673,32 @@ static void parse_post(struct atarid_state *s)
   s->handler_func = handle_post;
 }
 
+struct {
+  const char* url;
+  const unsigned char* data_ptr;
+  const unsigned int data_size;
+  const char* content_type;
+  const char* encoding_type;
+} static static_url_mapping [] = {
+/*    { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
+  { "images/icon-down.png", icon_down_png,icon_down_png_len,"image/png", "identity"},
+  { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
+  { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
+  { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
+  { "images/close.png", close_png,close_png_len,"image/png", "identity"},
+  { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},*/
+  { NULL,NULL,0 }
+};
+
 static void parse_get(struct atarid_state *s)
 {
-  struct {
-    const char* url;
-    const unsigned char* data_ptr;
-    const unsigned int data_size;
-    const char* content_type;
-    const char* encoding_type;
-  } static_url_mapping [] = {
-/*    { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
-    { "images/icon-down.png", icon_down_png,icon_down_png_len,"image/png", "identity"},
-    { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
-    { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
-    { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
-    { "images/close.png", close_png,close_png_len,"image/png", "identity"},
-    { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},*/
-    { NULL,NULL,0 }
-  };
-
   parse_url(s);
 
   s->handler_datasrc = NULL;
   s->handler_func = handle_get;
 
   if (s->query[0] == 0) {
-    /* request a static resource */
+    /* maybe request a static resource */
     for (size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
       if (strcmp(static_url_mapping[i].url, s->original_filename) == 0) {
         s->handler_datasrc = memSourceCreate(
@@ -714,6 +714,11 @@ static void parse_get(struct atarid_state *s)
     if (!s->handler_datasrc) {
       LOG(s->filename);
       s->handler_datasrc = fileSourceCreate(s->filename, "application/octet-stream","identity");
+      if (!s->handler_datasrc) {
+        // Couldn't create file source
+        s->http_result_code = 400;
+        s->handler_func = NULL;
+      }
     }
   } else if (!parse_query(s)) {
     s->http_result_code = 400;
@@ -748,7 +753,7 @@ struct {
   const size_t entry_len;
   void (*parse_func)(struct atarid_state *s);
   const char request_type;
-} commands[] = {
+} static commands[] = {
   HeaderEntry ("POST", parse_post, 1),
   HeaderEntry ("PUT", parse_post, 1),
   HeaderEntry ("GET", parse_get, 1),
@@ -761,7 +766,7 @@ struct {
 struct {
   const int http_result_code;
   const char* http_response_string;
-} http_responses[] = {
+} static http_responses[] = {
   { 200, "HTTP/1.1 200 OK" },
   { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
   { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
@@ -835,7 +840,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
         LOG("Error: no result string for the code");
       }
     }
-  } while (s->http_result_code == 200);
+  } while (s->http_result_code < 299);
 
   PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
