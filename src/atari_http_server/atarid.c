@@ -343,6 +343,7 @@ const char* file_stat_json(const char* path)
       } else {
         /* Error */
         LOG("path not found 2\r\n");
+        goto error;
       }
     } else {
       // it's a file
@@ -350,11 +351,16 @@ const char* file_stat_json(const char* path)
     }
   } else {
       LOG("path not found\r\n");
+      goto error;
   }
 
   fstrcat(&response, "]\r\n");
 
   return response.malloc_block;
+
+error:
+  free(response.malloc_block);
+  return NULL;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -492,6 +498,11 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 
   PT_BEGIN(worker);
 
+  if (!src) {
+    s->http_result_code = 400;
+    PT_EXIT(worker);
+  }
+
   this->buffer_start_offset = 0;
 
   if (src) {
@@ -610,27 +621,31 @@ void parse_url(struct atarid_state *s)
   strncpy(&s->filename[2], ++fn, sizeof(s->filename)-2);
 }
 
-static void query_dir(struct atarid_state *s)
+static int query_dir(struct atarid_state *s)
 {
   const char* dir_json = file_stat_json(s->filename);
-  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json), "text/javascript", "identity", 1);
+  if (dir_json) {
+    s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json), "text/javascript", "identity", 1);
+    return 1;
+  }
+  return 0;
 }
 
-static void query_run(struct atarid_state *s)
+static int query_run(struct atarid_state *s)
 {
   s->handler_func = handle_run;
 }
 
-static void query_newfolder(struct atarid_state *s)
+static int query_newfolder(struct atarid_state *s)
 {
   s->http_result_code = 1200;
   s->handler_func = NULL;
-  if (0!=ensureFolderExists(s->filename, 0)) {
+  if (0 != ensureFolderExists(s->filename, 0)) {
     s->http_result_code = 400;
   }
 }
 
-static void query_setfiledate(struct atarid_state *s)
+static int query_setfiledate(struct atarid_state *s)
 {
   char* dateIntStart = strchr(s->query, '=');;
   if (dateIntStart) {
@@ -644,7 +659,7 @@ static int parse_query(struct atarid_state *s)
 {
   static struct {
     const char* query_string;
-    void (*query_func)(struct atarid_state *s);
+    int (*query_func)(struct atarid_state *s);
   } query_mapping [] = {
     {"dir", query_dir},
     {"run", query_run},
@@ -657,11 +672,9 @@ static int parse_query(struct atarid_state *s)
     for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
       if (strncmp(query_mapping[i].query_string, s->query, strlen(query_mapping[i].query_string)) == 0) {
           LOG(query_mapping[i].query_string);
-          query_mapping[i].query_func(s);
-          break;
+          return query_mapping[i].query_func(s);
       }
     }
-    return 1;
   }
   return 0;
 }
