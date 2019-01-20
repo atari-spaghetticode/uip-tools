@@ -40,7 +40,7 @@
 
 #include "uip.h"
 
-void uip_add_rcv_nxt(u16_t n);
+static void uip_add_rcv_nxt(u16_t n);
 void uip_add32(u8_t *op32, u16_t op16);
 u16_t uip_ipchksum(void);
 u16_t uip_tcpchksum(void);
