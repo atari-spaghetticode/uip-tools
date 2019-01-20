@@ -22,13 +22,16 @@ def detectLibCMini(targetEnv):
     else:
         print "Libcmini not found, using default libs."
 
-def CompressProgramMaybe(env, target):
-    upx = env.WhereIs('upx')
-    if upx:
-        print "UPX detected, compressing target."
-        env.AddPostAction(target, Action('upx -qqq --best $TARGET'))
+def compressProgramMaybe(env, target):
+    if not os.environ.get('NOUPX'):
+        upx = env.WhereIs('upx')
+        if upx:
+            print "UPX detected, compressing target."
+            env.AddPostAction(target, Action('upx -qqq --best $TARGET'))
+        else:
+            print "UPX not found, skipping compression."
     else:
-        print "UPX not found, skipping compression." + upx
+        print "UPX compression is disabled"
 
 
 # Move scons database to builddir to avoid pollution
@@ -54,7 +57,7 @@ target = hostEnv.SConscript(
     src_dir = "../" )
 
 # Optionally compress the binary with UPX
-CompressProgramMaybe(targetEnv, target)
+compressProgramMaybe(targetEnv, target)
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))
 SetOption('num_jobs', num_cpu)
