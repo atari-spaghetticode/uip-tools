@@ -71,7 +71,7 @@
             //request dir status
             var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name + '/','dir', 'GET', true, processDirectoryListReq);
 
-          //update current path input string
+            //update current path input string
             var InputElem = document.getElementById("currentPathInput");
             // TOS drives: A/B(floppy), C-P
             // MultiTOS: A/B,C-Z + U 
@@ -85,7 +85,7 @@
             // .. parent dir
 
             if(InputElem!=null){
-                InputElem.value=btn.name+':'+'\\';
+                InputElem.value=btn.name+':';
             }else{
                  InputElem.value='';
             }  
@@ -134,18 +134,30 @@
         // directory view generation
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
+          var directoryReqStr=null;
           var entriesFound=0;
 
           for(var i=0;i<DirectoryArray.length;++i){
              if(DirectoryArray[i].type.toLowerCase()=='d'){
                 ++entriesFound;
                 directoryStr = DirectoryArray[i].name.toUpperCase();
+                directoryReqStr=directoryStr;
                 if(directoryStr=='ROOT') directoryStr='..';
+                if(directoryReqStr=='ROOT') directoryReqStr='';
 
-                node.innerHTML += directoryStr + '<br/>'
+                // make a link 
+                // 
+                var pathNode = document.getElementById("currentPathInput");
+                var dirPath = pathNode.value;
+                dirPath = dirPath.replace(":","/");
+                
+                // 192.168.1.1/c/foldername?dir
+                var requestStr = /*location.host + '/' + 'index.html' +*/ '/' + dirPath + directoryReqStr + '?dir';
+                node.innerHTML += '<a href="'+ requestStr +'">' + directoryStr + '<a/><br/>' ;
+                
                 node.onclick = function(){
-                requestChDir(this);            
-             }
+                  requestChDir(this);            
+                }
            }
           };
             if(entriesFound>0) node.innerHTML+='<br/>'
@@ -156,7 +168,7 @@
         
           var div = document.createElement("div");
           div.id="DirectoryList";
-          div.innerHTML = '<br/>';
+          //div.innerHTML = '<br/>';
 
           createDirectoryEntries(div,DirJsonArray);
           var elem = document.getElementById("directoryListView");
