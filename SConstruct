@@ -33,6 +33,15 @@ def compressProgramMaybe(env, target):
     else:
         print "UPX compression is disabled"
 
+def getVersion(env):
+    git = env.WhereIs('git')
+    if git:
+        import subprocess
+        p = subprocess.Popen('git rev-list --count master', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return p.stdout.readline().rstrip()
+    else:
+        print "git not found"
+
 
 # Move scons database to builddir to avoid pollution
 builddir = os.path.abspath(GetLaunchDir())
@@ -44,7 +53,8 @@ targetEnv = setupToolchain(hostEnv.Clone())
 # Optionally use libxmini
 detectLibCMini(targetEnv)
 
-targetEnv.Append(CPPDEFINES={'VERSION' : "99"})
+#version:=$(shell git rev-list --count master)
+targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
 print "Building in: " + GetLaunchDir()
