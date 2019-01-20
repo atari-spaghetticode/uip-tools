@@ -153,7 +153,7 @@
                 
                 // 192.168.1.1/c/foldername?dir
                 var requestStr = /*location.host + '/' + 'index.html' +*/ '/' + dirPath + directoryReqStr + '?dir';
-                node.innerHTML += '<a href="'+ requestStr +'">' + directoryStr + '<a/><br/>' ;
+                node.innerHTML += '<a href="'+ requestStr +'" target="_self">' + directoryStr + '<a/><br/>' ;
                 
                 node.onclick = function(){
                   requestChDir(this);            
