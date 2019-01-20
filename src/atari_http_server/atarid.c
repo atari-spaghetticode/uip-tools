@@ -361,9 +361,9 @@ const char* file_stat_json(const char* path)
 
 struct DataSource
 {
-  size_t (*read)(struct DataSource*, size_t, void*);
+  ssize_t (*read)(struct DataSource*, size_t, void*);
   void (*close)(struct DataSource*);
-  size_t (*size)(struct DataSource*);
+  ssize_t (*size)(struct DataSource*);
   const char* mime_type;
   const char* encoding_type;
 };
@@ -375,13 +375,13 @@ struct FsSource
   size_t size;
 };
 
-int fileSourceSize(struct DataSource* ds)
+ssize_t fileSourceSize(struct DataSource* ds)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   return fs->size;
 }
 
-size_t fileSourceRead(struct DataSource* ds, size_t size, void* ptr)
+ssize_t fileSourceRead(struct DataSource* ds, size_t size, void* ptr)
 {
   struct FsSource* fs = (struct FsSource*) ds;
   return (size_t)Fread(fs->fd, size, ptr);
@@ -419,13 +419,13 @@ struct DataSource* fileSourceCreate(
 struct MemSource
 {
   struct DataSource src;
-  char* ptr;
-  size_t size;
-  size_t current;
+  const char* ptr;
+  ssize_t size;
+  ssize_t current;
   char ownership;
 };
 
-int memSourceRead(struct DataSource* ds, size_t size, void* ptr)
+ssize_t memSourceRead(struct DataSource* ds, size_t size, void* ptr)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   size_t actual_size = size + mem->current > mem->size ? mem->size-mem->current : size;
@@ -450,14 +450,14 @@ void memSourceClose (struct DataSource* ds)
   free ((void*) mem);
 }
 
-int memSourceSize(struct DataSource* ds)
+ssize_t memSourceSize(struct DataSource* ds)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   return mem->size;
 }
 
-struct MemSource* memSourceCreate (
-    char* ptr,
+struct DataSource* memSourceCreate (
+    const char* ptr,
     size_t size,
     const char* mime_type,
     const char* encoding_type,
@@ -521,7 +521,8 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
       break;
 
     if (this->bytes_read < 0) {
-
+      s->http_result_code = 400;
+      break;
     }
 
     PSOCK_SEND2(worker, &s->sin, s->inputbuf, this->bytes_read+this->buffer_start_offset);
@@ -529,7 +530,6 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
   }
 
   src->close(src);
-  free(s->handler_datasrc);
   s->handler_datasrc = NULL;
   PT_END(worker);
 }
@@ -561,7 +561,7 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
   // set cwd
   Dsetpath(temp_path);
   // Bconmap(7);
-  void* basepage = Pexec(PE_LOAD, s->filename, "", "");
+  void* basepage = (void*)Pexec(PE_LOAD, s->filename, "", "");
   Fforce(1, 2);
   Pexec(PE_GO, 0, basepage, 0);
 
@@ -612,8 +612,8 @@ void parse_url(struct atarid_state *s)
 
 static void query_dir(struct atarid_state *s)
 {
-  char* dir_json = file_stat_json(s->filename);
-  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json), "text/javascript", "identity",1);
+  const char* dir_json = file_stat_json(s->filename);
+  s->handler_datasrc = memSourceCreate(dir_json, strlen(dir_json), "text/javascript", "identity", 1);
 }
 
 static void query_run(struct atarid_state *s)
