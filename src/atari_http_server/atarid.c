@@ -157,7 +157,7 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
     PT_EXIT(worker);
   }
 
-  s->fd = Fcreate(filename,0);
+  s->fd = Fcreate(filename, 0);
 
   if (s->fd < 0) {
     s->http_result_code = 400;
@@ -205,7 +205,7 @@ PT_THREAD(handle_post(struct pt* worker, struct atarid_state *s))
     PT_EXIT(worker);
   } else {
     PT_INIT(&worker[1]);
-    PT_WAIT_THREAD(worker, receive_file(&worker[1],s,s->filename,s->expected_file_length));
+    PT_WAIT_THREAD(worker, receive_file(&worker[1], s, s->filename, s->expected_file_length));
   }
 
   PT_END(worker);
@@ -400,7 +400,7 @@ struct DataSource* fileSourceCreate(
   const char* encoding_type)
 {
   struct FsSource* src = NULL;
-  int16_t fd = Fopen(fname,0);
+  int16_t fd = Fopen(fname, 0);
 
   if (fd > 0) {
     src = (struct FsSource*)malloc(sizeof(struct FsSource));
@@ -441,7 +441,7 @@ int memSourceRead(struct DataSource* ds, size_t size, void* ptr)
   return actual_size;
 }
 
-void memSourceClose ( struct DataSource* ds)
+void memSourceClose (struct DataSource* ds)
 {
   struct MemSource* mem = (struct MemSource*) ds;
   if (mem->ownership) {
@@ -498,7 +498,7 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
     this->file_len = src->size(src);
 
     this->buffer_start_offset = snprintf(
-      s->inputbuf,UIP_TCP_MSS,
+      s->inputbuf, UIP_TCP_MSS,
       "HTTP/1.1 200 OK\r\n"
       "Content-Type: %s\r\n"
       "Content-Encoding: %s\r\n"
@@ -607,7 +607,7 @@ void parse_url(struct atarid_state *s)
 
   s->filename[0] = fn[0]&0x7f;
   s->filename[1] = ':';
-  strncpy(&s->filename[2],++fn, sizeof(s->filename)-2);
+  strncpy(&s->filename[2], ++fn, sizeof(s->filename)-2);
 }
 
 static void query_dir(struct atarid_state *s)
