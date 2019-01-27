@@ -152,74 +152,64 @@ main(void)
   while( -1 == Cconis() ) Cconin ();
 
   while( -1 != Cconis() ) {
+    probeBegin(&netAll);
+
     probeBegin(&netRecv);
     uip_len = RTL8019dev_poll();
     probeEnd(&netRecv);
     
-    probeBegin(&netAll);
-
     if(uip_len > 0) {
-        probeBegin(&netInput);
+      probeBegin(&netInput);
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
-        //printf("got data.. %d: 0x%x\r\n",uip_len, (int)BUF->type);
         uip_arp_ipin();
         uip_input();
-        /* If the above function invocation resulted in data that
-           should be sent out on the network, the global variable
-           uip_len is set to a value > 0. */
         if(uip_len > 0) {
-       //   printf("sending data.. %d\r\n",uip_len);
           //uip_arp_out();
           net_send();
         }
       } else if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
-     //   printf("got arp.. %d\r\n",uip_len);
         uip_arp_arpin();
-        /* If the above function invocation resulted in data that
-           should be sent out on the network, the global variable
-           uip_len is set to a value > 0. */
         if(uip_len > 0) {
-       //   printf("sending arp.. %d\r\n",uip_len);
           RTL8019dev_send();
           //net_send();
         }
-    }
+      }
       probeEnd(&netInput);
 
-  } else if(timer_expired(&periodic_timer)) {
+    } else if(timer_expired(&periodic_timer)) {
       probeBegin(&netOther);
       timer_reset(&periodic_timer);
       for(i = 0; i < UIP_CONNS; i++) {
         uip_periodic(i);
-        /* If the above function invocation resulted in data that
-           should be sent out on the network, the global variable
-           uip_len is set to a value > 0. */
         if(uip_len > 0) {
          // uip_arp_out();
           net_send();
         }
       }
-
-#if UIP_UDP
-      for(i = 0; i < UIP_UDP_CONNS; i++) {
-        uip_udp_periodic(i);
-        /* If the above function invocation resulted in data that
-           should be sent out on the network, the global variable
-           uip_len is set to a value > 0. */
-        if(uip_len > 0) {
-          //uip_arp_out();
-          net_send();
-        }
-      }
-#endif /* UIP_UDP */
-      
-      /* Call the ARP timer function every 10 seconds. */
-      if(timer_expired(&arp_timer)) {
-        timer_reset(&arp_timer);
-        uip_arp_timer();
-      }
-      probeEnd(&netOther);
     }
+
+    for(i = 0; i < UIP_CONNS; i++) {
+      /* Call apps idle handlers */
+      uip_idle(i);
+    }
+
+    #if UIP_UDP
+    for(i = 0; i < UIP_UDP_CONNS; i++) {
+      uip_udp_periodic(i);
+      if(uip_len > 0) {
+        //uip_arp_out();
+        net_send();
+      }
+    }
+    #endif /* UIP_UDP */
+      
+    /* Call the ARP timer function every 10 seconds. */
+    if(timer_expired(&arp_timer)) {
+      timer_reset(&arp_timer);
+      uip_arp_timer();
+    }
+
+    probeEnd(&netOther);
     probeEnd(&netAll);
   }
 
