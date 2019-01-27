@@ -58,6 +58,7 @@
 
 #include "uip.h"
 #include "atarid.h"
+#include "../logging.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -85,9 +86,6 @@
 #define ISO_period  0x2e
 #define ISO_slash   0x2f
 #define ISO_colon   0x3a
-
-#define LOG(x) ((void)Cconws(x))
-//#define LOG(x)
 
 /*---------------------------------------------------------------------------*/
 int ensureFolderExists(const char* path, int stripFileName)
@@ -667,15 +665,16 @@ static int parse_query(struct atarid_state *s)
     {"setfiledate", query_setfiledate},
     {NULL,NULL}
   };
-
+  LOG("parse query: ");
   if (s->query[0] != 0) {
     for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
       if (strncmp(query_mapping[i].query_string, s->query, strlen(query_mapping[i].query_string)) == 0) {
-          LOG(query_mapping[i].query_string);
+          LOG("%s\r\n", query_mapping[i].query_string);
           return query_mapping[i].query_func(s);
       }
     }
   }
+  LOG("query not supported: %s\r\n", s->query);
   return 0;
 }
 
@@ -816,10 +815,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
 
       for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i) {
         if (0 == memcmp(s->inputbuf, commands[i].entry, commands[i].entry_len - 1)) {
-          if (commands[i].request_type) {
-            LOG(commands[i].entry);
-            LOG(": ");
-          }
+          LOG("method: %s\r\n", commands[i].entry);
           commands[i].parse_func(s);
           break;
         }
@@ -863,7 +859,7 @@ static void
 handle_error(struct atarid_state *s)
 {
   if (Fclose_safe(&s->fd) != -1) {
-    LOG(" -> failed\r\n");
+    LOG("FClose -> failed\r\n");
   }
 }
 
@@ -879,10 +875,12 @@ atarid_appcall(void)
 {
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
   if (uip_timedout()) {
+    LOG("Connection timeout\r\n");
     handle_error(s);
   } else if(uip_aborted()) {
-    printf("abort\r\n");
+    LOG("Connection aborted\r\n");
   } else if(uip_closed() ) {
+    LOG("Connection closed\r\n");
     /* allow connection handler to do it's cleanup if connection was closed while
       calling into UIP which would result in this code being executed and thead
       never resumed again so that it would have no chance of cleaning up after itself.
@@ -891,6 +889,7 @@ atarid_appcall(void)
     /* now check if there's and outstanding error */
     handle_error(s);
   } else if(uip_connected()) {
+    LOG("Connection established\r\n");
     s->inputbuf_size = INPUTBUF_SIZE;
     s->inputbuf = &s->inputbuf_data[0];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
@@ -898,7 +897,7 @@ atarid_appcall(void)
   } else if(s != NULL) {
     handle_connection(s);
   } else {
-    printf("abort2\r\n");
+    LOG("Unknown condition, aborting connection\r\n");
     uip_abort();
   }
 }

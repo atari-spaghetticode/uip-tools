@@ -35,6 +35,7 @@
  *
  */
 
+#include "logging.h"
 
 #include "uip.h"
 #include "uip_arp.h"
@@ -222,12 +223,14 @@ main(void)
     probeEnd(&netAll);
   }
 
-  // printf("\r\n\r\n");
-  // printf("All:     "); probePrint(&netAll);
-  // printf("Input:   "); probePrint(&netInput);
-  // printf("Other:   "); probePrint(&netOther);
-  // printf("DevSend: "); probePrint(&netSend);
-  // printf("DevRecv: "); probePrint(&netRecv);
+  #if 0
+  LOG("\r\n\r\n");
+  LOG("All:     "); probePrint(&netAll);
+  LOG("Input:   "); probePrint(&netInput);
+  LOG("Other:   "); probePrint(&netOther);
+  LOG("DevSend: "); probePrint(&netSend);
+  LOG("DevRecv: "); probePrint(&netRecv);
+  #endif
 
   return 0;
 }
@@ -235,8 +238,9 @@ main(void)
 void
 uip_log(char *m)
 {
-//  printf("uIP log message: %s\n", m);
+  LOG("uIP: %s\n", m);
 }
+
 #ifdef __DHCPC_H__
 void
 dhcpc_configured(const struct dhcpc_state *s)
