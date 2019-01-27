@@ -307,6 +307,8 @@ void uip_setipid(u16_t id);
  */
 #define uip_conn_active(conn) (uip_conns[conn].tcpstateflags != UIP_CLOSED)
 
+#define uip_conn_active_current() (uip_conn->tcpstateflags != UIP_CLOSED)
+
 /**
  * Perform periodic processing for a connection identified by a pointer
  * to its structure.
