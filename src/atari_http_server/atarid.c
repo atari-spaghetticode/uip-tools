@@ -148,7 +148,7 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
 {
   PT_BEGIN(worker);
 
-  LOG(filename);
+  LOG("receive_file: %s\r\n", filename);
   //(void)LOG("\033K");
 
   // make sure folder exists
@@ -700,6 +700,7 @@ static int parse_query(struct atarid_state *s)
   LOG("parse query: ");
   if (s->query[0] != 0) {
     for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
+      LOG("query loop: %s : %d\r\n", query_mapping[i].query_string, strlen(query_mapping[i].query_string));
       if (strncmp(query_mapping[i].query_string, s->query, strlen(query_mapping[i].query_string)) == 0) {
           LOG("%s\r\n", query_mapping[i].query_string);
           return query_mapping[i].query_func(s);
@@ -911,7 +912,7 @@ atarid_appcall(void)
     handle_error(s);
   } else if(uip_aborted()) {
     LOG("Connection aborted\r\n");
-  } else if(uip_closed() ) {
+  } else if(uip_closed()) {
     LOG("Connection closed\r\n");
     /* allow connection handler to do it's cleanup if connection was closed while
       calling into UIP which would result in this code being executed and thead
