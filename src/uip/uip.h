@@ -337,6 +337,12 @@ void uip_setipid(u16_t id);
 #define uip_poll_conn(conn) do { uip_conn = conn; \
                                  uip_process(UIP_POLL_REQUEST); } while (0)
 
+/**
+ * Reuqest app idle handler
+ */
+
+#define uip_idle(conn) do { uip_conn = &uip_conns[conn]; uip_flags = UIP_IDLE_TICK; \
+                                UIP_APPCALL(); } while (0)
 
 #if UIP_UDP
 /**
@@ -722,6 +728,12 @@ void uip_send(const void *data, int len);
  * \hideinitializer
  */
 #define uip_initialmss()             (uip_conn->initialmss)
+
+/**
+ * Check if this is idle callback
+ *
+ */
+#define uip_is_idle()             (uip_flags & UIP_IDLE_TICK)
 
 /**
  * Get the current maxium segment size that can be sent on the current
@@ -1295,7 +1307,7 @@ extern struct uip_stats uip_stat;
  * that are defined in this file. Please read below for more
  * infomation.
  */
-extern u8_t uip_flags;
+extern u16_t uip_flags;
 
 /* The following flags may be set in the global variable uip_flags
    before calling the application callback. The UIP_ACKDATA,
@@ -1332,6 +1344,9 @@ extern u8_t uip_flags;
 
 #define UIP_TIMEDOUT  128   /* The connection has been aborted due to
 			       too many retransmissions. */
+
+#define UIP_IDLE_TICK  256   /* Not connection related tick -
+                                application should do non IP related periodic actions  */
 
 /* uip_process(flag):
  *

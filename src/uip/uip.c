@@ -157,7 +157,7 @@ u16_t uip_len, uip_slen;
                                 depending on the maximum packet
                                 size. */
 
-u8_t uip_flags;     /* The uip_flags variable is used for
+u16_t uip_flags;     /* The uip_flags variable is used for
                                 communication between the TCP/IP stack
                                 and the application program. */
 struct uip_conn *uip_conn;   /* uip_conn always points to the current
