@@ -70,6 +70,9 @@
 #include <osbind.h>
 #include <errno.h>
 
+#include <ctype.h>
+#include <stdbool.h>
+
 // static content
 /*#include "index.h"
 #include "icon-down.h"
@@ -265,7 +268,6 @@ static void file_stat_single(struct Repsonse* response)
   fstrcat(response,"  }\r\n");
 }
 
-
 const char* file_stat_json(const char* path)
 {
   struct Repsonse response = { NULL, NULL, 8192 };
@@ -328,7 +330,7 @@ const char* file_stat_json(const char* path)
           // skip .. and . pseudo folders
           if (strcmp(dta.dta_name,"..") != 0
               && strcmp(dta.dta_name,".") != 0
-         //     && !dta.dta_attribute&FA_SYSTEM
+          // && !dta.dta_attribute&FA_SYSTEM
               && !(dta.dta_attribute&FA_LABEL)
            ) {
             if (!first) {
@@ -550,32 +552,62 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 {
   char temp_path[256];
   size_t len;
-
-  LOG(s->filename);
-  LOG("\r\n");
+  bool path_ok = false;
 
   PT_BEGIN(worker);
-  /* this wont work, connection needs to be closed first */
-  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
+  LOG("handle_run: %s\r\n", s->filename);
 
   len = strlen(s->filename);
   strncpy(temp_path, s->filename, sizeof(temp_path));
   // remove file name from the path file path base
-  for(size_t i = len; i != 0; --i) {
-    if (temp_path[i] == '\\') {
+  for (size_t i = len; i != 0; --i) {
+    if (temp_path[i] != '\\') {
       temp_path[i] = '\0';
+    } else {
       break;
     }
   }
-  // set cwd
-  Dsetpath(temp_path);
+
+  /* Set the current drive and path */
+  if (tolower(temp_path[0]) >= 'a'
+      && tolower(temp_path[0]) <= 'z') {
+      uint32_t drv_map = Dsetdrv (Dgetdrv ());
+      uint32_t drv_num = temp_path[0] - 'a';
+      uint32_t drv_bit = 1 << drv_num;
+
+      if (drv_bit&drv_map) {
+        Dsetdrv (drv_num);
+        const char* path_no_drive = &temp_path[3];
+        LOG("setting cwd: %s\r\n", path_no_drive);
+        // set cwd
+        path_ok = Dsetpath(path_no_drive) == 0 ? true: false;
+      }
+  }
+
+  if (!path_ok) {
+    LOG("Path set failed: %s\r\n", s->filename);
+    s->http_result_code = 400;
+    PSOCK_EXIT2(worker, &s->sin);
+  }
+
+  /* Close connection first */
+  PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
+  PSOCK_CLOSE(&s->sin);
+  PSOCK_WAIT_UNTIL2(worker, &s->sin, !uip_conn_active_current());
+
   // Bconmap(7);
   void* basepage = (void*)Pexec(PE_LOAD, s->filename, "", "");
+  LOG("basepage: %p\r\n", basepage);
   Fforce(1, 2);
-  Pexec(PE_GO, 0, basepage, 0);
+  int16_t pexec_ret = Pexec(PE_GO_FREE, 0, basepage, 0);
+  LOG("pexec_ret: %d\r\n", pexec_ret);
+
+  while( -1 == Cconis() ) Cconin ();
 
   PT_END(worker);
 }
+
+/*---------------------------------------------------------------------------*/
 
 void parse_url(struct atarid_state *s)
 {
@@ -894,12 +926,17 @@ atarid_appcall(void)
     s->inputbuf = &s->inputbuf_data[0];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
+  } else if (uip_is_idle()) {
+    if (PT_HAS_ENDED(PSOCK_GET_TREAD(&s->sin))) {
+      handle_connection(s);
+    }
   } else if(s != NULL) {
     handle_connection(s);
   } else {
     LOG("Unknown condition, aborting connection\r\n");
     uip_abort();
   }
+
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -911,6 +948,9 @@ atarid_appcall(void)
 void
 atarid_init(void)
 {
+  struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
+  memset(s, sizeof(struct atarid_state), 0);
+  PT_INIT(PSOCK_GET_TREAD(&s->sin));
   uip_listen(HTONS(80));
 }
 /*---------------------------------------------------------------------------*/

@@ -19,6 +19,7 @@ def detectLibCMini(targetEnv):
         targetEnv.Append(LIBPATH=[libcminiPath])
         targetEnv.Append(CCFLAGS='-nostdlib ')
         targetEnv.Append(LINKFLAGS='-nostdlib' + ' ' + libcminiPath + '/startup.o')
+        targetEnv.Append(CPPPATH=libcminiPath + '/../include')
     else:
         print "Libcmini not found, using default libs."
 
