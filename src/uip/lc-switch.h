@@ -71,6 +71,8 @@ typedef unsigned short lc_t;
 
 #define LC_END(s) }
 
+#define LC_HAS_FINISHED(s) (s != 0)
+
 #endif /* __LC_SWITCH_H__ */
 
 /** @} */

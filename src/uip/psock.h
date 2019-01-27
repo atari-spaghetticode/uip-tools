@@ -295,7 +295,7 @@ PT_THREAD(psock_readto(struct psock *psock, unsigned char c));
 #define PSOCK_READTO(psock, c)        \
   PT_WAIT_THREAD(&((psock)->pt), psock_readto(psock, c))
 
-#define PSOCK_READTO2(pt,psock, c)				\
+#define PSOCK_READTO2(pt, psock, c)				\
   PT_WAIT_THREAD((pt), psock_readto(psock, c))
 
 /**
@@ -325,6 +325,7 @@ u16_t psock_datalen(struct psock *psock);
  * \hideinitializer
  */
 #define PSOCK_EXIT(psock) PT_EXIT(&((psock)->pt))
+#define PSOCK_EXIT2(pt, psock) PT_EXIT(pt)
 
 /**
  * Close a protosocket and exit the protosocket's protothread.
@@ -402,8 +403,13 @@ char psock_newdata(struct psock *s);
 #define PSOCK_WAIT_UNTIL(psock, condition)    \
   PT_WAIT_UNTIL(&((psock)->pt), (condition));
 
+#define PSOCK_WAIT_UNTIL2(pt, psock, condition)    \
+  PT_WAIT_UNTIL((pt), (condition));
+
 #define PSOCK_WAIT_THREAD(psock, condition)   \
   PT_WAIT_THREAD(&((psock)->pt), (condition))
+
+#define PSOCK_GET_TREAD(psock) (&((psock)->pt))
 
 #endif /* __PSOCK_H__ */
 

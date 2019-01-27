@@ -127,6 +127,12 @@ struct pt {
 #define PT_END(pt) LC_END((pt)->lc); PT_YIELD_FLAG = 0; \
                    PT_INIT(pt); return PT_ENDED; }
 
+/**
+ * Check if thread is done.
+ *
+ */
+#define PT_HAS_ENDED(pt) LC_HAS_FINISHED((pt)->lc)
+
 /** @} */
 
 /**
