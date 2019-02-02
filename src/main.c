@@ -57,10 +57,9 @@
 struct ProfileProbe {
   uint64_t last;
   uint64_t all;
-
 };
 
-uint64_t getMicroseconds( )
+uint64_t getMicroseconds()
 {
   uint64_t timer200hz;
   uint32_t data;
@@ -78,23 +77,23 @@ resync:
   return timer200hz;
 }
 
-void initProbe ( struct ProfileProbe* p ) 
+void initProbe (struct ProfileProbe* p)
 {
   p->last = 0;
   p->all = 0;
 }
 
-void probeBegin ( struct ProfileProbe* p ) 
+void probeBegin (struct ProfileProbe* p)
 {
   p->last = getMicroseconds( );
 }
 
-void probeEnd ( struct ProfileProbe* p ) 
+void probeEnd (struct ProfileProbe* p)
 {
   p->all +=  getMicroseconds( ) - p->last;
 }
 
-void probePrint ( struct ProfileProbe* p  )
+void probePrint (struct ProfileProbe* p)
 {
   //printf("%llu\r\n",p->all );
 }
@@ -143,11 +142,11 @@ main(void)
   dhcpc_init(uip_ethaddr.addr, 6);
   atarid_init();
 
-  initProbe( &netSend);
-  initProbe( &netRecv);
-  initProbe( &netAll);
-  initProbe( &netInput);
-  initProbe( &netOther);
+  initProbe(&netSend);
+  initProbe(&netRecv);
+  initProbe(&netAll);
+  initProbe(&netInput);
+  initProbe(&netOther);
 
   while( -1 == Cconis() ) Cconin ();
 
@@ -186,11 +185,11 @@ main(void)
           net_send();
         }
       }
-    }
-
-    for(i = 0; i < UIP_CONNS; i++) {
-      /* Call apps idle handlers */
-      uip_idle(i);
+    } else {
+      for(i = 0; i < UIP_CONNS; i++) {
+        /* Call apps idle handlers */
+        uip_idle(i);
+      }
     }
 
     #if UIP_UDP
