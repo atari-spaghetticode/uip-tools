@@ -36,3 +36,25 @@ In addition to the HTML based user interface, uiptool allows you to use a simple
 
 		curl -0 192.168.1.1/c/filename.tos?dir
 		curl -0 192.168.1.1/c/foldername?dir
+		
+
+# uIPtool build instructions
+
+prerequisities:
+Cygwin or other Linux like environment
+m68k atari cross compiler (http://vincent.riviere.free.fr/soft/m68k-atari-mint)
+vasm m68k cross compiler (http://sun.hasenbraten.de/vasm)
+GNU make
+xxd
+
+For CSS/JS minification automation in release builds:
+nodeJS 11.9.0 https://nodejs.org/en/ 
+from npm:
+	npm install uglify-js -g
+	npm install less -g
+Edit PREFIX path in uiptool\Makefile folder, so it points to proper c compiler binary path or uncomment typical Linux or Cygwin variants.
+
+cd uiptool
+make
+
+Done...
