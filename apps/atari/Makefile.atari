@@ -1,10 +1,13 @@
 vpath %.html ../apps/atari/
 
+
 index.h: webinterface.html
 	$(CPP) -traditional-cpp -DVERSION=$(version) -P -o index.html $<
 	gzip -9 -f index.html -c > index.html.gz
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
+	lessc ../apps/atari/css.css ../apps/atari/css_minified.css
+	uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
 
 icons: close.h
 
