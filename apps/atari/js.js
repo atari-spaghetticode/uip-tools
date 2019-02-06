@@ -1,3 +1,4 @@
+"use strict";
 // <!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
         var directoryDummyData = []; 
