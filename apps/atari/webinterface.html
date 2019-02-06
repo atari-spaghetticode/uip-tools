@@ -14,11 +14,19 @@
 " rel="icon" type="image/x-icon">
 
 <script type="text/javascript">
+#if RELEASE
+#include "js_minified.js"
+#else
 #include "js.js"
+#endif
 </script>
 
 <style type="text/css">
+#if RELEASE
+#include "css_minified.css"
+#else
 #include "css.css"
+#endif
 </style>
 
 </head>
