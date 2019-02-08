@@ -40,7 +40,6 @@
         }
 // <!-- ----------------------------------------------------------------------------------------- -->
 
-
         // view cleanup on reload
         function initMainView(){
 
@@ -68,12 +67,6 @@
           updateFileViewUI(DirListArray);
         }
 
-        function requestChangeCurrentDirectory(btn){
-            //request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name + '/','dir', 'GET', true, processDirectoryListReq);
-
-            //update current path input string
-            var InputElem = document.getElementById("currentPathInput");
             // TOS drives: A/B(floppy), C-P
             // MultiTOS: A/B,C-Z + U 
             // files/directories 8+3
@@ -85,15 +78,32 @@
             // . - current dir
             // .. parent dir
 
-            if(InputElem!=null){
-                InputElem.value=btn.name+':';
-            }else{
-                 InputElem.value='';
-            }  
+        function requestChDrive(btn){
+            var InputElem = document.getElementById("currentPathInput");
+            var pathPrefix;
             
+            if(InputElem.value === ""){
+                pathPrefix="";
+            }else{
+                pathPrefix = InputElem.value.replace(":","/");                 
+            }
+
+            //request dir status
+            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix,'dir', 'GET', true, processDirectoryListReq);
         }
 
         function requestChDir(source){
+            var InputElem = document.getElementById("currentPathInput");
+            var pathPrefix;
+            
+            if(InputElem.value === ""){
+                pathPrefix="";
+            }else{
+                pathPrefix = InputElem.value.replace(":","/");                 
+            }
+
+            //request dir status
+            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + btn.name + '/','dir', 'GET', true, processDirectoryListReq);
 
         }
 
@@ -108,13 +118,24 @@
 
              buttonStr = DriveArray[i].name.toUpperCase();
              var button = document.createElement("button");
+             
              var textNode = document.createTextNode(buttonStr + ':');
              button.appendChild(textNode);
+
              button.type='button';
              button.name = buttonStr;
              
              button.onclick = function(){
-                requestChangeCurrentDirectory(this);            
+
+              var InputElem = document.getElementById("currentPathInput");
+            
+               if(InputElem!=null){
+                  InputElem.value=this.name + ':';
+               }else{
+                 InputElem.value='';
+               }
+
+                requestChDrive(this);            
              }
 
              node.appendChild(button);
@@ -146,19 +167,23 @@
                 if(directoryStr=='ROOT') directoryStr='..';
                 if(directoryReqStr=='ROOT') directoryReqStr='';
 
-                // make a link 
-                // 
+                // make a buttons 
                 var pathNode = document.getElementById("currentPathInput");
                 var dirPath = pathNode.value;
                 dirPath = dirPath.replace(":","/");
                 
-                // 192.168.1.1/c/foldername?dir
-                var requestStr = /*location.host + '/' + 'index.html' +*/ '/' + dirPath + directoryReqStr + '?dir';
-                node.innerHTML += '<a href="'+ requestStr +'" target="_self">' + directoryStr + '<a/><br/>' ;
+                var button = document.createElement("button");
+                var textNode = document.createTextNode(directoryStr);
+                button.appendChild(textNode);
+                button.type='button';
+                var requestStr = '/' + dirPath + directoryReqStr;
+                button.name = requestStr;
                 
-                node.onclick = function(){
+                button.onclick = function(){
                   requestChDir(this);            
                 }
+
+                node.appendChild(button);
            }
           };
             if(entriesFound>0) node.innerHTML+='<br/>'
@@ -191,7 +216,18 @@
             if(FileArray[i].type.toLowerCase()=='f'){
              ++entriesFound;
              fileStr = FileArray[i].name.toUpperCase();
-             node.innerHTML += fileStr + '<br/>'
+
+             var button = document.createElement("button");
+             var textNode = document.createTextNode(fileStr);
+             button.appendChild(textNode);
+             button.type='button';
+             button.name = fileStr;
+                
+             button.onclick = function(){
+               requestFileAction(this);            
+             }
+
+             node.appendChild(button);
            }
 
           };
