@@ -92,7 +92,7 @@
             var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix,'dir', 'GET', true, processDirectoryListReq);
         }
 
-        function requestChDir(source){
+        function requestChDir(btn){
             var InputElem = document.getElementById("currentPathInput");
             var pathPrefix;
             
@@ -111,6 +111,20 @@
 
         } 
 
+
+        function handleDriveButtonOnClick(){
+          var InputElem = document.getElementById("currentPathInput");
+
+          if(InputElem!=null){
+              InputElem.value=this.name + ':';
+          }else{
+              InputElem.value='';
+          }
+
+          requestChDrive(this);            
+          return false;
+        }
+
         function createDriveButtons(node, DriveArray){
           var buttonStr = null;
           
@@ -118,25 +132,12 @@
 
              buttonStr = DriveArray[i].name.toUpperCase();
              var button = document.createElement("button");
-             
              var textNode = document.createTextNode(buttonStr + ':');
-             button.appendChild(textNode);
 
+             button.appendChild(textNode);
              button.type='button';
              button.name = buttonStr;
-             
-             button.onclick = function(){
-
-              var InputElem = document.getElementById("currentPathInput");
-            
-               if(InputElem!=null){
-                  InputElem.value=this.name + ':';
-               }else{
-                 InputElem.value='';
-               }
-
-                requestChDrive(this);            
-             }
+             button.onclick = handleDriveButtonOnClick;
 
              node.appendChild(button);
           };
@@ -144,7 +145,6 @@
         }
 
         function updateDriveViewUI(DriveArray){
-
           var div = document.createElement("div");
           div.id="DriveButtonGroup"
           div.innerHTML = '';
@@ -154,6 +154,11 @@
         }
 
         // directory view generation
+        function handleDirectoryOnClick(){
+            requestChDir(this);
+            return false;
+        }
+
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
           var directoryReqStr=null;
@@ -173,20 +178,17 @@
                 
                 var button = document.createElement("button");
                 var textNode = document.createTextNode(directoryStr);
+                var requestStr = '/' + dirPath + directoryReqStr;
+
                 button.appendChild(textNode);
                 button.type='button';
-                var requestStr = '/' + dirPath + directoryReqStr;
                 button.name = requestStr;
-                
-                button.onclick = function(){
-                  requestChDir(this);            
-                }
-
+                button.onclick = handleDirectoryOnClick;
                 node.appendChild(button);
            }
           };
-            if(entriesFound>0) node.innerHTML+='<br/>'
-            else node.innerHTML+='No directories found!<br/>'       
+           
+           if(entriesFound==0) node.innerHTML+='No directories found!<br/>'       
         }
 
         function updateDirectoryViewUI(DirJsonArray){
@@ -206,7 +208,13 @@
           elem.appendChild(div);
         }
 
-        // file view generation 
+        // file view generation
+
+        function handleFileOnClick(){
+            requestFileAction(this);
+            return false;            
+        }
+
         function createFileEntries(node, FileArray){
           var fileStr = null;
           var entriesFound=0;
@@ -220,18 +228,12 @@
              var textNode = document.createTextNode(fileStr);
              button.appendChild(textNode);
              button.type='button';
-             button.name = fileStr;
-                
-             button.onclick = function(){
-               requestFileAction(this);            
-             }
-
-             node.appendChild(button);
-           }
-
+             button.name = fileStr;              
+             button.onclick = handleFileOnClick;
           };
-            if(entriesFound>0) node.innerHTML+='<br/>';
-              else node.innerHTML+='No files found!<br/>';
+        }
+            if(entriesFound==0) 
+              node.innerHTML+='No files found!<br/>';
         }
 
 
@@ -341,4 +343,4 @@
           elem.style.visibility = 'visible';       
           evt.currentTarget.className += " active";
         }        
-    } 
+    }
