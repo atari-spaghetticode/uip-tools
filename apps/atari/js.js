@@ -99,16 +99,16 @@
             if(InputElem.value === ""){
                 pathPrefix="";
             }else{
-                pathPrefix = InputElem.value.replace(":","/");                 
+                pathPrefix = InputElem.value.replace(":","/"); 
             }
 
             //request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + btn.name + '/','dir', 'GET', true, processDirectoryListReq);
+            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + btn.name,'dir', 'GET', true, processDirectoryListReq);
 
         }
 
         function requestFileAction(source){
-
+            // TODO make download request
         } 
 
 
@@ -171,14 +171,10 @@
                 directoryReqStr=directoryStr;
                 if(directoryStr=='ROOT') directoryStr='..';
                 if(directoryReqStr=='ROOT') directoryReqStr='';
-
-                // make a buttons 
-                var pathNode = document.getElementById("currentPathInput");
-                var dirPath = pathNode.value[0];
                 
                 var button = document.createElement("button");
                 var textNode = document.createTextNode(directoryStr);
-                var requestStr = '/' + dirPath + directoryReqStr;
+                var requestStr = directoryReqStr;
 
                 button.appendChild(textNode);
                 button.type='button';
