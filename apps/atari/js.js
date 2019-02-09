@@ -112,7 +112,7 @@
         } 
 
 
-        function handleDriveButtonOnClick(){
+        function handleDriveOnClick(){
           var InputElem = document.getElementById("currentPathInput");
 
           if(InputElem!=null){
@@ -137,7 +137,7 @@
              button.appendChild(textNode);
              button.type='button';
              button.name = buttonStr;
-             button.onclick = handleDriveButtonOnClick;
+             button.onclick = handleDriveOnClick;
 
              node.appendChild(button);
           };
@@ -192,11 +192,9 @@
         }
 
         function updateDirectoryViewUI(DirJsonArray){
-        
+
           var div = document.createElement("div");
           div.id="DirectoryList";
-          //div.innerHTML = '<br/>';
-
           createDirectoryEntries(div,DirJsonArray);
           var elem = document.getElementById("directoryListView");
           var oldElem = document.getElementById("DirectoryList");
@@ -230,6 +228,7 @@
              button.type='button';
              button.name = fileStr;              
              button.onclick = handleFileOnClick;
+             node.appendChild(button);
           };
         }
             if(entriesFound==0) 
@@ -241,8 +240,6 @@
 
           var div = document.createElement("div");
           div.id="FileList"
-          div.innerHTML = '<br/><br/>';
-
           createFileEntries(div, FileJsonArray)
           
           var elem = document.getElementById("fileView");
