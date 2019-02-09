@@ -1,3 +1,5 @@
 *.d
 *.o
 /sublimebuild.sublime-build
+apps/atari/css_minified.css
+apps/atari/js_minified.js

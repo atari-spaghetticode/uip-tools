@@ -85,7 +85,7 @@
             if(InputElem.value === ""){
                 pathPrefix="";
             }else{
-                pathPrefix = InputElem.value.replace(":","/");                 
+                pathPrefix = InputElem.value[0];                 
             }
 
             //request dir status
@@ -169,8 +169,7 @@
 
                 // make a buttons 
                 var pathNode = document.getElementById("currentPathInput");
-                var dirPath = pathNode.value;
-                dirPath = dirPath.replace(":","/");
+                var dirPath = pathNode.value[0];
                 
                 var button = document.createElement("button");
                 var textNode = document.createTextNode(directoryStr);
