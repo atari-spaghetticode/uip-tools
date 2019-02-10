@@ -97,7 +97,8 @@
             var pathPrefix='';
 
             if(btn.name=='ROOT'){
-              var pathArray = CURRENT_GEMDOS_PATH.split('/');
+
+              var pathArray = CURRENT_GEMDOS_PATH.replace(/\/$/, "").split('/');
               
               CURRENT_GEMDOS_PATH='';
               
@@ -116,7 +117,8 @@
               var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
 
               //todo: check request result
-              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+              document.getElementById("currentPathInput").value = '';
+              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH.replace(/\/$/, "");
 
             }else{
             
