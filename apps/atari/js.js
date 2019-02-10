@@ -96,13 +96,16 @@
         function requestChDir(btn){
             var pathPrefix = CURRENT_GEMDOS_PATH;
             
-            pathPrefix = pathPrefix.replace(":","/").replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            pathPrefix = pathPrefix.replace(":","/");
+            pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
+            pathPrefix = pathPrefix.replace('//', '/');
             
             //request dir status
             var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
 
             //todo: check request result
-            CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '\\' + btn.name;
+            CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
             document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
         }
 
@@ -110,7 +113,10 @@
             
             var pathPrefix = CURRENT_GEMDOS_PATH;
             pathPrefix = pathPrefix + '/' + btn.name;
-            pathPrefix = pathPrefix.replace(":","/").replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            pathPrefix = pathPrefix.replace(":","\\");
+            pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
+            pathPrefix = pathPrefix.replace('//', '/');
             
             // request file download
             var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processDirectoryListReq);
