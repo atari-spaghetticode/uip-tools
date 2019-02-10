@@ -106,8 +106,14 @@
             document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
         }
 
-        function requestFileAction(source){
-            // TODO make download request
+        function requestFileDownload(btn){
+            
+            var pathPrefix = CURRENT_GEMDOS_PATH;
+            pathPrefix = pathPrefix + '/' + btn.name;
+            pathPrefix = pathPrefix.replace(":","/").replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            
+            // request file download
+            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processDirectoryListReq);
         } 
 
 
@@ -208,7 +214,7 @@
         // file view generation
 
         function handleFileOnClick(){
-            requestFileAction(this);
+            requestFileDownload(this);
             return false;            
         }
 
@@ -263,8 +269,14 @@
 
             var xhr = new XMLHttpRequest();
             
+            if(params==null || params.length==0){
+              params = '';
+            } else{
+              params = '/?' + params;
+            }
+
             if(isAsync!=true){
-                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
+                xhr.open(requestType, 'http://' + addr + params, isAsync);
                 xhr.send();
                 return xhr.responseText; 
             }else{
@@ -273,7 +285,7 @@
                        requestHandler(xhr.responseText);
                     }
 
-                xhr.open(requestType, 'http://' + addr +'/?' + params, isAsync);
+                xhr.open(requestType, 'http://' + addr + params, isAsync);
                 xhr.send();
             }
 
