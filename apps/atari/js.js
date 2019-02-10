@@ -40,23 +40,28 @@
         }
 // <!-- ----------------------------------------------------------------------------------------- -->
 
+        var CURRENT_GEMDOS_PATH = '';
+
+
         // view cleanup on reload
         function initMainView(){
-
-          var oldElem = document.getElementById("DirectoryList");
           
-          if(oldElem!=null){
-            oldElem.parentNode.removeChild(oldElem);
+          CURRENT_GEMDOS_PATH="";
+          
+          var item = document.getElementById("DirectoryList");
+          
+          if(item!=null){
+            item.parentNode.removeChild(oldElem);
           }
 
-          oldElem = document.getElementById("FileList");
+          item = document.getElementById("FileList");
           
-          if(oldElem!=null){
-            oldElem.parentNode.removeChild(oldElem);
+          if(item!=null){
+            item.parentNode.removeChild(oldElem);
           }
 
-          oldElem = document.getElementById("currentPathInput");
-          oldElem.value='';
+          item = document.getElementById("currentPathInput");
+          item.value = CURRENT_GEMDOS_PATH;
 
         }
 
@@ -79,32 +84,26 @@
             // .. parent dir
 
         function requestChDrive(btn){
-            var InputElem = document.getElementById("currentPathInput");
-            var pathPrefix;
+    
+            // request dir status
+            var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name,'dir', 'GET', true, processDirectoryListReq);
             
-            if(InputElem.value === ""){
-                pathPrefix="";
-            }else{
-                pathPrefix = InputElem.value[0];                 
-            }
-
-            //request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix,'dir', 'GET', true, processDirectoryListReq);
+            //todo: check request result
+            CURRENT_GEMDOS_PATH = btn.name + ':'; 
+            document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
         }
 
         function requestChDir(btn){
-            var InputElem = document.getElementById("currentPathInput");
-            var pathPrefix;
+            var pathPrefix = CURRENT_GEMDOS_PATH;
             
-            if(InputElem.value === ""){
-                pathPrefix="";
-            }else{
-                pathPrefix = InputElem.value.replace(":","/"); 
-            }
-
+            pathPrefix = pathPrefix.replace(":","/").replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            
             //request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + btn.name,'dir', 'GET', true, processDirectoryListReq);
+            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
 
+            //todo: check request result
+            CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '\\' + btn.name;
+            document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
         }
 
         function requestFileAction(source){
@@ -113,14 +112,6 @@
 
 
         function handleDriveOnClick(){
-          var InputElem = document.getElementById("currentPathInput");
-
-          if(InputElem!=null){
-              InputElem.value=this.name + ':';
-          }else{
-              InputElem.value='';
-          }
-
           requestChDrive(this);            
           return false;
         }
@@ -164,6 +155,17 @@
           var directoryReqStr=null;
           var entriesFound=0;
 
+          if(CURRENT_GEMDOS_PATH.length > 2){
+            var rootbtn = document.createElement("button");
+            var rootbtnNode = document.createTextNode('..');
+                
+            rootbtn.appendChild(rootbtnNode);
+            rootbtn.type='button';
+            rootbtn.name = 'ROOT';
+            rootbtn.onclick = handleDirectoryOnClick;
+            node.appendChild(rootbtn);
+          }
+
           for(var i=0;i<DirectoryArray.length;++i){
              if(DirectoryArray[i].type.toLowerCase()=='d'){
                 ++entriesFound;
@@ -184,7 +186,8 @@
            }
           };
            
-           if(entriesFound==0) node.innerHTML+='No directories found!<br/>'       
+           if(entriesFound==0) node.innerHTML+='No directories found!<br/>' ;
+                 
         }
 
         function updateDirectoryViewUI(DirJsonArray){
