@@ -148,13 +148,13 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
 {
   PT_BEGIN(worker);
 
-  LOG("receive_file: %s\r\n", filename);
+  LOG_TRACE("receive_file: %s\r\n", filename);
   //(void)LOG("\033K");
 
   // make sure folder exists
   if (ensureFolderExists(filename, 1)) {
     s->http_result_code = 400;
-    LOG(" -> failed to create folder!\r\n");
+    LOG_TRACE(" -> failed to create folder!\r\n");
     PT_EXIT(worker);
   }
 
@@ -162,7 +162,7 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
 
   if (s->fd < 0) {
     s->http_result_code = 400;
-    LOG(" -> failed to open!\r\n");
+    LOG_TRACE(" -> failed to open!\r\n");
     PT_EXIT(worker);
   }
 
@@ -342,7 +342,7 @@ const char* file_stat_json(const char* path)
         } while (0 == Fsnext());
       } else {
         /* Error */
-        LOG("path not found 2\r\n");
+        LOG_TRACE("path not found 2\r\n");
         goto error;
       }
     } else {
@@ -350,7 +350,7 @@ const char* file_stat_json(const char* path)
       file_stat_single(&response);
     }
   } else {
-      LOG("path not found\r\n");
+      LOG_TRACE("path not found\r\n");
       goto error;
   }
 
@@ -739,17 +739,16 @@ static int parse_query(struct atarid_state *s)
     {"setfiledate", query_setfiledate},
     {NULL,NULL}
   };
-  LOG("parse query: ");
+  LOG_TRACE("parse query: ");
   if (s->query[0] != 0) {
     for (size_t i = 0; query_mapping[i].query_string != 0 ; i++) {
-      LOG("query loop: %s : %d\r\n", query_mapping[i].query_string, strlen(query_mapping[i].query_string));
       if (strncmp(query_mapping[i].query_string, s->query, strlen(query_mapping[i].query_string)) == 0) {
-          LOG("%s\r\n", query_mapping[i].query_string);
+          LOG_TRACE("%s\r\n", query_mapping[i].query_string);
           return query_mapping[i].query_func(s);
       }
     }
   }
-  LOG("query not supported: %s\r\n", s->query);
+  LOG_TRACE("query not supported: %s\r\n", s->query);
   return 0;
 }
 
@@ -890,7 +889,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
 
       for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); ++i) {
         if (0 == memcmp(s->inputbuf, commands[i].entry, commands[i].entry_len - 1)) {
-          LOG("method: %s\r\n", commands[i].entry);
+          LOG_TRACE("method: %s\r\n", commands[i].entry);
           commands[i].parse_func(s);
           break;
         }
@@ -921,7 +920,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
         PSOCK_SEND_STR(&s->sin, s->http_result_string);
           /* this wont work, connection needs to be closed first */
       } else {
-        LOG("Error: no result string for the code");
+        LOG_WARN("Error: no result string for the code");
       }
     }
   } while (s->http_result_code < 299);
@@ -934,7 +933,7 @@ static void
 handle_error(struct atarid_state *s)
 {
   if (Fclose_safe(&s->fd) != -1) {
-    LOG("FClose -> failed\r\n");
+    LOG_WARN("FClose -> failed\r\n");
   }
 }
 
@@ -950,12 +949,12 @@ atarid_appcall(void)
 {
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
   if (uip_timedout()) {
-    LOG("Connection timeout\r\n");
+    LOG_WARN("Connection timeout\r\n");
     handle_error(s);
   } else if(uip_aborted()) {
-    LOG("Connection aborted\r\n");
+    LOG_WARN("Connection aborted\r\n");
   } else if(uip_closed()) {
-    LOG("Connection closed\r\n");
+    LOG_WARN("Connection closed\r\n");
     /* allow connection handler to do it's cleanup if connection was closed while
       calling into UIP which would result in this code being executed and thead
       never resumed again so that it would have no chance of cleaning up after itself.
@@ -964,7 +963,7 @@ atarid_appcall(void)
     /* now check if there's and outstanding error */
     handle_error(s);
   } else if(uip_connected()) {
-    LOG("Connection established\r\n");
+    LOG_TRACE("Connection established\r\n");
     s->inputbuf_size = INPUTBUF_SIZE;
     s->inputbuf = &s->inputbuf_data[0];
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
@@ -976,7 +975,7 @@ atarid_appcall(void)
   } else if(s != NULL) {
     handle_connection(s);
   } else {
-    LOG("Unknown condition, aborting connection\r\n");
+    LOG_WARN("Unknown condition, aborting connection\r\n");
     uip_abort();
   }
 
