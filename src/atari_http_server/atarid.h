@@ -66,6 +66,11 @@ struct atarid_state {
   struct pt worker[4];
   size_t temp_file_length;
 
+  void (*idle_run_handler)(struct atarid_state *s);
+  char storeCurrentPath[256];
+  char run_path[256];
+  int16_t storeCurrentDrive;
+
   char(*handler_func)(struct pt* worker,struct atarid_state *s);
 
   struct DataSource* handler_datasrc;

@@ -548,44 +548,84 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 /*---------------------------------------------------------------------------*/
 
 static
+void handle_idle_run(struct atarid_state *s)
+{
+  /* Process arguments */
+  s->idle_run_handler = NULL;
+
+  char* args = strchr(s->query, '=');
+  if (args)  {
+    const size_t max_args_len = 124;
+    size_t args_len = strlen(args+1);
+    if (args_len > max_args_len) {
+      LOG_WARN("Command line too long!");
+      args_len = max_args_len;
+    }
+    *args = (uint8_t) args_len;
+  }
+
+  // Bconmap(7);
+  void* basepage = (void*)Pexec(PE_LOAD, s->run_path, args, "");
+  //Fforce(1, 2);
+  int16_t pexec_ret = Pexec(PE_GO_FREE, 0, basepage, 0);
+
+  while( -1 == Cconis() ) Cconin ();
+  Dsetdrv (s->storeCurrentDrive);
+  Dsetpath(s->storeCurrentPath);
+}
+
+static
 PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 {
   char temp_path[256];
-  size_t len;
   bool path_ok = false;
 
   PT_BEGIN(worker);
-  LOG("handle_run: %s\r\n", s->filename);
 
-  len = strlen(s->filename);
   strncpy(temp_path, s->filename, sizeof(temp_path));
-  // remove file name from the path file path base
-  for (size_t i = len; i != 0; --i) {
-    if (temp_path[i] != '\\') {
+  // remove file name from the path
+  for (size_t i = strlen(s->filename); i != 0; --i) {
+    if (temp_path[i] == '\\') {
       temp_path[i] = '\0';
-    } else {
       break;
     }
+    temp_path[i] = '\0';
   }
+
+  Dgetpath (s->storeCurrentPath, 0);
+  s->storeCurrentDrive = Dgetdrv ();
 
   /* Set the current drive and path */
   if (tolower(temp_path[0]) >= 'a'
       && tolower(temp_path[0]) <= 'z') {
-      uint32_t drv_map = Dsetdrv (Dgetdrv ());
-      uint32_t drv_num = temp_path[0] - 'a';
-      uint32_t drv_bit = 1 << drv_num;
+    uint32_t drv_map = Dsetdrv (Dgetdrv ());
+    uint32_t drv_num = tolower(temp_path[0]) - 'a';
+    uint32_t drv_bit = 1 << drv_num;
 
-      if (drv_bit&drv_map) {
-        Dsetdrv (drv_num);
-        const char* path_no_drive = &temp_path[3];
-        LOG("setting cwd: %s\r\n", path_no_drive);
-        // set cwd
-        path_ok = Dsetpath(path_no_drive) == 0 ? true: false;
+    if (drv_bit&drv_map) {
+      char cwd[256];
+      Dsetdrv (drv_num);
+
+      Dgetpath (cwd, 0);
+      /* We want to convert to lower case and skip first backslash */
+      for (int i = 0; i < strlen(cwd); i++) {
+        cwd[i] = tolower (cwd[i+1]);
       }
+
+      const char* path_no_drive = &temp_path[3];
+
+      path_ok = true;
+
+      if (strcmp(cwd, path_no_drive) != 0) {
+        // set cwd
+        int ret = Dsetpath(path_no_drive);
+        path_ok = ret == 0 ? true: false;
+      }
+    }
   }
 
   if (!path_ok) {
-    LOG("Path set failed: %s\r\n", s->filename);
+    LOG_WARN("Path set failed: %s\r\n", s->filename);
     s->http_result_code = 400;
     PSOCK_EXIT2(worker, &s->sin);
   }
@@ -593,17 +633,10 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
   /* Close connection first */
   PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
   PSOCK_CLOSE(&s->sin);
-  PSOCK_WAIT_UNTIL2(worker, &s->sin, !uip_conn_active_current());
-
-  // Bconmap(7);
-  void* basepage = (void*)Pexec(PE_LOAD, s->filename, "", "");
-  LOG("basepage: %p\r\n", basepage);
-  Fforce(1, 2);
-  int16_t pexec_ret = Pexec(PE_GO_FREE, 0, basepage, 0);
-  LOG("pexec_ret: %d\r\n", pexec_ret);
-
-  while( -1 == Cconis() ) Cconin ();
-
+  //PSOCK_WAIT_UNTIL2(worker, &s->sin, !uip_conn_active_current());
+  //PT_YIELD(worker);
+  s->idle_run_handler = handle_idle_run;
+  strcpy(s->run_path, s->filename);
   PT_END(worker);
 }
 
@@ -612,14 +645,22 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 void parse_url(struct atarid_state *s)
 {
   char* fn_end = s->inputbuf;
-  char* fn,*fn2;
+  char* fn, *query;
 
+  /* Find the first character of the file path */
   while (*fn_end++ != '/');
 
   fn = fn_end;
 
-  while (*fn_end != ' ')
+  /* skip to the end of line */
+  while (*fn_end != '\r' && *fn_end != '\n') {
     fn_end++;
+  }
+
+  /* We want to skip the last word if the line which would usually be something like "HTTP/1.0" */
+  while (*fn_end != ' ') {
+    --fn_end;
+  }
 
   *fn_end = 0;
 
@@ -627,16 +668,17 @@ void parse_url(struct atarid_state *s)
   strncpy(s->original_filename, fn, sizeof(s->original_filename));
 
   /* extract query string */
+  query=fn;
+  s->query[0] = 0;
 
-  fn2=fn;
-  s->query[ 0 ] = 0;
+  /* find if there's a query in the URL */
+  while (*query != '?' && query != fn_end) query++;
 
-  while (*fn2 != '?' && fn2 != fn_end) fn2++;
-
-  if (fn2 != fn_end) {
-    /* got query string */
-    strncpy (s->query, &fn2[1], sizeof(s->query));
-    *fn2=0;
+  /* got query string? */
+  if (query != fn_end) {
+    /* Now copy the query with the unnecesery bit removed */
+    strncpy (s->query, &query[1], sizeof(s->query));
+    *query=0;
   }
 
   /* convert path to dos/atari format */
@@ -837,7 +879,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
     s->http_result_code = 0;
     s->tosFileDateTime = 0;
 
-    while(1) {
+    while (1) {
       // eat away the header
       PSOCK_READTO(&s->sin, ISO_nl);
 
@@ -928,8 +970,8 @@ atarid_appcall(void)
     PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
     s->timer = 0;
   } else if (uip_is_idle()) {
-    if (PT_HAS_ENDED(PSOCK_GET_TREAD(&s->sin))) {
-      handle_connection(s);
+    if (s->idle_run_handler) {
+      s->idle_run_handler(s);
     }
   } else if(s != NULL) {
     handle_connection(s);
