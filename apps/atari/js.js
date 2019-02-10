@@ -94,19 +94,48 @@
         }
 
         function requestChDir(btn){
-            var pathPrefix = CURRENT_GEMDOS_PATH;
-            
-            pathPrefix = pathPrefix.replace(":","/");
-            pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
-            pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
-            pathPrefix = pathPrefix.replace('//', '/');
-            
-            //request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
+            var pathPrefix='';
 
-            //todo: check request result
-            CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
-            document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+            if(btn.name=='ROOT'){
+              var pathArray = CURRENT_GEMDOS_PATH.split('/');
+              
+              CURRENT_GEMDOS_PATH='';
+              
+              for(var i=0;i<(pathArray.length-1);++i){
+                CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + pathArray[i] + '/' ;
+              }
+
+              pathPrefix = CURRENT_GEMDOS_PATH;
+            
+              pathPrefix = pathPrefix.replace(":","/");
+              pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
+              pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
+              pathPrefix = pathPrefix.replace('//', '/');
+
+              //request dir status
+              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
+
+              //todo: check request result
+              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+
+            }else{
+            
+              pathPrefix = CURRENT_GEMDOS_PATH;
+            
+              pathPrefix = pathPrefix.replace(":","/");
+              pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
+              pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
+              pathPrefix = pathPrefix.replace('//', '/');
+            
+              //request dir status
+              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
+
+              //todo: check request result
+              CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
+              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+            }
+
+            
         }
 
         function requestFileDownload(btn){
