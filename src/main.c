@@ -232,6 +232,7 @@ read_config()
   if (size == 0) {
     fclose (fp);
     config_setup_default ();
+    configure_ip ();
     save_config ();
     return;
   }
