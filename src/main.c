@@ -119,6 +119,60 @@ void tcpip_output()
 }
 
 /*---------------------------------------------------------------------------*/
+/* Note: Cookiejar code base on toshyp.atari.org source
+*/
+
+typedef struct
+{
+    uint32_t id;             /* Identification code */
+    uint32_t value;          /* Value of the cookie */
+} CookieJar;
+
+bool get_cookie(uint32_t cookie, void *value )
+{
+  CookieJar *cookiejar;
+  uint32_t    val = -1l;
+  uint16_t    i=0;
+
+  /* Get pointer to cookie jar */
+  cookiejar = (CookieJar *)(Setexc(0x05A0/4,(const void (*)(void))-1));
+  if (cookiejar) {
+    for (i=0 ; cookiejar[i].id ; i++) {
+      #if 0
+      const char* cookie_id_bytes = (const char*)&cookiejar[i].id;
+      LOG("Cookie: %c%c%c%c\r\n",
+        cookie_id_bytes[0], cookie_id_bytes[1],
+        cookie_id_bytes[2], cookie_id_bytes[3]);
+      #endif
+      if (cookiejar[i].id==cookie) {
+        if (value)
+          *(uint32_t *)value = cookiejar[i].value;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool
+check_cookiejar()
+{
+  if(get_cookie('MiNT', NULL)) {
+    LOG("uiptool doesn't work under MiNT, sorry!\r\n");
+    return false;
+  }
+
+  if(get_cookie('STiK', NULL)) {
+    LOG("uiptool doesn't work with STiK, sorry!\r\n");
+    return false;
+  }
+
+  return true;
+}
+
+/*---------------------------------------------------------------------------*/
+
 int
 main(void)
 {
@@ -129,6 +183,9 @@ main(void)
   (void)printf("uIP tool, version %d\r\n", VERSION);
 
   Super(0);
+  if (!check_cookiejar()) {
+    return 1;
+  }
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
