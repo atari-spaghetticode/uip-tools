@@ -364,6 +364,14 @@ dhcpc_init(const void *mac_addr, int mac_len)
   }
   PT_INIT(&s.pt);
 }
+
+void
+dhcp_stop()
+{
+  if(s.conn != NULL) {
+    uip_udp_remove(s.conn);
+  }
+}
 /*---------------------------------------------------------------------------*/
 void
 dhcpc_appcall(void)

@@ -47,6 +47,7 @@
 
 #include <osbind.h>
 #include <stdio.h>
+#include <string.h>
 
 #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
 
@@ -104,6 +105,8 @@ struct ProfileProbe netAll;
 struct ProfileProbe netInput;
 struct ProfileProbe netOther;
 
+/*---------------------------------------------------------------------------*/
+
 void net_send()
 {
   uip_split_output();
@@ -116,6 +119,175 @@ void tcpip_output()
   uip_arp_out();
   RTL8019dev_send();
   probeEnd(&netSend);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+uip_log(char *m)
+{
+  LOG_TRACE("uIP: %s\n", m);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+uip_configure_ip(
+  const uip_ipaddr_t ipaddr,
+  const uip_ipaddr_t netmask,
+  const uip_ipaddr_t default_router)
+{
+  LOG("%d.%d.%d.%d\r\n",
+	  uip_ipaddr1(ipaddr), uip_ipaddr2(ipaddr),
+	  uip_ipaddr3(ipaddr), uip_ipaddr4(ipaddr));
+
+  uip_sethostaddr(ipaddr);
+  uip_setnetmask(netmask);
+  uip_setdraddr(default_router);
+}
+
+void
+dhcpc_configured(const struct dhcpc_state *s)
+{
+  uip_configure_ip(s->ipaddr, s->netmask, s->default_router);
+  if ( s->hostname[0] != 0 ) {
+    LOG("DHCP Hostname: %s\r\n", s->hostname);
+  }
+
+  /*  resolv_conf(s->dnsaddr); */
+}
+
+void configure_ip();
+
+/*---------------------------------------------------------------------------*/
+
+uip_ipaddr_t config_ip;
+uip_ipaddr_t config_netmask;
+uip_ipaddr_t config_router;
+bool config_static_ip;
+char config_path[256];
+
+void
+toggle_ip_config()
+{
+  config_static_ip=!config_static_ip;
+  save_config();
+  configure_ip();
+}
+
+void
+create_config_path(const char* app_path)
+{
+  char* file_ext = NULL;
+  strncpy(config_path, app_path, sizeof(config_path));
+  file_ext = strrchr(config_path, '.');
+  if (file_ext) {
+    *file_ext = 0;
+    strcat(config_path, ".cnf");
+    LOG("config path: %s\r\n", config_path);
+  } else {
+    config_path[0] = 0;
+  }
+}
+
+void
+config_setup_default()
+{
+  config_static_ip = false;
+  uip_ipaddr(&config_ip, 192,168,1,90);
+  uip_ipaddr(&config_netmask, 255,255,255,0);
+  uip_ipaddr(&config_router, 192,168,1,254);
+}
+
+void
+save_config()
+{
+  FILE* fp = fopen (config_path, "w");
+  fprintf(fp,
+    "%d " /* dhcp enabled? */
+    "%d.%d.%d.%d %d.%d.%d.%d %d.%d.%d.%d",
+    config_static_ip ? 1 : 0,
+    uip_ipaddr1(config_ip), uip_ipaddr2(config_ip),
+	  uip_ipaddr3(config_ip), uip_ipaddr4(config_ip),
+    uip_ipaddr1(config_netmask), uip_ipaddr2(config_netmask),
+	  uip_ipaddr3(config_netmask), uip_ipaddr4(config_netmask),
+    uip_ipaddr1(config_router), uip_ipaddr2(config_router),
+	  uip_ipaddr3(config_router), uip_ipaddr4(config_router));
+  fclose(fp);
+}
+
+void
+read_config()
+{
+  FILE* fp = fopen (config_path, "r");
+  size_t size = 0;
+  char* config_data = NULL;
+
+  if (fp) {
+    fseek (fp, 0L, SEEK_END);
+    size = ftell (fp);
+    fseek (fp, 0L, SEEK_SET);
+  }
+
+  if (size == 0) {
+    fclose (fp);
+    config_setup_default ();
+    save_config ();
+    return;
+  }
+
+  config_data = malloc (size);
+
+  if (!config_data) {
+    LOG ("2 Couldn't open/create the config file: %s\r\n", config_path);
+    return;
+  }
+
+  fread (config_data, size, 1, fp);
+  fclose (fp);
+
+  {
+    int ip[4], mask[4], route[4];
+    int static_ip_enabled = 0;
+
+    size_t num_values = sscanf(config_data,
+      "%u " /* dhcp enabled? */
+      "%u.%u.%u.%u %u.%u.%u.%u %u.%u.%u.%u",
+      &static_ip_enabled,
+      &ip[0], &ip[1], &ip[2], &ip[3],
+      &mask[0], &mask[1], &mask[2], &mask[3],
+      &route[0], &route[1], &route[2], &route[3]);
+
+    if(num_values != 13) {
+      LOG("Configuration file malformed! %d\r\n", num_values);
+      config_setup_default ();
+    }
+
+    config_static_ip = static_ip_enabled == 1 ? true : false;
+    uip_ipaddr(&config_ip, ip[0], ip[1], ip[2], ip[3]);
+    uip_ipaddr(&config_netmask, mask[0], mask[1], mask[2], mask[3]);
+    uip_ipaddr(&config_router, route[0], route[1], route[2], route[3]);
+
+    configure_ip();
+  }
+
+  free (config_data);
+
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+configure_ip()
+{
+  if (!config_static_ip) {
+    LOG("DHCP IP: ");
+    dhcpc_init(uip_ethaddr.addr, 6);
+  } else {
+    dhcp_stop();
+    LOG("STATIC IP: ");
+    uip_configure_ip (config_ip, config_netmask, config_router);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -174,13 +346,15 @@ check_cookiejar()
 /*---------------------------------------------------------------------------*/
 
 int
-main(void)
+main(int argc, char *argv[])
 {
   int i;
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   
-  (void)printf("uIP tool, version %d\r\n", VERSION);
+  LOG("uIP tool, version %d\r\n", VERSION);
+
+  create_config_path(argv[0]);
 
   Super(0);
   if (!check_cookiejar()) {
@@ -189,14 +363,14 @@ main(void)
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  (void)Cconws("RTL8019 init .. ");
-  if ( !RTL8019dev_init(uip_ethaddr.addr) ) {
-    (void)Cconws("failed!\r\n");
+  LOG("RTL8019 init ... ");
+  if (!RTL8019dev_init(uip_ethaddr.addr) ) {
+    LOG("driver initialisation failed!\r\n");
     return 1;
   }
 
   uip_init();
-  dhcpc_init(uip_ethaddr.addr, 6);
+  read_config();
   atarid_init();
 
   initProbe(&netSend);
@@ -207,7 +381,18 @@ main(void)
 
   while( -1 == Cconis() ) Cconin ();
 
-  while( -1 != Cconis() ) {
+  while(1) {
+
+    if( -1 == Cconis() ) {
+      uint32_t code = Cconin ();
+      /* Check if F1 was pressed  */
+      if(code == 0x3b0000) {
+        toggle_ip_config();
+      } else {
+        break;
+      }
+    }
+
     probeBegin(&netAll);
 
     probeBegin(&netRecv);
@@ -280,22 +465,4 @@ main(void)
 
   return 0;
 }
-/*---------------------------------------------------------------------------*/
-void
-uip_log(char *m)
-{
-  LOG("uIP: %s\n", m);
-}
-
-#ifdef __DHCPC_H__
-void
-dhcpc_configured(const struct dhcpc_state *s)
-{
-  uip_sethostaddr(s->ipaddr);
-  uip_setnetmask(s->netmask);
-  uip_setdraddr(s->default_router);
-//  resolv_conf(s->dnsaddr);
-}
-#endif /* __DHCPC_H__ */
-
 /*---------------------------------------------------------------------------*/

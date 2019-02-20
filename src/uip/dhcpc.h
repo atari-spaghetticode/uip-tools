@@ -57,6 +57,7 @@ struct __attribute__ ((__packed__)) dhcpc_state {
 };
 
 void dhcpc_init(const void *mac_addr, int mac_len);
+void dhcp_stop();
 void dhcpc_request(void);
 
 void dhcpc_appcall(void);
