@@ -34,6 +34,9 @@ def compressProgramMaybe(env, target):
     else:
         print "UPX compression is disabled"
 
+def setFastRamFlags(env, target):
+    env.AddPostAction(target, Action('m68k-atari-mint-flags --mfastram --mfastload --mfastalloc $TARGET'))
+
 def getVersion(env):
     git = env.WhereIs('git')
     if git:
@@ -69,6 +72,8 @@ target = hostEnv.SConscript(
 
 # Optionally compress the binary with UPX
 compressProgramMaybe(targetEnv, target)
+# Load into TT ram if possible
+setFastRamFlags(targetEnv, target)
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))
 SetOption('num_jobs', num_cpu)
