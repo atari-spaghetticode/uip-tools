@@ -240,7 +240,7 @@ read_config()
   config_data = malloc (size);
 
   if (!config_data) {
-    LOG ("2 Couldn't open/create the config file: %s\r\n", config_path);
+    LOG ("Couldn't open/create the config file: %s\r\n", config_path);
     return;
   }
 
@@ -344,8 +344,6 @@ main(int argc, char *argv[])
 
   Super(0);
 
-  LOG("read: %x\r\n",  *((uint16_t*) 0xfb0102));
-
   if(get_cookie('MiNT', NULL)) {
     LOG("uiptool doesn't work under MiNT, sorry!\r\n");
     return 1;
@@ -356,9 +354,7 @@ main(int argc, char *argv[])
     return 1;
   }
 
-  if(get_cookie('_CPU', &cpu_type)) {
-    LOG("CPU: %d\r\n", cpu_type);
-  }
+  get_cookie('_CPU', &cpu_type);
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
