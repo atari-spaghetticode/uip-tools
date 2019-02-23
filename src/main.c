@@ -301,7 +301,7 @@ typedef struct
     uint32_t value;          /* Value of the cookie */
 } CookieJar;
 
-bool get_cookie(uint32_t cookie, void *value )
+bool get_cookie(uint32_t cookie, uint32_t *value)
 {
   CookieJar *cookiejar;
   uint32_t    val = -1l;
@@ -319,29 +319,13 @@ bool get_cookie(uint32_t cookie, void *value )
       #endif
       if (cookiejar[i].id==cookie) {
         if (value)
-          *(uint32_t *)value = cookiejar[i].value;
+          *value = cookiejar[i].value;
         return true;
       }
     }
   }
 
   return false;
-}
-
-bool
-check_cookiejar()
-{
-  if(get_cookie('MiNT', NULL)) {
-    LOG("uiptool doesn't work under MiNT, sorry!\r\n");
-    return false;
-  }
-
-  if(get_cookie('STiK', NULL)) {
-    LOG("uiptool doesn't work with STiK, sorry!\r\n");
-    return false;
-  }
-
-  return true;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -352,20 +336,34 @@ main(int argc, char *argv[])
   int i;
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
+  uint32_t cpu_type = 0;  // assume MC68000
   
   LOG("uIP tool, version %d\r\n", VERSION);
 
   create_config_path(argv[0]);
 
   Super(0);
-  if (!check_cookiejar()) {
+
+  LOG("read: %x\r\n",  *((uint16_t*) 0xfb0102));
+
+  if(get_cookie('MiNT', NULL)) {
+    LOG("uiptool doesn't work under MiNT, sorry!\r\n");
     return 1;
+  }
+
+  if(get_cookie('STiK', NULL)) {
+    LOG("uiptool doesn't work with STiK, sorry!\r\n");
+    return 1;
+  }
+
+  if(get_cookie('_CPU', &cpu_type)) {
+    LOG("CPU: %d\r\n", cpu_type);
   }
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
   LOG("RTL8019 init ... ");
-  if (!RTL8019dev_init(uip_ethaddr.addr) ) {
+  if (!RTL8019dev_init(uip_ethaddr.addr, cpu_type) ) {
     LOG("driver initialisation failed!\r\n");
     return 1;
   }

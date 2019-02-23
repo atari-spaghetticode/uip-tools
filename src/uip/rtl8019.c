@@ -1,9 +1,33 @@
 #include "rtl8019.h"
-#include "delay.h"
 #include "debug.h"
 #include "rtlregs.h"
 #include <stdint.h>
 #include <stdbool.h>
+
+static int64_t getMicroseconds()
+{
+  uint64_t timer200hz;
+  uint32_t data;
+resync:
+  timer200hz = *((volatile uint32_t*)0x4BA) ;
+  data = *((volatile uint8_t*)0xFFFFFA23);
+
+  if ( *((volatile uint32_t*)0x4BA) != timer200hz )
+  {
+    goto resync;
+  }
+
+  timer200hz*=5000;       // convert to microseconds
+  timer200hz+=(uint64_t)(((192-data)*6666)>>8); //26;     // convert data to microseconds
+  return timer200hz;
+}
+
+
+void Delay_microsec(long delay)
+{
+    uint64_t future = getMicroseconds() + delay;
+    while(future > getMicroseconds());
+}
 
 /*****************************************************************************
 *  Module Name:       Realtek 8019AS Driver
@@ -49,20 +73,8 @@
 *
 *****************************************************************************/
 
-void writeRTL(const uint16_t address, const unsigned char data)
+inline void writeRTL(const uint16_t address, const unsigned char data)
 {
-    // asm volatile
-    // (   "   move.l  #0xfb0000,a0         ;"
-    //     "   move.w %0,D0                ;"
-    //     "   lsl.w #8,d0                 ;"
-    //     "   move.b %1,d0                ;"
-    //     "   tst.b (a0,d0.w*2)           ;"
-    //    :    
-    //    :    "o"(address),
-    //         "o"(data)
-    //    : "a0", "d0"
-    // );
-
     ((uint8_t volatile*) 0xfb0000 )[ ((address<<8) | data) << 1] ? 1:0;
 }
 
@@ -83,52 +95,10 @@ void writeRTL(const uint16_t address, const unsigned char data)
 *
 *****************************************************************************/
 
-const unsigned char readRTL(const uint16_t address)
+inline unsigned char readRTL(const uint16_t address)
 {
-  // unsigned char byte=0;  
-  //   asm volatile
-  //   (   "   move.l  #0xfa0000,a0         ;"
-  //       "   move.w %1,d0                ;"
-  //       "   lsl.w  #8,d0                ;"
-  //       "   move.b (a0,d0.w*2),%0       ;"
-  //      :    "=r"(byte)
-  //      :    "o"(address)
-  //      : "a0", "d0"
-  //   );
-  //  return byte;
-
    return ((uint8_t volatile*) 0xfa0000 )[ address<<9 ];
-
 }
-
-/*****************************************************************************
-*  RTL8019setupPorts(void);
-*
-*  Created By:  Louis Beaudoin
-*  Date:        September 21, 2002
-*  Description: Sets up the ports used for communication with the RTL8019 NIC
-*                 (data bus, address bus, read, write, and reset)
-*****************************************************************************/
-void RTL8019setupPorts(void)
-{
-
-}
-
-
-
-/*****************************************************************************
-*  HARD_RESET_RTL8019()
-*
-*  Created By:  Louis Beaudoin
-*  Date:        September 21, 2002
-*  Description: Simply toggles the pin that resets the NIC
-*****************************************************************************/
-/*#define HARD_RESET_RTL8019() do{ sbi(RTL8019_RESET_PORT, RTL8019_RESET_PIN); \
-                                Delay_10ms(1); \
-                                cbi(RTL8019_RESET_PORT, RTL8019_RESET_PIN);} \
-                                while(0)*/
-
-
 
 /*****************************************************************************
 *  overrun(void);
@@ -250,11 +220,130 @@ void RTL8019beginPacketSend(unsigned int packetLength)
     writeRTL(CR,0x12);
 }
 
+uint32_t rtl_cpu_type = 0;
+
 inline void RTL8019sendPacketData(unsigned char * localBuffer, unsigned int length)
 {
-    unsigned int i;
-    for(i=0;i<length;i++)
-        writeRTL(RDMAPORT, localBuffer[i]);
+    if (rtl_cpu_type < 20) {
+        asm volatile
+        (
+            "   move.l  %0,a0               \n"
+            "   move.l  #0xfb0000,a1        \n"
+            "   add.l   %2,a1               \n"
+            "   move.l  %1,d0               \n"
+            "   move.l  d0,d2               \n"
+            "   lsr.w   #3,d0               \n"
+            "   and.w   #0x7,d2             \n"
+            "   move.w  d2,d3               \n"
+            "   lsl.w   #3,d2               \n"
+            "   add.w   d3,d2               \n"
+            "   add.w   d3,d2               \n"
+            "   neg.w   d2                  \n"
+            "   moveq   #0,d1               \n"
+            "   jmp     2f(pc,d2.w)         \n"
+            "1:                             \n"
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "   move.b  (a0)+,d1            \n"
+            "   add.w   d1,d1               \n"
+            "   tst.b  (a1,d1.w)            \n"
+            "   moveq  #0,d1                \n"
+
+            "2: dbf     d0,1b               \n"
+        :
+        :   "g"(localBuffer),
+            "g"(length),
+            "g"(RDMAPORT << 9)          /* shift the address as we need to do it anyway*/
+        :    "a0","a1","d0","d1","d2","d3"
+        );
+    } else {
+        asm volatile
+        (
+            "   move.l  %2,d1               \n"
+            "   move.l  %0,a0               \n"
+            "   move.l  #0xfb0000,a1        \n"
+            "   move.l  %1,d0               \n"
+            "   move.l  d0,d2               \n"
+            "   lsr.w   #4,d0               \n"
+            "   and.w   #0xf,d2             \n"
+            "   move.w  d2,d3               \n"
+            "   add.w   d3,d2               \n"
+            "   add.w   d3,d2               \n"
+            "   neg.w   d2                  \n"
+            "   dc.w    0x4efb,0x2262       \n"    //  jmp     2f(pc,d2.w*2)
+            "1: move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "   move.b  (a0)+,d1            \n"
+            "   dc.w    0x4a31,0x1200       \n"    //  tst.b   (a1,d1.w*2)
+            "2: dbf     d0,1b               \n"
+        :
+        :   "g"(localBuffer),
+            "g"(length),
+            "g"(RDMAPORT << 8)          /* shift the address as we need to do it anyway*/
+        :    "a0","a1","d0","d1","d2","d3"
+        );
+    }
 }
 
 inline void RTL8019endPacketSend(void)
@@ -296,20 +385,11 @@ unsigned int RTL8019beginPacketRetreive(void)
     
     // read the boundary register - pointing to the beginning of the packet
     bnry = readRTL(BNRY) ;
-
-    /*  debug_print(("bnry: "));
-        debug_print8(bnry);*/
-
-    /*  debug_print(("RXSTOP_INIT: "));
-    debug_print8(RXSTOP_INIT);
-    debug_print(("RXSTART_INIT: "));
-    debug_print8(RXSTART_INIT);*/
     // return if there is no packet in the buffer
     if( bnry == i ) {
       return 0;
     }
     
-
     // clear the packet received interrupt flag
     writeRTL(ISR, (1<<ISR_PRX));
     
@@ -330,18 +410,16 @@ unsigned int RTL8019beginPacketRetreive(void)
     writeRTL(RSAR0, 0);
     writeRTL(RSAR1, bnry);
     writeRTL(CR, 0x0A);
-    /*      debug_print(("Page header: "));*/
 
     for(i=0;i<4;i++) {
       pageheader[i] = readRTL(RDMAPORT);
-      /*      debug_print8(pageheader[i]);*/
     }
     
     // end the DMA operation
     writeRTL(CR, 0x22);
     for(i = 0; i <= 20; i++) {
       if(readRTL(ISR) & 1<<6) {
-    break;
+        break;
       }
     }
     writeRTL(ISR, 1<<6);
@@ -351,9 +429,6 @@ unsigned int RTL8019beginPacketRetreive(void)
     
     currentRetreiveAddress = (bnry<<8) + 4;
 
-    /*  debug_print(("nextPage: "));
-        debug_print8(nextPage);*/
-    
     // if the nextPage pointer is invalid, the packet is not ready yet - exit
     if( (nextPage >= RXSTOP_INIT) || (nextPage < RXSTART_INIT) ) {
       /*      UDR0 = '0';*/
@@ -372,22 +447,39 @@ void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
     writeRTL(RSAR0, (unsigned char)currentRetreiveAddress);
     writeRTL(RSAR1, (unsigned char)(currentRetreiveAddress>>8));
     writeRTL(CR, 0x0A);
-//    for(i=0;i<length;i++)
-//        localBuffer[i] = readRTL(RDMAPORT);
 
     asm volatile
     (   
-        "   move.l  %0,a0               \n"             // stack pointer
-        "   move.l  #0xfa2000,a1               \n"             // stack pointer
-        "   move.l  %1,d0               \n"             // push Run func argument
-        "   subq.l  #1,d0               \n"             // push Run func argument
-        "1: move.b  (a1),(a0)+          \n"             // push Run func argument
-        "   dbf     d0,1b              \n"             // push Run func argument
-        
-       :    
-       :    "g"( localBuffer ),
-            "g"( length )
-       :    "a0","a1","d0"
+        "   move.l  %0,a0               \n"
+        "   move.l  #0xfa2000,a1        \n"
+        "   move.l  %1,d0               \n"
+        "   move.l  d0,d2               \n"
+        "   lsr.w   #4,d0               \n"
+        "   and.w   #0xf,d2             \n"
+        "   add.w   d2,d2               \n"
+        "   neg.w   d2                  \n"
+        "   jmp     2f(pc,d2.w)         \n"
+        "1: move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "   move.b  (a1),(a0)+          \n"
+        "2: dbf     d0,1b               \n"
+    :
+    :   "g"( localBuffer ),
+        "g"( length )
+    :    "a0","a1","d0","d2"
     );
 
 
@@ -424,7 +516,7 @@ void overrun(void)
 
     data_L = readRTL(CR);
     writeRTL(CR, 0x21);
-  //  Delay_1ms(2);
+
     writeRTL(RBCR0, 0x00);
     writeRTL(RBCR1, 0x00);
     if(!(data_L & 0x04))
@@ -492,17 +584,7 @@ void overrun(void)
 #define TX_PAGES 12         /* Allow for 2 back-to-back frames */
 
 static unsigned char mac[6] = {0x00,0x06,0x98,0x01,0x02,0x29};
-void Delay(long nops)
-{
-    volatile long i;
 
-    for(i = 0; i < nops; i++) 
-#ifdef __IMAGECRAFT__
-        asm("nop\n");
-#else
-        asm volatile("nop\n\t"::);
-#endif
-}
 
 static bool NicReset(void)
 {
@@ -513,10 +595,12 @@ static bool NicReset(void)
     for(j = 0; j < 20; j++) {
         debug_print(("SW-Reset..."));
         i = readRTL(NIC_RESET);
-        Delay(500);
+        //Delay(500);
+        Delay_microsec(100);
         writeRTL(NIC_RESET, i);
         for(i = 0; i < 20; i++) {
-            Delay(5000);
+            Delay_microsec(200);
+            //Delay(5000);
 
             /*
              * ID detection added for version 1.1 boards.
@@ -529,20 +613,6 @@ static bool NicReset(void)
             }
         }
         debug_print(("failed\r\n\x07"));
-
-        /*
-         * Toggle the hardware reset line. Since Ethernut version 1.3 the 
-         * hardware reset pin of the nic is no longer connected to bit 4 
-         * on port E, but wired to the board reset line.
-         */
-        // if(j == 10) {
-        //     debug_print(("Ethernut 1.1 HW-Reset\r\n"));
-        //     sbi(DDRE, 4);
-        //     sbi(PORTE, 4);
-        //     Delay(100000);
-        //     cbi(PORTE, 4);
-        //     Delay(250000);
-        // }
     }
     return false;
 }
@@ -617,8 +687,8 @@ void RTL8019getMac(uint8_t* macaddr)
 {
     uint8_t tempCR;
     // switch register pages
-    //tempCR = readRTL(NIC_CR);
-    //writeRTL(CR,tempCR|NIC_CR_PS0);
+    tempCR = readRTL(NIC_CR);
+    writeRTL(CR,tempCR|NIC_CR_PS0);
 
     //writeRTL(NIC_CR, E8390_NODMA+E8390_PAGE3);
     writeRTL(NIC_CR,  NIC_CR_RD2 | NIC_CR_PS0 | NIC_CR_PS1);
@@ -632,9 +702,11 @@ void RTL8019getMac(uint8_t* macaddr)
     writeRTL(CR,tempCR);
 }
 
-bool initRTL8019(uint8_t* macaddr)
+bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
 {
     unsigned char i, rb;
+
+    rtl_cpu_type = cpu_type;
 
     if ( !NicReset() ) {
         return false;
@@ -644,7 +716,6 @@ bool initRTL8019(uint8_t* macaddr)
 
     printf("MAC: %x:%x:%x:%x:%x:%x\r\n", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 
-
     debug_print(("Init controller..."));
     writeRTL(NIC_PG0_IMR, 0);
     writeRTL(NIC_PG0_ISR, 0xff);
@@ -653,8 +724,8 @@ bool initRTL8019(uint8_t* macaddr)
     writeRTL(NIC_PG3_CONFIG3, 0);
     writeRTL(NIC_PG3_CONFIG2, NIC_CONFIG2_BSELB);
     writeRTL(NIC_PG3_EECR, 0);
-    /*    Delay(50000);*/
-    Delay_10ms(200);
+
+    Delay_microsec(1000);
     writeRTL(NIC_CR, NIC_CR_STP | NIC_CR_RD2);
     writeRTL(NIC_PG0_DCR, NIC_DCR_LS | NIC_DCR_FT1);
     writeRTL(NIC_PG0_RBCR0, 0);
@@ -678,8 +749,8 @@ bool initRTL8019(uint8_t* macaddr)
     writeRTL(NIC_PG0_IMR, 0);
     writeRTL(NIC_CR, NIC_CR_STA | NIC_CR_RD2);
     writeRTL(NIC_PG0_TCR, 0);
-    /*    Delay(1000000)*/
-    Delay_10ms(200);
+
+    Delay_microsec(1000);
 
 
     writeRTL(NIC_CR, NIC_CR_STA | NIC_CR_RD2 | NIC_CR_PS0 | NIC_CR_PS1);
@@ -710,11 +781,6 @@ bool initRTL8019(uint8_t* macaddr)
     if(rb & 0x03)
         debug_print(("Failed\x07 "));
 
-    /*    rb = readRTL(NIC_PG3_CONFIG1);
-      debug_print8(rb);*/
-    /*    NutPrintFormat(0, "IRQ%u ", (rb >> 4) & 7);*/
-    /*    debug_print("IRQ ");
-      debug_print8((rb >> 4) & 7);*/
 
     rb = readRTL(NIC_PG3_CONFIG2);
     debug_print8(rb);
@@ -743,25 +809,5 @@ void processRTL8019Interrupt(void)
     
   if( byte & (1<<ISR_OVW) )
     overrun();
-
 }
-
-/*
-  unsigned char RTL8019ReceiveEmpty(void)
-  {
-  unsigned char temp;
-
-  // read CURR from page 1
-  writeRTL(CR,0x62);
-  temp = readRTL(CURR);
-    
-  // return to page 0
-  writeRTL(CR,0x22);
-    
-  return ( readRTL(BNRY) == temp );
-    
-  }*/
-
-
-
 

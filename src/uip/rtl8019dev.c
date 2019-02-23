@@ -27,9 +27,9 @@
 
 
 
-bool RTL8019dev_init(uint8_t* macaddr)
+bool RTL8019dev_init(uint8_t* macaddr, uint32_t cpu_type)
 {
-	return initRTL8019(macaddr);
+	return initRTL8019(macaddr, cpu_type);
 }
 
 

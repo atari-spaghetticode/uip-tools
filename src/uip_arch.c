@@ -38,173 +38,204 @@
 
 #include "uip.h"
 #include "uip_arch.h"
+#include <stdint.h>
 
 #define BUF ((struct uip_tcpip_hdr *)&uip_buf[UIP_LLH_LEN])
-#define IP_PROTO_TCP    6
 
 /*-----------------------------------------------------------------------------------*/
-void
-uip_add_rcv_nxt(u16_t n)
-{
-  uip_conn->rcv_nxt[3] += (n & 0xff);
-  uip_conn->rcv_nxt[2] += (n >> 8);
-
-  if(uip_conn->rcv_nxt[2] < (n >> 8)) {
-    ++uip_conn->rcv_nxt[1];    
-    if(uip_conn->rcv_nxt[1] == 0) {
-      ++uip_conn->rcv_nxt[0];
-    }
-  }
-  
-  
-  if(uip_conn->rcv_nxt[3] < (n & 0xff)) {
-    ++uip_conn->rcv_nxt[2];  
-    if(uip_conn->rcv_nxt[2] == 0) {
-      ++uip_conn->rcv_nxt[1];    
-      if(uip_conn->rcv_nxt[1] == 0) {
-	++uip_conn->rcv_nxt[0];
-      }
-    }
-  }
-}
-/*-----------------------------------------------------------------------------------*/
-#if 0
-void
-uip_add32(u8_t *op32, u16_t op16)
-{
-  
-  uip_acc32[3] = op32[3] + (op16 & 0xff);
-  uip_acc32[2] = op32[2] + (op16 >> 8);
-  uip_acc32[1] = op32[1];
-  uip_acc32[0] = op32[0];
-  
-  if(uip_acc32[2] < (op16 >> 8)) {
-    ++uip_acc32[1];    
-    if(uip_acc32[1] == 0) {
-      ++uip_acc32[0];
-    }
-  }
-  
-  
-  if(uip_acc32[3] < (op16 & 0xff)) {
-    ++uip_acc32[2];  
-    if(uip_acc32[2] == 0) {
-      ++uip_acc32[1];    
-      if(uip_acc32[1] == 0) {
-  ++uip_acc32[0];
-      }
-    }
-  }
-}
-/*-----------------------------------------------------------------------------------*/
-static u16_t
-chksum(u16_t *sdata, u16_t len)
-{ 
-  u16_t acc,asm_acc;
-
-  asm volatile
-  (   
-      "     move.l %1,a0        \n"
-      "     move.w %2,d0        \n"
-      "     move.w d0,d1        \n"
-      "     move #0,ccr         \n"
-
-      "     and.w #0xf,d1       \n"
-      "     moveq #0,d6         \n"
-      "     lsr.w #4,d0         \n"
-      "     subq.w #1,d0        \n"
-      "     bmi.b 2f            \n"
-      "1:                       \n"
-      "     movem.l (a0)+,d2-d5 \n"
-      "     addx.l d2,d6        \n"
-      "     addx.l d3,d6        \n"
-      "     addx.l d4,d6        \n"
-      "     addx.l d5,d6        \n"
-      "     dbf d0,1b           \n"
-
-      "     moveq #0,d3         \n"
-      "     move.l d6,d2        \n"
-      "     swap d2             \n"
-      "     addx.w d2,d6        \n"
-      "     addx.w d3,d6        \n"
-      "2:                       \n"
-      "     move.w d1,d0        \n"
-      "     lsr.w #1,d0         \n"
-      "     subq.w #1,d0        \n"
-      "     bmi.b 4f            \n"
-      "3:                       \n"  
-      "     move.w (a0)+,d2     \n"
-      "     addx.w d2,d6        \n"
-      "     dbf d0,3b           \n"
-      "     moveq #0,d3         \n"
-      "     addx.w d3,d6        \n"
-      "4:                       \n"  
-      "     moveq #0,d3         \n"
-      "     btst #0,d1          \n"
-      "     beq.b 5f            \n"
-      "     move.b (a0)+,d3     \n"
-      "     lsl.w  #8,d3        \n"
-      "     addx.w d3,d6        \n"
-      "5:                       \n"
-      "     move.w  d6,%0       \n"
-      
-     :    "=r" ( asm_acc )
-     :    "g"( sdata ),
-          "g"( len )
-     :    "a0","d0","d1","d2","d3","d4","d5","d6"
-  );
-
-  return asm_acc;
-}
-/*-----------------------------------------------------------------------------------*/
+/* The checksum code has been copied from Freemint project:
+   https://github.com/freemint/freemint
+   freemint/sys/sockets/inet4/tcputil.c
+*/
 u16_t
-uip_ipchksum(void)
+upper_layer_chksum(int proto)
 {
-  return chksum((u16_t *)&uip_buf[UIP_LLH_LEN], UIP_IPH_LEN);
-}
-/*-----------------------------------------------------------------------------------*/
-u16_t
-uip_tcpchksum(void)
-{
-  u16_t hsum, sum;
+  uint8_t* dgram = (uint8_t*)&uip_buf[UIP_IPH_LEN + UIP_LLH_LEN];
+  uint16_t len = (((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - UIP_IPH_LEN;
+  uint32_t srcadr = *((uint32_t*)BUF->srcipaddr);
+  uint32_t dstadr = *((uint32_t*)BUF->destipaddr);
+	uint32_t sum = 0;
 
-  
-  /* Compute the checksum of the TCP header. */
-  hsum = uip_chksum((u16_t *)&uip_buf[UIP_LLH_LEN + UIP_IPH_LEN], UIP_TCPH_LEN);
+	/*
+	 * Pseudo IP header checksum
+	 */
+	__asm__
+	(
+		"moveq	#0, d0		\n\t"
+		"movel	%3, %0		\n\t"
+		"addl	%1, %0		\n\t"
+		"addxl	%2, %0		\n\t"
+		"addxw	%4, %0		\n\t"
+		"addxw	d0, %0		\n\t"
+		: "=d"(sum)
+		: "g"(srcadr), "d"(dstadr), "d"(proto),
+		  "d"(len), "0"(sum)
+		: "d0"
+	);
 
-  /* Compute the checksum of the data in the TCP packet and add it to
-     the TCP header checksum. */
-  sum = uip_chksum((u16_t *)uip_appdata,
-		   (u16_t)(((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) -
-		   UIP_IPTCPH_LEN)));
+	/*
+	 * TCP datagram & header checksum
+	 */
+	__asm__
+	(
+		"clrl	d0		\n\t"
+		"movew	%2, d1		\n\t"
+		"lsrw	#4, d1		\n\t"
+		"beq	4f		\n\t"
+		"subqw	#1, d1		\n"	/* clears X bit */
+		"1:			\n\t"
+		"moveml	%4@+, d0/d2-d4	\n\t"	/* 16 byte loop */
+		"addxl	d0, %0		\n\t"	/* ~5 clock ticks per byte */
+		"addxl	d2, %0		\n\t"
+		"addxl	d3, %0		\n\t"
+		"addxl	d4, %0		\n\t"
+		"dbra	d1, 1b		\n\t"
+		"clrl	d0		\n\t"
+		"addxl	d0, %0		\n"
+		"4:			\n\t"
+		"movew	%2, d1		\n\t"
+		"andiw	#0xf, d1	\n\t"
+		"lsrw	#2, d1		\n\t"
+		"beq	2f		\n\t"
+		"subqw	#1, d1		\n"
+		"3:			\n\t"
+		"addl	%4@+, %0	\n\t"	/* 4 byte loop */
+		"addxl	d0, %0		\n\t"	/* ~10 clock ticks per byte */
+		"dbra	d1, 3b		\n"
+		"2:			\n\t"
+		: "=d"(sum), "=a"(dgram)
+		: "g"(len), "0"(sum), "1"(dgram)
+		: "d0", "d1", "d2", "d3", "d4"
+	);
 
-  if((sum += hsum) < hsum) {
-    ++sum;
-  }
-  
-  if((sum += BUF->srcipaddr[0]) < BUF->srcipaddr[0]) {
-    ++sum;
-  }
-  if((sum += BUF->srcipaddr[1]) < BUF->srcipaddr[1]) {
-    ++sum;
-  }
-  if((sum += BUF->destipaddr[0]) < BUF->destipaddr[0]) {
-    ++sum;
-  }
-  if((sum += BUF->destipaddr[1]) < BUF->destipaddr[1]) {
-    ++sum;
-  }
-  if((sum += (u16_t)htons((u16_t)IP_PROTO_TCP)) < (u16_t)htons((u16_t)IP_PROTO_TCP)) {
-    ++sum;
-  }
+	/*
+	 * Add in extra word, byte (if len not multiple of 4).
+	 * Convert to short
+	 */
+	__asm__
+	(
+		"clrl	d0		\n\t"
+		"btst	#1, %2		\n\t"
+		"beq	5f		\n\t"
+		"addw	%4@+, %0	\n\t"	/* extra word */
+		"addxw	d0, %0		\n"
+		"5:			\n\t"
+		"btst	#0, %2		\n\t"
+		"beq	6f		\n\t"
+		"moveb	%4@+, d1	\n\t"	/* extra byte */
+		"lslw	#8, d1		\n\t"
+		"addw	d1, %0		\n\t"
+		"addxw	d0, %0		\n"
+		"6:			\n\t"
+		"movel	%0, d1		\n\t"	/* convert to short */
+		"swap	d1		\n\t"
+		"addw	d1, %0		\n\t"
+		"addxw	d0, %0		\n\t"
 
-  hsum = (u16_t)HTONS((((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - UIP_IPH_LEN);
-  
-  if((sum += hsum) < hsum) {
-    ++sum;
-  }
-  
+		: "=d"(sum), "=a"(dgram)
+		: "d"(len), "0"(sum), "1"(dgram)
+		: "d0", "d1"
+	);
+
   return sum;
 }
 /*-----------------------------------------------------------------------------------*/
-#endif
+
+static u16_t
+chksum(u16_t sum16, const u8_t *data, u16_t len)
+{
+  uint8_t* dgram = data;
+	uint32_t sum = sum16;
+
+	/*
+	 * TCP datagram & header checksum
+	 */
+	__asm__
+	(
+		"clrl	d0		\n\t"
+		"movew	%2, d1		\n\t"
+		"lsrw	#4, d1		\n\t"
+		"beq	4f		\n\t"
+		"subqw	#1, d1		\n"	/* clears X bit */
+		"1:			\n\t"
+		"moveml	%4@+, d0/d2-d4	\n\t"	/* 16 byte loop */
+		"addxl	d0, %0		\n\t"	/* ~5 clock ticks per byte */
+		"addxl	d2, %0		\n\t"
+		"addxl	d3, %0		\n\t"
+		"addxl	d4, %0		\n\t"
+		"dbra	d1, 1b		\n\t"
+		"clrl	d0		\n\t"
+		"addxl	d0, %0		\n"
+		"4:			\n\t"
+		"movew	%2, d1		\n\t"
+		"andiw	#0xf, d1	\n\t"
+		"lsrw	#2, d1		\n\t"
+		"beq	2f		\n\t"
+		"subqw	#1, d1		\n"
+		"3:			\n\t"
+		"addl	%4@+, %0	\n\t"	/* 4 byte loop */
+		"addxl	d0, %0		\n\t"	/* ~10 clock ticks per byte */
+		"dbra	d1, 3b		\n"
+		"2:			\n\t"
+		: "=d"(sum), "=a"(dgram)
+		: "g"(len), "0"(sum), "1"(dgram)
+		: "d0", "d1", "d2", "d3", "d4"
+	);
+
+	/*
+	 * Add in extra word, byte (if len not multiple of 4).
+	 * Convert to short
+	 */
+	__asm__
+	(
+		"clrl	d0		\n\t"
+		"btst	#1, %2		\n\t"
+		"beq	5f		\n\t"
+		"addw	%4@+, %0	\n\t"	/* extra word */
+		"addxw	d0, %0		\n"
+		"5:			\n\t"
+		"btst	#0, %2		\n\t"
+		"beq	6f		\n\t"
+		"moveb	%4@+, d1	\n\t"	/* extra byte */
+		"lslw	#8, d1		\n\t"
+		"addw	d1, %0		\n\t"
+		"addxw	d0, %0		\n"
+		"6:			\n\t"
+		"movel	%0, d1		\n\t"	/* convert to short */
+		"swap	d1		\n\t"
+		"addw	d1, %0		\n\t"
+		"addxw	d0, %0		\n\t"
+
+		: "=d"(sum), "=a"(dgram)
+		: "d"(len), "0"(sum), "1"(dgram)
+		: "d0", "d1"
+	);
+  /* Return sum in host byte order. */
+  return sum;
+}
+/*---------------------------------------------------------------------------*/
+u16_t
+uip_chksum(u16_t *data, u16_t len)
+{
+  return htons(chksum(0, (u8_t *)data, len));
+}
+/*---------------------------------------------------------------------------*/
+
+u16_t
+uip_ipchksum(void)
+{
+  u16_t sum = chksum(0, &uip_buf[UIP_LLH_LEN], UIP_IPH_LEN);
+  return (sum == 0) ? 0xffff : htons(sum);
+}
+
+u16_t
+uip_tcpchksum(void)
+{
+  return upper_layer_chksum(UIP_PROTO_TCP);
+}
+
+u16_t
+uip_udpchksum(void)
+{
+  return upper_layer_chksum(UIP_PROTO_UDP);
+}

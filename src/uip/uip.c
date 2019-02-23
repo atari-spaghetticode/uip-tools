@@ -1871,8 +1871,9 @@ uip_process(u8_t flag)
   
   /* Calculate TCP checksum. */
   BUF->tcpchksum = 0;
+#ifndef UIP_EXTERNAL_CHECKSUM
   BUF->tcpchksum = ~(uip_tcpchksum());
-  
+#endif
  ip_send_nolen:
 
 #if UIP_CONF_IPV6

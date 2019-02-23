@@ -23,8 +23,6 @@
 *
 *****************************************************************************/
 
-/*#include "delay.h"*/
-
 #include "compiler.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -78,7 +76,7 @@ void RTL8019endPacketSend(void);
 *  Description: Sets up the RTL8019 NIC hardware interface, and initializes
 *                 the buffers and configuration of the NIC
 *****************************************************************************/
-bool initRTL8019(uint8_t* macaddr);
+bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type);
 
 
 /*****************************************************************************
@@ -239,12 +237,6 @@ void RTL8019endPacketRetreive(void);
 * MAC address assigned to the RTL8019
 *
 *****************************************************************************/
-/*#define MYMAC_0 '0'
-#define MYMAC_1 'F'
-#define MYMAC_2 'F'
-#define MYMAC_3 'I'
-#define MYMAC_4 'C'
-#define MYMAC_5 'E'*/
 
 #define MYMAC_0 0x00
 #define MYMAC_1 0x06
@@ -252,15 +244,5 @@ void RTL8019endPacketRetreive(void);
 #define MYMAC_3 0x01
 #define MYMAC_4 0x02
 #define MYMAC_5 0x26
-
-
-
-
-
-
-
-
-
-
 
 #endif /* __RTL8019_H__ */

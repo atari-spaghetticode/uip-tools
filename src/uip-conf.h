@@ -145,6 +145,9 @@ typedef unsigned short uip_stats_t;
 
 #define CLOCK_CONF_SECOND      200
 
+/* Checksum will be calculated in IP split driver */
+#define UIP_EXTERNAL_CHECKSUM 1
+#define UIP_ARCH_CHKSUM 1
 
 /* Here we include the header file for the application(s) we use in
    our project. */
