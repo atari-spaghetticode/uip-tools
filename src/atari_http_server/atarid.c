@@ -496,6 +496,7 @@ struct GetState {
   size_t buffer_start_offset;
   int file_len;
   struct DataSource* source;
+  uint32_t send_buffer_size;
 };
 
 static
@@ -533,10 +534,10 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
     PT_EXIT(worker);
   }
 
-  const uint32_t send_buffer_size = UIP_TCP_MSS*16 > INPUTBUF_SIZE ? UIP_TCP_MSS : UIP_TCP_MSS*16;
+  this->send_buffer_size = UIP_TCP_MSS * 1;
 
   while (1) {
-    this->bytes_read = src->read(src, send_buffer_size-this->buffer_start_offset,
+    this->bytes_read = src->read(src, this->send_buffer_size-this->buffer_start_offset,
             &s->inputbuf[this->buffer_start_offset]);
 
     if (this->bytes_read == 0)
@@ -549,6 +550,10 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 
     PSOCK_SEND2(worker, &s->sin, s->inputbuf, this->bytes_read+this->buffer_start_offset);
     this->buffer_start_offset = 0;
+
+    if(this->send_buffer_size != UIP_TCP_MSS * 16) {
+      this->send_buffer_size <<= 1;
+    }
   }
 
   src->close(src);
