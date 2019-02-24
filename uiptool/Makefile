@@ -38,7 +38,7 @@ version:=$(shell git rev-list --count master)
 PREFIX = /opt/cross-mint/bin
 
 #Linux prefix
-PREFIX = /usr/bin
+#PREFIX = /usr/bin
 
 CC     = $(PREFIX)/m68k-atari-mint-gcc
 LD     = $(PREFIX)/m68k-atari-mint-gcc
@@ -54,7 +54,8 @@ CFLAGS = -std=gnu99 -Wall -Os -fomit-frame-pointer -m68000 \
 		-DUIP_CONF_BYTE_ORDER=BIG_ENDIAN \
 		-DVERSION=$(version)
 
-LD_FLAGS = -s -Wl,--traditional-format -Wl,-Map,linker.map
+#LD_FLAGS = -s -Wl,--traditional-format -Wl,-Map,linker.map
+LD_FLAGS = -s -Wl,--traditional-format
 
 -include ../uip/Makefile.include
 
@@ -63,5 +64,6 @@ uip: $(addprefix $(OBJECTDIR)/, main.o tapdev.o uip_arch.o clock-arch.o) apps.a 
 
 clean:
 	rm -fr *.o *~ *core uip $(OBJECTDIR) *.a *.tos *.map index.*
-
+	rm -fr ../apps/atari/img/*.dat 
+	
 release: clean all

@@ -7,7 +7,6 @@ SRC_IMG_FILES = $(wildcard $(SRC_IMG_DIR)/*.png)
 DEST_IMG_FILES = $(patsubst $(SRC_IMG_DIR)/%.png,$(SRC_IMG_DIR)/%.dat,$(SRC_IMG_FILES))
 
 $(SRC_IMG_DIR)/%.dat: $(SRC_IMG_DIR)/%.png
-	rm -fv $@
 	base64 -w 0 $< > $@
 	sed -i '1s;^;\";' $@
 	echo "\"" >>$@
