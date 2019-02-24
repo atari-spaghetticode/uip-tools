@@ -142,8 +142,11 @@ buf_bufto(register struct psock_buf *buf, u8_t endmarker,
 }
 /*---------------------------------------------------------------------------*/
 static char
-send_data(register struct psock *s)
+data_is_sent_and_acked(struct psock *s)
 {
+  /* If data has previously been sent, and the data has been acked, we
+     increase the send pointer and call send_data() to send more
+     data. */
   if(s->state != STATE_DATA_SENT || uip_rexmit()) {
     if(s->sendlen > uip_mss()) {
       uip_send(s->sendptr, uip_mss());
@@ -151,15 +154,8 @@ send_data(register struct psock *s)
       uip_send(s->sendptr, s->sendlen);
     }
     s->state = STATE_DATA_SENT;
-    return 1;
-  }
-  return 0;
-}
-/*---------------------------------------------------------------------------*/
-static char
-data_acked(register struct psock *s)
-{
-  if(s->state == STATE_DATA_SENT && uip_acked()) {
+    return 0;
+  } else if(s->state == STATE_DATA_SENT && uip_acked()) {
     if(s->sendlen > uip_mss()) {
       s->sendlen -= uip_mss();
       s->sendptr += uip_mss();
@@ -173,8 +169,8 @@ data_acked(register struct psock *s)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
-PT_THREAD(psock_send(register struct psock *s, const char *buf,
-		     unsigned int len))
+PT_THREAD(psock_send(struct psock *s, const uint8_t *buf,
+		     uint32_t len))
 {
   PT_BEGIN(&s->psockpt);
 
@@ -195,16 +191,10 @@ PT_THREAD(psock_send(register struct psock *s, const char *buf,
   while(s->sendlen > 0) {
 
     /*
-     * The condition for this PT_WAIT_UNTIL is a little tricky: the
-     * protothread will wait here until all data has been acknowledged
-     * (data_acked() returns true) and until all data has been sent
-     * (send_data() returns true). The two functions data_acked() and
-     * send_data() must be called in succession to ensure that all
-     * data is sent. Therefore the & operator is used instead of the
-     * && operator, which would cause only the data_acked() function
-     * to be called when it returns false.
+     * The protothread will wait here until all data has been
+     * acknowledged and sent (data_is_acked_and_send() returns 1).
      */
-    PT_WAIT_UNTIL(&s->psockpt, data_acked(s) & send_data(s));
+    PT_WAIT_UNTIL(&s->psockpt, data_is_sent_and_acked(s));
   }
 
   s->state = STATE_NONE;
@@ -212,7 +202,7 @@ PT_THREAD(psock_send(register struct psock *s, const char *buf,
   PT_END(&s->psockpt);
 }
 /*---------------------------------------------------------------------------*/
-PT_THREAD(psock_generator_send(register struct psock *s,
+PT_THREAD(psock_generator_send(struct psock *s,
 			       unsigned short (*generate)(void *), void *arg))
 {
   PT_BEGIN(&s->psockpt);
@@ -222,21 +212,24 @@ PT_THREAD(psock_generator_send(register struct psock *s,
     PT_EXIT(&s->psockpt);
   }
 
-  /* Call the generator function to generate the data in the
-     uip_appdata buffer. */
-  s->sendlen = generate(arg);
-  s->sendptr = uip_appdata;
-
-  s->state = STATE_NONE;  
+  s->state = STATE_NONE;
   do {
-    /* Call the generator function again if we are called to perform a
-       retransmission. */
-    if(uip_rexmit()) {
-      generate(arg);
+    /* Call the generator function to generate the data in the
+     uip_appdata buffer. */
+    s->sendlen = generate(arg);
+    s->sendptr = uip_appdata;
+
+    if(s->sendlen > uip_mss()) {
+      uip_send(s->sendptr, uip_mss());
+    } else {
+      uip_send(s->sendptr, s->sendlen);
     }
+    s->state = STATE_DATA_SENT;
+
     /* Wait until all data is sent and acknowledged. */
-    PT_WAIT_UNTIL(&s->psockpt, data_acked(s) & send_data(s));
-  } while(s->sendlen > 0);
+ // if (!s->sendlen) break;   //useful debugging aid
+    PT_YIELD_UNTIL(&s->psockpt, uip_acked() || uip_rexmit());
+  } while(!uip_acked());
   
   s->state = STATE_NONE;
   
