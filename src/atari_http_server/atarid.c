@@ -169,12 +169,20 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
   s->temp_file_length = filelen;
 
   while (s->temp_file_length > 0) {
-
+    int32_t write_ret = 0;
     PSOCK_READBUF_LEN2(worker, &s->sin,
       s->temp_file_length > s->inputbuf_size ?
         s->inputbuf_size : s->temp_file_length);
 
-    Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
+    write_ret = Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
+
+    if (write_ret < 0 || write_ret != PSOCK_DATALEN(&s->sin)) {
+      s->http_result_code = 500;
+      LOG_TRACE("Fwrite failed!\r\n");
+      Fclose_safe(&s->fd);
+      PT_EXIT(worker);
+    }
+
     s->temp_file_length-=PSOCK_DATALEN(&s->sin);
   }
 
