@@ -3,3 +3,8 @@
 /sublimebuild.sublime-build
 apps/atari/css_minified.css
 apps/atari/js_minified.js
+apps/atari/img/uiplogo.dat
+apps/atari/img/favicon.dat
+apps/atari/img/dir_open.dat
+apps/atari/img/file_generic.dat
+apps/atari/img/dir_close.dat

@@ -1,4 +1,3 @@
-"use strict";
 
 // <!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
@@ -39,6 +38,23 @@
             fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
+
+        function initIconSources(){
+          var img = document.createElement('img');
+          img.alt = "image embed test";
+          img.src = 'data:image/png;base64,' + img_logo_src;
+          document.getElementById('imageTest').appendChild(img);
+        }
+
+        function initFavicon(){
+          var docHead = document.getElementsByTagName('head')[0];       
+          var newLink = document.createElement('link');
+          newLink.rel = 'shortcut icon';
+          newLink.href = 'data:image/png;base64,' + img_favicon_src;
+          docHead.appendChild(newLink);
+        }
+
+
 // <!-- ----------------------------------------------------------------------------------------- -->
 
         var CURRENT_GEMDOS_PATH = '';
@@ -46,7 +62,7 @@
 
         // view cleanup on reload
         function initMainView(){
-          
+
           CURRENT_GEMDOS_PATH="";
           
           var item = document.getElementById("DirectoryList");
@@ -64,7 +80,20 @@
           item = document.getElementById("currentPathInput");
           item.value = CURRENT_GEMDOS_PATH;
 
+          initFavicon();
+          initIconSources();
+
         }
+
+        function processFileDownloadReq(responseText){
+          var fileDataResponse = JSON.parse(responseText);
+          
+          // get file data and write it to file
+
+
+        }
+
+
 
         function processDirectoryListReq(responseText){
           var DirListArray = JSON.parse(responseText);
@@ -151,7 +180,7 @@
             pathPrefix = pathPrefix.replace('//', '/');
             
             // request file download
-            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processDirectoryListReq);
+            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processFileDownloadReq);
         } 
 
 

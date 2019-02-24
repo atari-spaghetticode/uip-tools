@@ -1,7 +1,18 @@
 
 vpath %.html ../apps/atari/
 
-index.h: webinterface.html
+# image batch conversion
+SRC_IMG_DIR=../apps/atari/img
+SRC_IMG_FILES = $(wildcard $(SRC_IMG_DIR)/*.png)
+DEST_IMG_FILES = $(patsubst $(SRC_IMG_DIR)/%.png,$(SRC_IMG_DIR)/%.dat,$(SRC_IMG_FILES))
+
+$(SRC_IMG_DIR)/%.dat: $(SRC_IMG_DIR)/%.png
+	rm -fv $@
+	base64 -w 0 $< > $@
+	sed -i '1s;^;\";' $@
+	echo "\"" >>$@
+
+index.h: webinterface.html $(DEST_IMG_FILES)
 	$(CPP) -traditional-cpp -DRELEASE=0 -DVERSION=$(version) -P -o index.html $<
 	gzip -9 -f index.html -c > index.html.gz
 	xxd -i index.html.gz > $@
@@ -9,12 +20,9 @@ index.h: webinterface.html
 	lessc ../apps/atari/css.css ../apps/atari/css_minified.css
 	uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
 
-%.h: %.png
-	xxd -i $< > $@
-
 .PHONY: staticdata
-staticdata: index.h 
 
+staticdata:	index.h 
 *.c: staticdata
 
 APP_SOURCES+=atarid.c

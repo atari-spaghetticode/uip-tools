@@ -8,12 +8,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Atari ST/STe/TT/F030/F060">
 <title id='Description'>uIPtool</title>
- 
-<link href=" 
-#include "favicon.dat"
-" rel="icon" type="image/x-icon">
 
 <script type="text/javascript">
+"use strict";
+
+var img_favicon_src = 
+#include "img/favicon.dat"
+;
+
+var img_logo_src =
+#include "img/uiplogo.dat"
+;
+
+var img_dir_open_src =
+#include "img/dir_open.dat"
+;
+
+var img_dir_close_src = 
+#include "img/dir_close.dat"
+;
+
+var img_file_generic_src = 
+#include "img/file_generic.dat"
+;
+
 #if RELEASE
 #include "js_minified.js"
 #else
@@ -56,6 +74,8 @@
   </div>
 
   </div>
+
+<div id="imageTest"/>
 
 <footer>
 Mystic Bytes &copy;2019
