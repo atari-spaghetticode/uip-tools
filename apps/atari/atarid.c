@@ -71,7 +71,6 @@
 
 // static content
 #include "index.h"
-#include "close.h"
 
 #define ISO_nl      0x0a
 #define ISO_space   0x20
@@ -676,7 +675,6 @@ static void parse_get(struct atarid_state *s)
     const char* encoding_type;
   } static_url_mapping [] = {
     { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
-    { "images/close.png", close_png,close_png_len,"image/png", "identity"},
     { NULL,NULL,0 }
   };
 

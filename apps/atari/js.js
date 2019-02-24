@@ -1,4 +1,5 @@
 "use strict";
+
 // <!-- this will be gone after http interfaces resurrection -->
         var driveDummyData = [];         
         var directoryDummyData = []; 
@@ -354,38 +355,3 @@
         var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
         return ((tosTime<<16) | tosDate) >>> 0;
      }
-
-    function openLogTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-
-        tabcontent = document.getElementsByClassName("tabcontent");
-        tablinks = document.getElementsByClassName("tablinks");
-        buttoncontent = document.getElementsByClassName("button");
-        
-        // Get all elements with class="tabcontent" and hide them
-        for (i = 0; i < tabcontent.length; ++i) {
-            tabcontent[i].style.display = "none";
-        }
-
-        // Get all elements with class="tablinks" and remove the class "active"
-        for (i = 0; i < tablinks.length; ++i) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-
-       for (i = 0; i < buttoncontent.length; ++i) {
-            buttoncontent[i].style.visibility = 'hidden';
-        }
-
-        // Show the current tab, and add an "active" class to the button that opened the tab
-        var elem=document.getElementById(tabName)
-        
-        if(elem!=null){
-            elem.style.display = "block";
-        }
-
-        elem = document.getElementById("Clear" + tabName + "Button")
-        if(elem!=null){
-          elem.style.visibility = 'visible';       
-          evt.currentTarget.className += " active";
-        }        
-    }

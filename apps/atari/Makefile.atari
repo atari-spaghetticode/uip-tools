@@ -1,5 +1,5 @@
-vpath %.html ../apps/atari/
 
+vpath %.html ../apps/atari/
 
 index.h: webinterface.html
 	$(CPP) -traditional-cpp -DRELEASE=0 -DVERSION=$(version) -P -o index.html $<
@@ -9,16 +9,11 @@ index.h: webinterface.html
 	lessc ../apps/atari/css.css ../apps/atari/css_minified.css
 	uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
 
-icons: close.h
-
 %.h: %.png
 	xxd -i $< > $@
 
-%.h: %.gif
-	xxd -i $< > $@
-
 .PHONY: staticdata
-staticdata: index.h icons
+staticdata: index.h 
 
 *.c: staticdata
 
