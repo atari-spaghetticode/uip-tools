@@ -73,15 +73,15 @@
 /*---------------------------------------------------------------------------*/
 static void
 buf_setup(struct psock_buf *buf,
-	  u8_t *bufptr, u16_t bufsize)
+	  u8_t *bufptr, uint32_t bufsize)
 {
   buf->ptr = bufptr;
   buf->left = bufsize;
 }
 /*---------------------------------------------------------------------------*/
 static u8_t
-buf_bufdata(struct psock_buf *buf, u16_t len,
-	    u8_t **dataptr, u16_t *datalen)
+buf_bufdata(struct psock_buf *buf, uint32_t len,
+	    u8_t **dataptr, uint32_t *datalen)
 {
   if(*datalen < buf->left) {
     memcpy(buf->ptr, *dataptr, *datalen);
@@ -109,7 +109,7 @@ buf_bufdata(struct psock_buf *buf, u16_t len,
 /*---------------------------------------------------------------------------*/
 static u8_t
 buf_bufto(register struct psock_buf *buf, u8_t endmarker,
-	  register u8_t **dataptr, register u16_t *datalen)
+	  register u8_t **dataptr, register uint32_t *datalen)
 {
   u8_t c;
   while(buf->left > 0 && *datalen > 0) {
@@ -243,7 +243,7 @@ PT_THREAD(psock_generator_send(register struct psock *s,
   PT_END(&s->psockpt);
 }
 /*---------------------------------------------------------------------------*/
-u16_t
+uint32_t
 psock_datalen(struct psock *psock)
 {
   return psock->bufsize - psock->buf.left;
@@ -297,7 +297,7 @@ PT_THREAD(psock_readto(register struct psock *psock, unsigned char c))
 }
 
 /*---------------------------------------------------------------------------*/
-PT_THREAD(psock_readbuf_len(register struct psock *psock, uint16_t len))
+PT_THREAD(psock_readbuf_len(register struct psock *psock, uint32_t len))
 {
   PT_BEGIN(&psock->psockpt);
 
@@ -326,7 +326,7 @@ PT_THREAD(psock_readbuf_len(register struct psock *psock, uint16_t len))
 } 
 /*---------------------------------------------------------------------------*/
 void
-psock_init(register struct psock *psock, char *buffer, unsigned int buffersize)
+psock_init(register struct psock *psock, char *buffer, uint32_t buffersize)
 {
   psock->state = STATE_NONE;
   psock->readlen = 0;

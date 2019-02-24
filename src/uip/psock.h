@@ -94,7 +94,7 @@
  */
 struct psock_buf {
   u8_t *ptr;
-  unsigned short left;
+  uint32_t left;
 };
 
 /**
@@ -113,17 +113,17 @@ struct psock {
   char *bufptr;          /* Pointer to the buffer used for buffering
 			    incoming data. */
   
-  u16_t sendlen;         /* The number of bytes left to be sent. */
-  u16_t readlen;         /* The number of bytes left to be read. */
+  uint32_t sendlen;         /* The number of bytes left to be sent. */
+  uint32_t readlen;         /* The number of bytes left to be read. */
 
   struct psock_buf buf;  /* The structure holding the state of the
 			    input buffer. */
-  unsigned int bufsize;  /* The size of the input buffer. */
+  uint32_t bufsize;  /* The size of the input buffer. */
   
   unsigned char state;   /* The state of the protosocket. */
 };
 
-void psock_init(struct psock *psock, char *buffer, unsigned int buffersize);
+void psock_init(struct psock *psock, char *buffer, uint32_t buffersize);
 /**
  * Initialize a protosocket.
  *
@@ -157,7 +157,7 @@ void psock_init(struct psock *psock, char *buffer, unsigned int buffersize);
  */
 #define PSOCK_BEGIN(psock) PT_BEGIN(&((psock)->pt))
 
-PT_THREAD(psock_send(struct psock *psock, const char *buf, unsigned int len));
+PT_THREAD(psock_send(struct psock *psock, const char *buf, uint32_t len));
 /**
  * Send data.
  *
@@ -240,7 +240,7 @@ PT_THREAD(psock_generator_send(struct psock *psock,
  */
 #define PSOCK_CLOSE(psock) uip_close()
 
-PT_THREAD(psock_readbuf_len(struct psock *psock, uint16_t len));
+PT_THREAD(psock_readbuf_len(struct psock *psock, uint32_t len));
 /**
  * Read data until the buffer is full.
  *
@@ -266,7 +266,7 @@ PT_THREAD(psock_readbuf_len(struct psock *psock, uint16_t len));
  *
  * \param psock (struct psock *) A pointer to the protosocket from which
  * data should be read.
- * \param len (uint16_t) The minimum number of bytes to read.
+ * \param len (uin32_t) The minimum number of bytes to read.
  *
  * \hideinitializer
  */
@@ -310,7 +310,7 @@ PT_THREAD(psock_readto(struct psock *psock, unsigned char c));
  */
 #define PSOCK_DATALEN(psock) psock_datalen(psock)
 
-u16_t psock_datalen(struct psock *psock);
+uint32_t psock_datalen(struct psock *psock);
 
 /**
  * Exit the protosocket's protothread.
