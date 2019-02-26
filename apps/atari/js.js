@@ -180,10 +180,16 @@
              var textNode = document.createTextNode(buttonStr + ':');
 
              var img = document.createElement('img');
-             img.alt = "file icon hard drive";
-             img.src = 'data:image/png;base64,' + img_hd_active_src;
+ 
+             if(buttonStr=='A' || buttonStr=='B'){
+                img.alt = "file icon floppy drive";
+                img.src = 'data:image/png;base64,' + img_floppy_active_src;
+             } else {
+                img.alt = "file icon hard drive";
+                img.src = 'data:image/png;base64,' + img_hd_active_src;
+             }
+ 
              node.appendChild(img);
-              
              button.appendChild(img);
              
              button.appendChild(textNode);
