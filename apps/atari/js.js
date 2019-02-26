@@ -288,7 +288,7 @@
             var a = document.createElement('a');
             var linkText = document.createTextNode(fileName);
             a.appendChild(linkText);
-            
+
             a.href = fileName;  /* get ipaddr + folder + filename*/
             a.download = fileName;
 
@@ -297,22 +297,92 @@
 
         function createFileEntries(node, FileArray){
           var fileStr = null;
+          var fileSize=0;
+          var fileDate="";
+
           var entriesFound=0;
+          
+          var tableDiv = document.createElement('div');
+          tableDiv.classList.add('divTable');
+          tableDiv.classList.add('blueTable');
+          
+          var tableHead = document.createElement('div');
+          tableHead.classList.add('divTableHeading');
+         
+          var tableRow = document.createElement('div');
+          tableRow.classList.add('divTableRow');
+          
+          var tableHead1 = document.createElement('div');
+          var tableHead2 = document.createElement('div');
+          var tableHead3 = document.createElement('div');
+
+          tableHead1.classList.add('divTableHead');
+          tableHead2.classList.add('divTableHead');
+          tableHead3.classList.add('divTableHead');
+
+          var headNameText1=document.createTextNode('filename');
+          var headNameText2=document.createTextNode('size');
+          var headNameText3=document.createTextNode('date');
+ 
+          tableHead1.appendChild(headNameText1);
+          tableHead2.appendChild(headNameText2);
+          tableHead3.appendChild(headNameText3);
+
+          tableRow.appendChild(tableHead1);
+          tableRow.appendChild(tableHead2);
+          tableRow.appendChild(tableHead3);
+
+          tableHead.appendChild(tableRow);
+          tableDiv.appendChild(tableHead);
+
+          var tableBody = document.createElement('div');
+          tableBody.classList.add('divTableBody');
+          tableDiv.appendChild(tableBody);
+          /* add entries to tableBody */
+          node.appendChild(tableDiv);
+
           for(var i=0;i<FileArray.length;++i){
            
             if(FileArray[i].type.toLowerCase()=='f'){
-             ++entriesFound;
-             fileStr = FileArray[i].name.toUpperCase();
+              ++entriesFound;
              
+             var fileRow = document.createElement('div');
+             fileRow.classList.add('divTableRow');
+
+             var cell1 = document.createElement('div');
+             var cell2 = document.createElement('div');
+             var cell3 = document.createElement('div');
+             
+             cell1.classList.add('divTableCell');
+             cell2.classList.add('divTableCell');
+             cell3.classList.add('divTableCell');
+             
+             fileRow.appendChild(cell1);
+             fileRow.appendChild(cell2);
+             fileRow.appendChild(cell3);
+
+             tableBody.appendChild(fileRow);
+             
+             fileStr = FileArray[i].name.toUpperCase();
+             fileSize = FileArray[i].size;
+             fileDate = FileArray[i].date;
+
              var div = document.createElement('div');
              div.id = "fileEntryInfo";
 
-             node.appendChild(div);
-             
              var img = document.createElement('img');
              img.alt = "file icon generic";
              img.src = 'data:image/png;base64,' + img_file_generic_src;
              div.appendChild(img);
+
+             var fileSizeText = document.createTextNode(fileSize);
+             var fileDateText = document.createTextNode(fileDate);
+             
+             cell1.appendChild(div);
+             cell2.innerHTML=fileSize;
+             cell3.innerHTML=fileDate;
+             
+             
              createFileDownloadLink(div,fileStr);
              
           };
