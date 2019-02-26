@@ -119,26 +119,26 @@
 
               pathPrefix = CURRENT_GEMDOS_PATH;
             
-              pathPrefix = pathPrefix.replace(":","/");
+              pathPrefix = pathPrefix.replace(":",'/');
               pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
               pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
-              pathPrefix = pathPrefix.replace('//', '/');
-
+              pathPrefix = pathPrefix.replace(/\/\//g,'/');
+            
               //request dir status
               var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
 
               //todo: check request result
               document.getElementById("currentPathInput").value = '';
-              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH.replace(/\/$/, "");
+              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH.replace(/\/$/, "").replace(/\/\//g,'/');;
 
             }else{
             
               pathPrefix = CURRENT_GEMDOS_PATH;
             
-              pathPrefix = pathPrefix.replace(":","/");
+              pathPrefix = pathPrefix.replace(":",'/');
               pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
               pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
-              pathPrefix = pathPrefix.replace('//', '/');
+              pathPrefix = pathPrefix.replace(/\/\//g,'/');
             
               //request dir status
               var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
@@ -147,7 +147,6 @@
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
               document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
             }
-
             
         }
 
@@ -155,10 +154,10 @@
             
             var pathPrefix = CURRENT_GEMDOS_PATH;
             pathPrefix = pathPrefix + '/' + btn.name;
-            pathPrefix = pathPrefix.replace(":","\\");
+            pathPrefix = pathPrefix.replace(":",'/');
             pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
             pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
-            pathPrefix = pathPrefix.replace('//', '/');
+            pathPrefix = pathPrefix.replace(/\/\//g,'/');
             
             // request file download
             var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processFileDownloadReq);
