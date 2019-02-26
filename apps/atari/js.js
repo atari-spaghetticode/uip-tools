@@ -39,13 +39,6 @@
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
 
-        function initIconSources(){
-          var img = document.createElement('img');
-          img.alt = "image embed test";
-          img.src = 'data:image/png;base64,' + img_logo_src;
-          document.getElementById('imageTest').appendChild(img);
-        }
-
         function initFavicon(){
           var docHead = document.getElementsByTagName('head')[0];       
           var newLink = document.createElement('link');
@@ -53,7 +46,6 @@
           newLink.href = 'data:image/png;base64,' + img_favicon_src;
           docHead.appendChild(newLink);
         }
-
 
 // <!-- ----------------------------------------------------------------------------------------- -->
 
@@ -81,7 +73,6 @@
           item.value = CURRENT_GEMDOS_PATH;
 
           initFavicon();
-          initIconSources();
 
         }
 
@@ -285,6 +276,15 @@
             return false;            
         }
 
+        function createFileDownloadLink(node, fileName){
+            var a = document.createElement('a');
+            var linkText = document.createTextNode(fileName);
+            a.appendChild(linkText);
+            a.href = fileName;  /* get ipaddr + folder + filename*/
+            a.download = fileName;
+            node.appendChild(a);
+        }
+
         function createFileEntries(node, FileArray){
           var fileStr = null;
           var entriesFound=0;
@@ -293,14 +293,14 @@
             if(FileArray[i].type.toLowerCase()=='f'){
              ++entriesFound;
              fileStr = FileArray[i].name.toUpperCase();
+             
+             var img = document.createElement('img');
+             img.alt = "file icon generic";
+             img.src = 'data:image/png;base64,' + img_file_generic_src;
+             node.appendChild(img);
 
-             var button = document.createElement("button");
-             var textNode = document.createTextNode(fileStr);
-             button.appendChild(textNode);
-             button.type='button';
-             button.name = fileStr;              
-             button.onclick = handleFileOnClick;
-             node.appendChild(button);
+             createFileDownloadLink(node,fileStr);
+             
           };
         }
             if(entriesFound==0) 
