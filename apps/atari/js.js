@@ -253,6 +253,7 @@
                 button.type='button';
                 button.name = requestStr;
                 button.onclick = handleDirectoryOnClick;
+                button.style="display:block;";
                 node.appendChild(button);
            }
           };
@@ -287,8 +288,10 @@
             var a = document.createElement('a');
             var linkText = document.createTextNode(fileName);
             a.appendChild(linkText);
+            
             a.href = fileName;  /* get ipaddr + folder + filename*/
             a.download = fileName;
+
             node.appendChild(a);
         }
 
@@ -301,12 +304,16 @@
              ++entriesFound;
              fileStr = FileArray[i].name.toUpperCase();
              
+             var div = document.createElement('div');
+             div.id = "fileEntryInfo";
+
+             node.appendChild(div);
+             
              var img = document.createElement('img');
              img.alt = "file icon generic";
              img.src = 'data:image/png;base64,' + img_file_generic_src;
-             node.appendChild(img);
-
-             createFileDownloadLink(node,fileStr);
+             div.appendChild(img);
+             createFileDownloadLink(div,fileStr);
              
           };
         }
