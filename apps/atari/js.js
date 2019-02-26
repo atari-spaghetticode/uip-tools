@@ -76,16 +76,6 @@
 
         }
 
-        function processFileDownloadReq(responseText){
-          var fileDataResponse = JSON.parse(responseText);
-          
-          // get file data and write it to file
-
-
-        }
-
-
-
         function processDirectoryListReq(responseText){
           var DirListArray = JSON.parse(responseText);
 
@@ -189,11 +179,17 @@
              var button = document.createElement("button");
              var textNode = document.createTextNode(buttonStr + ':');
 
+             var img = document.createElement('img');
+             img.alt = "file icon hard drive";
+             img.src = 'data:image/png;base64,' + img_hd_active_src;
+             node.appendChild(img);
+              
+             button.appendChild(img);
+             
              button.appendChild(textNode);
              button.type='button';
              button.name = buttonStr;
              button.onclick = handleDriveOnClick;
-
              node.appendChild(button);
           };
 
@@ -241,6 +237,11 @@
                 var button = document.createElement("button");
                 var textNode = document.createTextNode(directoryStr);
                 var requestStr = directoryReqStr;
+
+                var img = document.createElement('img');
+                img.alt = "folder closed icon";
+                img.src = 'data:image/png;base64,' + img_dir_close_src;
+                button.appendChild(img);
 
                 button.appendChild(textNode);
                 button.type='button';
