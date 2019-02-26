@@ -289,7 +289,15 @@
             var linkText = document.createTextNode(fileName);
             a.appendChild(linkText);
 
-            a.href = fileName;  /* get ipaddr + folder + filename*/
+            var pathPrefix = CURRENT_GEMDOS_PATH;
+            pathPrefix = pathPrefix + '/' + fileName;
+            
+            pathPrefix = pathPrefix.replace(":",'/');
+            pathPrefix = pathPrefix.replace(/\/+/g, '/').replace(/\/+$/, ''); 
+            pathPrefix = pathPrefix.replace(/\\\\/g, '\\');
+            pathPrefix = pathPrefix.replace(/\/\//g,'/');
+            
+            a.href = pathPrefix;  
             a.download = fileName;
 
             node.appendChild(a);
@@ -375,13 +383,9 @@
              img.src = 'data:image/png;base64,' + img_file_generic_src;
              div.appendChild(img);
 
-             var fileSizeText = document.createTextNode(fileSize);
-             var fileDateText = document.createTextNode(fileDate);
-             
              cell1.appendChild(div);
-             cell2.innerHTML=fileSize;
-             cell3.innerHTML=fileDate;
-             
+             cell2.innerHTML = fileSize;
+             cell3.innerHTML = fileDate;
              
              createFileDownloadLink(div,fileStr);
              
