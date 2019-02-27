@@ -30,7 +30,7 @@
     }
 
     div #mainSection{
-      height:800px;
+      height:768px;
     }
 
     div #CurrentDirPath{
@@ -62,8 +62,10 @@
 
     div #fileManagementBlock{
         width:100%;
-        height:800px;
-        overflow:auto;
+        min-height:600px;
+        max-height:768px;
+        overflow-x:hidden;
+        overflow-y:auto;
     }
 
     div #directoryListView{
