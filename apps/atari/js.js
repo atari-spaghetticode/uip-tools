@@ -52,24 +52,28 @@
         var CURRENT_GEMDOS_PATH = '';
 
 
+        function $id(id) {
+          return document.getElementById(id);
+        }
+
         // view cleanup on reload
         function initMainView(){
 
           CURRENT_GEMDOS_PATH="";
           
-          var item = document.getElementById("DirectoryList");
+          var item = $id("DirectoryList");
           
           if(item!=null){
             item.parentNode.removeChild(oldElem);
           }
 
-          item = document.getElementById("FileList");
+          item = $id("FileList");
           
           if(item!=null){
             item.parentNode.removeChild(oldElem);
           }
 
-          item = document.getElementById("currentPathInput");
+          item = $id("currentPathInput");
           item.value = CURRENT_GEMDOS_PATH;
 
           initFavicon();
@@ -101,7 +105,7 @@
             
             //todo: check request result
             CURRENT_GEMDOS_PATH = btn.name + ':'; 
-            document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+            $id("currentPathInput").value = CURRENT_GEMDOS_PATH;
         }
 
         function requestChDir(btn){
@@ -128,8 +132,8 @@
               var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
 
               //todo: check request result
-              document.getElementById("currentPathInput").value = '';
-              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH.replace(/\/$/, "").replace(/\/\//g,'/');;
+              $id("currentPathInput").value = '';
+              $id("currentPathInput").value = CURRENT_GEMDOS_PATH.replace(/\/$/, "").replace(/\/\//g,'/');;
 
             }else{
             
@@ -145,7 +149,7 @@
 
               //todo: check request result
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
-              document.getElementById("currentPathInput").value = CURRENT_GEMDOS_PATH;
+              $id("currentPathInput").value = CURRENT_GEMDOS_PATH;
             }
             
         }
@@ -205,7 +209,7 @@
           div.id="DriveButtonGroup"
           div.innerHTML = '';
           createDriveButtons(div, DriveArray);            
-          var elem = document.getElementById("DriveButtonListTab");
+          var elem = $id("DriveButtonListTab");
           elem.appendChild(div);
         }
 
@@ -266,8 +270,8 @@
           var div = document.createElement("div");
           div.id="DirectoryList";
           createDirectoryEntries(div,DirJsonArray);
-          var elem = document.getElementById("directoryListView");
-          var oldElem = document.getElementById("DirectoryList");
+          var elem = $id("directoryListView");
+          var oldElem = $id("DirectoryList");
           
           if(oldElem!=null){
             oldElem.parentNode.removeChild(oldElem);
@@ -401,8 +405,8 @@
           div.id="FileList"
           createFileEntries(div, FileJsonArray)
           
-          var elem = document.getElementById("fileView");
-          var oldElem = document.getElementById("FileList");
+          var elem = $id("fileView");
+          var oldElem = $id("FileList");
           
           if(oldElem!=null){
             oldElem.parentNode.removeChild(oldElem);
@@ -471,3 +475,9 @@
         var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
         return ((tosTime<<16) | tosDate) >>> 0;
      }
+
+     // debug output functions
+     function DebugOutput(msg) {
+        var m = $id("DebugOutput");
+        m.innerHTML = msg + m.innerHTML;
+    }
