@@ -63,9 +63,10 @@
     }
 
     div #directoryListView{
-        width:20%;
-        height:800px;
-        overflow:auto;
+        width:15%;
+        height:95%;
+        overflow-x:hidden;
+        overflow-y:auto;
     }
 
     div #fileListView{
