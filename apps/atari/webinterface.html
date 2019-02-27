@@ -12,28 +12,28 @@
 <script type="text/javascript">
 "use strict";
 
-var img_favicon_src = 
+let img_favicon_src = 
 #include "img/favicon.dat"
 
-var img_logo_src =
+let img_logo_src =
 #include "img/uiplogo.dat"
 
-var img_floppy_active_src =
+let img_floppy_active_src =
 #include "img/floppy_active.dat"
 
-var img_hd_active_src =
+let img_hd_active_src =
 #include "img/hd_active.dat"
 
-var img_dir_open_src =
+let img_dir_open_src =
 #include "img/dir_open.dat"
 
-var img_dir_close_src = 
+let img_dir_close_src = 
 #include "img/dir_close.dat"
 
-var img_file_generic_src = 
+let img_file_generic_src = 
 #include "img/file_generic.dat"
 
-var img_file_app_src = 
+let img_file_app_src = 
 #include "img/file_app.dat"
 
 
@@ -77,7 +77,7 @@ var img_file_app_src =
       <div class="fileActionsView" id="fileActionsView" />
 
         <div id="fileDragAndDrop">
-          <form class="my-form">
+          <form class="dragAndDropForm">
             <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
             <input type="file" id="fileElem" multiple accept="image/*" onchange="handleFiles(this.files)">
             <label class="button" for="fileElem">Select some files</label>
@@ -104,10 +104,10 @@ Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target
             initMainView();
 
             // test display
-            initSampleData();
-            updateDriveViewUI(driveDummyData);
-            updateDirectoryViewUI(directoryDummyData);
-            updateFileViewUI(fileDummyData);        
+            //initSampleData();
+            //updateDriveViewUI(driveDummyData);
+            //updateDirectoryViewUI(directoryDummyData);
+            //updateFileViewUI(fileDummyData);        
             
             // your page initialization code here
             // the DOM will be available here
