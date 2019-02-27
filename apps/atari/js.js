@@ -72,41 +72,45 @@
         function dnd_handleDrop(e) {
           var dt = e.dataTransfer
           var files = dt.files
+          uploadFiles(files)
+        }
 
-            //handleFiles(files)
+        function uploadFiles(files){
+          alert(files);
         }
 
         function initDragAndDropControl(){
             // Prevent default drag behaviors
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_preventDefaults, false)   
-              document.body.addEventListener(eventName, dnd_preventDefaults, false)
-            });
+            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_preventDefaults, false)   
+            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_preventDefaults, false)   
+            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_preventDefaults, false)   
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_preventDefaults, false)   
+            
+            document.body.addEventListener('dragenter', dnd_preventDefaults, false);
+            document.body.addEventListener('dragover', dnd_preventDefaults, false);
+            document.body.addEventListener('dragleave', dnd_preventDefaults, false);
+            document.body.addEventListener('drop', dnd_preventDefaults, false);
 
             // Highlight drop area when item is dragged over it
-            ['dragenter', 'dragover'].forEach(eventName => {
-              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_highlight, false)
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_unhighlight, false)
-            });
+            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_highlight, false);
+            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_highlight, false);
+            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_unhighlight, false);
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_unhighlight, false);
 
             // Handle dropped files
             DRAGNDROP_AREA_REF.addEventListener('drop', dnd_handleDrop, false);
         }
 
         function initGlobalReferences(){
-            CURRENT_GEMDOS_PATH="";
+            CURRENT_GEMDOS_PATH = "";
             DIR_LIST_REF = $id("DirectoryList");
             FILE_LIST_REF = $id("FileList");
             FILE_VIEW_REF = $id("fileView");
-            DRAGNDROP_AREA_REF=$id("fileDragAndDrop");
+            DRAGNDROP_AREA_REF = $id("fileDragAndDrop");
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DRIVE_BUTTON_LIST_TAB_REF = $id("DriveButtonListTab");
             DEBUG_OUTPUT_REF = $id("DebugOutput");
-
         }
 
         function initFavicon(){
