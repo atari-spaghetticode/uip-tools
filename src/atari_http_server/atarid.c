@@ -1,28 +1,6 @@
-/**
- * \addtogroup apps
- * @{
- */
-
-/**
- * \defgroup atarid Web server
- * @{
- * The uIP web server is a very simplistic implementation of an HTTP
- * server. It can serve web pages and files from a read-only ROM
- * filesystem, and provides a very small scripting language.
-
- */
-
-/**
- * \file
- *         Web server
- * \author
- *         Mariusz Buras <mariusz.buras@gmail.com>
- *         Adam Dunkels <adam@sics.se>
- */
-
-
 /*
  * Copyright (c) 2004, Adam Dunkels.
+ * Copyright (c) 2015-19, Mariusz Buras.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -278,11 +256,11 @@ void fstrcat(struct Repsonse* response, char* format, ...)
 
   if (response->size  <= (response->current-response->malloc_block) + formated_len) {
     size_t current_offset = response->current-response->malloc_block;
-//    printf("realloc: %zu->%zu\r\n", response->size, response->size*2);
+    LOG_TRACE("realloc: %zu->%zu\r\n", response->size, response->size*2);
     response->size = response->size * 2;
     response->malloc_block = realloc(response->malloc_block,response->size);
     response->current = &response->malloc_block[current_offset];
-//    printf("realloc: %p\r\n", response->malloc_block);
+    LOG_TRACE("realloc: %p\r\n", response->malloc_block);
   }
 
   strcat(response->current, formated);
