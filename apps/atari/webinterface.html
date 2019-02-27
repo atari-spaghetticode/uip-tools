@@ -74,8 +74,16 @@ var img_file_app_src =
     <div id="directoryListView" class="column menu"></div>
   
     <div id="directoryView" class="column content">
-      <div class="fileDragAndDrop" id="fileDragAndDropSection" />
       <div class="fileActionsView" id="fileActionsView" />
+
+        <div id="fileDragAndDrop">
+          <form class="my-form">
+            <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
+            <input type="file" id="fileElem" multiple accept="image/*" onchange="handleFiles(this.files)">
+            <label class="button" for="fileElem">Select some files</label>
+          </form>
+       </div>
+
       <div class="fileView" id="fileView"> </div>
     </div>
   </div>
@@ -96,10 +104,10 @@ Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target
             initMainView();
 
             // test display
-            //initSampleData();
-            //updateDriveViewUI(driveDummyData);
-            //updateDirectoryViewUI(directoryDummyData);
-            //updateFileViewUI(fileDummyData);        
+            initSampleData();
+            updateDriveViewUI(driveDummyData);
+            updateDirectoryViewUI(directoryDummyData);
+            updateFileViewUI(fileDummyData);        
             
             // your page initialization code here
             // the DOM will be available here

@@ -182,3 +182,39 @@ div #progress p.failed {
   background: #c00 none 0 0 no-repeat;
 }
 
+/* drag and drop */
+div #fileDragAndDrop {
+   border: 2px dashed #ccc;
+   border-radius: 20px;
+   width: 100%;
+   font-family: sans-serif;
+   margin: 2px auto;
+   padding: 5px;
+}
+
+div #fileDragAndDrop.highlight {
+  border-color: purple;
+}
+
+p {
+  margin-top: 0;
+}
+.dragAndDropForm {
+  margin-bottom: 10px;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px;
+  background: #ccc;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.button:hover {
+  background: #ddd;
+}
+
+div #fileElem {
+  display: none;
+}
