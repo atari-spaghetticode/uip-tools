@@ -29,6 +29,10 @@
         clear:both;
     }
 
+    div #mainSection{
+      height:800px;
+    }
+
     div #CurrentDirPath{
         width:100%;
         border:0px;
@@ -87,7 +91,7 @@
 
     .column {
         float: left;
-        padding: 15px;
+        padding: 5px;
     }
 
     .clearfix::after {
