@@ -39,21 +39,21 @@
             fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
         }
 
+
+// <!-- ----------------------------------------------------------------------------------------- -->
+
+        var CURRENT_GEMDOS_PATH = '';
+
+        function $id(id) {
+          return document.getElementById(id);
+        }
+
         function initFavicon(){
           var docHead = document.getElementsByTagName('head')[0];       
           var newLink = document.createElement('link');
           newLink.rel = 'shortcut icon';
           newLink.href = 'data:image/png;base64,' + img_favicon_src;
           docHead.appendChild(newLink);
-        }
-
-// <!-- ----------------------------------------------------------------------------------------- -->
-
-        var CURRENT_GEMDOS_PATH = '';
-
-
-        function $id(id) {
-          return document.getElementById(id);
         }
 
         // view cleanup on reload
