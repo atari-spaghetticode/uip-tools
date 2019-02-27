@@ -53,22 +53,25 @@
 
     div #mainSection{
         width:100%;
-        height:600px;
+        height:auto;
     }
 
     div #fileManagementBlock{
         width:100%;
-        height:80%;
+        height:800px;
+        overflow:auto;
     }
 
     div #directoryListView{
         width:20%;
-        overflow:hidden;
+        height:800px;
+        overflow:auto;
     }
 
     div #fileListView{
         width:80%;
-        overflow:hidden;
+        height:95%;
+        overflow-y: scroll; 
     }
 
     div #TransferTabs{
@@ -105,7 +108,7 @@
             height: auto;
    }
 
-
+/* file table */
 div.blueTable {
   border: 1px solid #1C6EA4;
   background-color: #EEEEEE;
@@ -162,3 +165,13 @@ div.blueTable {
 .divTableHeading { display: table-header-group;}
 .divTableFoot { display: table-footer-group;}
 .divTableBody { display: table-row-group;}
+
+/* progress bar */
+div #progress p.success {
+  background: #0c0 none 0 0 no-repeat;
+}
+
+div #progress p.failed {
+  background: #c00 none 0 0 no-repeat;
+}
+
