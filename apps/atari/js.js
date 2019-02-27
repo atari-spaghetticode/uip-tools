@@ -49,10 +49,51 @@
         var DIR_LIST_REF;
         var DIR_LIST_VIEW_REF;
         var DRIVE_BUTTON_LIST_TAB_REF;
+        var DRAGNDROP_AREA_REF;
         var DEBUG_OUTPUT_REF;
 
         function $id(id) {
           return document.getElementById(id);
+        }
+
+        function dnd_preventDefaults (e) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+
+        function dnd_highlight(e) {
+          DRAGNDROP_AREA_REF.classList.add('highlight')
+        }
+
+        function dnd_unhighlight(e) {
+          DRAGNDROP_AREA_REF.classList.remove('active')
+        }
+
+        function dnd_handleDrop(e) {
+          var dt = e.dataTransfer
+          var files = dt.files
+
+            //handleFiles(files)
+        }
+
+        function initDragAndDropControl(){
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_preventDefaults, false)   
+              document.body.addEventListener(eventName, dnd_preventDefaults, false)
+            });
+
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_highlight, false)
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+              DRAGNDROP_AREA_REF.addEventListener(eventName, dnd_unhighlight, false)
+            });
+
+            // Handle dropped files
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_handleDrop, false);
         }
 
         function initGlobalReferences(){
@@ -60,7 +101,7 @@
             DIR_LIST_REF = $id("DirectoryList");
             FILE_LIST_REF = $id("FileList");
             FILE_VIEW_REF = $id("fileView");
-            
+            DRAGNDROP_AREA_REF=$id("fileDragAndDrop");
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DRIVE_BUTTON_LIST_TAB_REF = $id("DriveButtonListTab");
@@ -90,6 +131,7 @@
 
           initGlobalReferences();
           initFavicon();
+          initDragAndDropControl();
 
           if(DIR_LIST_REF!=null){
             DIR_LIST_REF.parentNode.removeChild(DIR_LIST_REF);

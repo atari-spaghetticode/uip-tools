@@ -17,7 +17,7 @@ index.h: webinterface.html $(DEST_IMG_FILES)
 	xxd -i index.html.gz > $@
 	sed -i -e 's/unsigned/static const unsigned/g' $@
 	lessc ../apps/atari/css.css ../apps/atari/css_minified.css
-	uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
+	#uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
 
 .PHONY: staticdata
 
