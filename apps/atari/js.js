@@ -50,6 +50,7 @@
         var DIR_LIST_VIEW_REF=null;
         var DRIVE_BUTTON_LIST_TAB_REF=null;
         var DRAGNDROP_AREA_REF=null;
+        var FILE_UPLOAD_PROGRESSBAR=null;
         var DEBUG_OUTPUT_REF=null;
 
         function $id(id) {
@@ -75,6 +76,30 @@
           uploadFiles(files)
         }
 
+        // progress bar handling
+        var uploadProgress = [];
+
+        function initializeProgress(numFiles) {
+          
+          FILE_UPLOAD_PROGRESSBAR.value = 0;
+          uploadProgress = [];
+          
+          for(var i = 0; i < numFiles; ++i) {
+            uploadProgress.push(0);
+          }
+        }
+
+        function sum(total, value){
+          return total + value;
+        }
+        
+        function updateProgress(fileNumber, percent) {
+          uploadProgress[fileNumber] = percent;
+          var total = (uploadProgress.reduce(sum,0) / uploadProgress.length);
+          FILE_UPLOAD_PROGRESSBAR.value = total;
+        }
+
+
         function convertFileNameToGemdos(filename){
           return filename;
         }
@@ -84,7 +109,7 @@
             if(this.status == 200 || this.status == 201){
                // Done. Inform the user
               console.log("Success: upload done."); 
-              //refresh dir ui 
+               //TODO: refresh dir ui 
 
               return;            
             }else{
@@ -96,8 +121,10 @@
 
         function uploadFiles(files) {
           var fileArray = Array.from(files);
+          initializeProgress(fileArray.length); 
+ 
           var gemdosName = null;
-
+          
           for (var i = 0; i < fileArray.length; ++i) {
             // upload file request
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
@@ -115,7 +142,12 @@
             return function(event) {
                 var xhr = new XMLHttpRequest;
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
+                
                 xhr.onreadystatechange = handleUploadError;
+                xhr.upload.addEventListener('progress', function(e) {
+                   updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
+                });
+
                 xhr.open('POST', request, true);
                 xhr.send(blob);
               };
@@ -156,6 +188,7 @@
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
+            FILE_UPLOAD_PROGRESSBAR = $id("progressBar");
             DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
