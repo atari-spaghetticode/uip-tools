@@ -11,6 +11,28 @@
   box-sizing: border-box;
 }
 
+ /* unvisited link */
+a:link {
+  color: green;
+  text-decoration: none
+}
+
+/* visited link */
+a:visited {
+  color: green;
+}
+
+/* mouse over link */
+a:hover {
+  color: red;
+}
+
+/* selected link */
+a:active {
+  color: yellow;
+} 
+
+
     nav {
         background-color: black;
         color: white;
@@ -26,7 +48,9 @@
         background:black;
         color:white;    
         border:0px;
+        padding:2px;
         clear:both;
+        font-size: xx-small;
     }
 
     div #mainSection{
@@ -62,8 +86,8 @@
 
     div #fileManagementBlock{
         width:100%;
-        min-height:600px;
-        max-height:768px;
+        min-height:760px;
+        max-height:760px;
         overflow-x:hidden;
         overflow-y:auto;
     }
