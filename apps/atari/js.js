@@ -42,15 +42,15 @@
 
 // <!-- ----------------------------------------------------------------------------------------- -->
 
-        var CURRENT_GEMDOS_PATH;
-        var FILE_LIST_REF;
-        var FILE_VIEW_REF;
-        var CURRENT_PATH_INPUT_REF;
-        var DIR_LIST_REF;
-        var DIR_LIST_VIEW_REF;
-        var DRIVE_BUTTON_LIST_TAB_REF;
-        var DRAGNDROP_AREA_REF;
-        var DEBUG_OUTPUT_REF;
+        var CURRENT_GEMDOS_PATH=null;
+        var FILE_LIST_REF=null;
+        var FILE_VIEW_REF=null;
+        var CURRENT_PATH_INPUT_REF=null;
+        var DIR_LIST_REF=null;
+        var DIR_LIST_VIEW_REF=null;
+        var DRIVE_BUTTON_LIST_TAB_REF=null;
+        var DRAGNDROP_AREA_REF=null;
+        var DEBUG_OUTPUT_REF=null;
 
         function $id(id) {
           return document.getElementById(id);
@@ -103,8 +103,8 @@
 
         function initGlobalReferences(){
             CURRENT_GEMDOS_PATH = "";
-            DIR_LIST_REF = $id("DirectoryList");
-            FILE_LIST_REF = $id("FileList");
+            DIR_LIST_REF = $id("directoryList");
+            FILE_LIST_REF = $id("fileList");
             FILE_VIEW_REF = $id("fileView");
             DRAGNDROP_AREA_REF = $id("fileDragAndDrop");
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
@@ -139,10 +139,12 @@
 
           if(DIR_LIST_REF!=null){
             DIR_LIST_REF.parentNode.removeChild(DIR_LIST_REF);
+            DIR_LIST_REF=null;
           }
           
           if(FILE_LIST_REF!=null){
             FILE_LIST_REF.parentNode.removeChild(FILE_LIST_REF);
+            FILE_LIST_REF=null;
           }
 
           CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
@@ -323,14 +325,16 @@
         function updateDirectoryViewUI(DirJsonArray){
 
           var div = document.createElement("div");
-          div.id="DirectoryList";
+          div.id="directoryList";
           createDirectoryEntries(div,DirJsonArray);
 
           if(DIR_LIST_REF!=null){
             DIR_LIST_REF.parentNode.removeChild(DIR_LIST_REF);
+            DIR_LIST_REF=null;
           }
 
           DIR_LIST_VIEW_REF.appendChild(div);
+          DIR_LIST_REF=$id("directoryList");
         }
 
         // file view generation
@@ -452,14 +456,16 @@
         function updateFileViewUI(FileJsonArray){
 
           var div = document.createElement("div");
-          div.id="FileList"
+          div.id="fileList"
           createFileEntries(div, FileJsonArray)
 
           if(FILE_LIST_REF!=null){
             FILE_LIST_REF.parentNode.removeChild(FILE_LIST_REF);
+            FILE_LIST_REF=null;
           }
 
           FILE_VIEW_REF.appendChild(div);
+          FILE_LIST_REF=$id("fileList");
         }
 
 
