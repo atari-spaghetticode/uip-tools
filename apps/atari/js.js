@@ -75,8 +75,54 @@
           uploadFiles(files)
         }
 
-        function uploadFiles(files){
-          alert(files);
+        function convertFileNameToGemdos(filename){
+          return filename;
+        }
+
+        function handleUploadError(e){
+          if(this.readyState==4){
+            if(this.status == 200 || this.status == 201){
+               // Done. Inform the user
+              console.log("Success: upload done."); 
+              //refresh dir ui 
+
+              return;            
+            }else{
+                // Error. Inform the user
+                console.log("Error: upload failed." + this.responseText);  
+            }
+         }
+        }
+
+        function uploadFiles(files) {
+          var fileArray = Array.from(files);
+          var gemdosName = null;
+
+          for (var i = 0; i < fileArray.length; ++i) {
+            // upload file request
+            // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
+            gemdosName = convertFileNameToGemdos(fileArray[i].name);
+
+            var request = CURRENT_PATH_INPUT_REF.value + gemdosName;
+            request = sanitizeGemdosPath(request);
+            
+            var current_date = new Date(fileArray[i].lastModifiedDate);
+            request += '?setfiledate=' + convertDateToAtariTOSFormat(current_date);
+            
+            var reader = new FileReader();
+            reader.onload = (function(request, current_date) {
+            
+            return function(event) {
+                var xhr = new XMLHttpRequest;
+                var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
+                xhr.onreadystatechange = handleUploadError;
+                xhr.open('POST', request, true);
+                xhr.send(blob);
+              };
+            })(request,current_date);
+
+            reader.readAsArrayBuffer(fileArray[i]);
+          }
         }
 
         function initDragAndDropControl(){
@@ -109,8 +155,8 @@
             DRAGNDROP_AREA_REF = $id("fileDragAndDrop");
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
-            DRIVE_BUTTON_LIST_TAB_REF = $id("DriveButtonListTab");
-            DEBUG_OUTPUT_REF = $id("DebugOutput");
+            DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
+            DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
         function initFavicon(){
@@ -318,7 +364,7 @@
            }
           };
            
-           if(entriesFound==0) node.innerHTML+='No directories found!<br/>' ;
+           if(entriesFound==0) node.innerHTML+='[Empty]<br/>' ;
                  
         }
 
@@ -449,7 +495,7 @@
           };
         }
             if(entriesFound==0) 
-              node.innerHTML += 'No files found!<br/>';
+              node.innerHTML += '[EMPTY]<br/>';
         }
 
 
@@ -516,7 +562,9 @@
     // } DOSTIME;
     
     function convertDateToAtariTOSFormat(date) {
+        
         var tosYear = (date.getFullYear() - 1980);
+
         tosYear = tosYear < 0 ? 0 : tosYear;
         tosYear = tosYear > 119 ? 119 : tosYear;
         var tosDay = date.getDate();
