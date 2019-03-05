@@ -367,7 +367,14 @@
             rootbtn.appendChild(rootbtnNode);
             rootbtn.type='button';
             rootbtn.name = 'ROOT';
+            rootbtn.className ='directoryButton';
             rootbtn.onclick = handleDirectoryOnClick;
+
+            var img = document.createElement('img');
+            img.alt = "folder closed icon";
+            img.src = 'data:image/png;base64,' + img_dir_close_src;
+            rootbtn.appendChild(img);
+
             node.appendChild(rootbtn);
           }
 
@@ -392,7 +399,7 @@
                 button.type='button';
                 button.name = requestStr;
                 button.onclick = handleDirectoryOnClick;
-                button.style="display:block;";
+                button.className ='directoryButton';
                 node.appendChild(button);
            }
           };
