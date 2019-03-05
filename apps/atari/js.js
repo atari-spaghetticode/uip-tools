@@ -103,14 +103,14 @@
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
             gemdosName = convertFileNameToGemdos(fileArray[i].name);
 
-            var request = CURRENT_PATH_INPUT_REF.value + gemdosName;
+            var request = CURRENT_PATH_INPUT_REF.value + '/' + gemdosName;
             request = sanitizeGemdosPath(request);
             
-            var current_date = new Date(fileArray[i].lastModifiedDate);
-            request += '?setfiledate=' + convertDateToAtariTOSFormat(current_date);
+            var current_date = new Date();
+            request = request+"?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
             var reader = new FileReader();
-            reader.onload = (function(request, current_date) {
+            reader.onload = (function(request) {
             
             return function(event) {
                 var xhr = new XMLHttpRequest;
@@ -119,7 +119,7 @@
                 xhr.open('POST', request, true);
                 xhr.send(blob);
               };
-            })(request,current_date);
+            })(request);
 
             reader.readAsArrayBuffer(fileArray[i]);
           }
