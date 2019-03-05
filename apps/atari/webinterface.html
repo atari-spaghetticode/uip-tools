@@ -79,8 +79,8 @@ let img_file_app_src =
         <div id="fileDragAndDrop">
           <form class="dragAndDropForm">
             <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
-            <input type="file" id="fileElem" multiple onchange="uploadFiles(this.files)">
-            <label class="button" for="fileElem">Select some files</label>
+            <input type="file" id="fileElem" multiple onchange="uploadFiles(this.files)" />
+            <label class="button" for="fileElem">Select files to upload</label>
           </form>
           <progress id="progressBar" max=100 value=0></progress>
        </div>

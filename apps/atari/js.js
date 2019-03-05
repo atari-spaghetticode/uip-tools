@@ -144,10 +144,10 @@
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
                 
                 xhr.onreadystatechange = handleUploadError;
-                xhr.upload.addEventListener('progress', function(e) {
+                xhr.upload.onprogress= (function onUpdateProgressBar(e) {
                    updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
                 });
-
+                
                 xhr.open('POST', request, true);
                 xhr.send(blob);
               };
