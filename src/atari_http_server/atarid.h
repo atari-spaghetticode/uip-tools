@@ -42,7 +42,7 @@
 
 struct DataSource;
 
-struct atarid_state {
+typedef struct atarid_state {
   const char* http_request_type;
   int http_result_code;
   const char* http_result_string;
@@ -78,7 +78,7 @@ struct atarid_state {
   int16_t  fd;
 
   uint8_t heap[HEAP_SIZE];
-};
+} sAtariState;
 
 void atarid_init(void);
 void atarid_appcall(void);

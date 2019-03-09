@@ -74,14 +74,8 @@
 #include <stdbool.h>
 
 // static content
-/*#include "index.h"
-#include "icon-down.h"
-#include "icon-up.h"
-#include "icon-left.h"
-#include "icon-right.h"
-#include "loader.h"
-#include "close.h"
-*/
+#include "index.h"
+
 #define ISO_nl      0x0a
 #define ISO_space   0x20
 #define ISO_bang    0x21
@@ -775,21 +769,16 @@ static void parse_post(struct atarid_state *s)
   s->handler_func = handle_post;
 }
 
-struct {
-  const char* url;
-  const unsigned char* data_ptr;
+struct
+{
+  const char *url;
+  const unsigned char *data_ptr;
   const unsigned int data_size;
-  const char* content_type;
-  const char* encoding_type;
-} static static_url_mapping [] = {
-/*    { "", index_html_gz,index_html_gz_len,"text/html; charset=UTF-8", "gzip"},
-  { "images/icon-down.png", icon_down_png,icon_down_png_len,"image/png", "identity"},
-  { "images/icon-up.png", icon_up_png,icon_up_png_len,"image/png", "identity"},
-  { "images/icon-left.png", icon_left_png,icon_left_png_len,"image/png", "identity"},
-  { "images/icon-right.png", icon_right_png,icon_right_png_len,"image/png", "identity"},
-  { "images/close.png", close_png,close_png_len,"image/png", "identity"},
-  { "images/loader.gif", loader_gif,loader_gif_len,"image/gif", "identity"},*/
-  { NULL,NULL,0 }
+  const char *content_type;
+  const char *encoding_type;
+} static_url_mapping[] = {
+    {"", index_html_gz, index_html_gz_len, "text/html; charset=UTF-8", "gzip"},
+    {NULL, NULL, 0}
 };
 
 static void parse_get(struct atarid_state *s)

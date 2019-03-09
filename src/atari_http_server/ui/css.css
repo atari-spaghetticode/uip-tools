@@ -1,0 +1,271 @@
+   html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+            clear:both;
+    }
+
+* {
+  box-sizing: border-box;
+}
+
+ /* unvisited link */
+a:link {
+  color: green;
+  text-decoration: none
+}
+
+/* visited link */
+a:visited {
+  color: green;
+}
+
+/* mouse over link */
+a:hover {
+  color: red;
+}
+
+/* selected link */
+a:active {
+  color: yellow;
+} 
+
+
+    nav {
+        background-color: black;
+        color: white;
+        width:100%;
+        border: 0px;
+        margin-right:10px;
+        padding-left:10px;
+    }   
+
+    footer {
+        width:100%;
+        float:none;
+        background:black;
+        color:white;    
+        border:0px;
+        padding:2px;
+        clear:both;
+        font-size: xx-small;
+    }
+
+    div #mainSection{
+      height:768px;
+    }
+
+    div #CurrentDirPath{
+        width:100%;
+        border:0px;
+        margin:0px;
+        padding:2px;
+        clear:both;
+    }
+
+    div #currentPathInput{
+        width:100%;
+        border:0px;
+        margin:0px;
+        padding:2px;
+        clear:both;
+    };
+
+    input #currentPathInput{
+        width:80%;
+        overflow:hidden;
+        border:1px;
+    }
+
+    div #mainSection{
+        width:100%;
+        height:auto;
+    }
+
+    div #fileManagementBlock{
+        width:100%;
+        min-height:760px;
+        max-height:760px;
+        overflow-x:hidden;
+        overflow-y:auto;
+    }
+
+    div #directoryListView{
+        width:15%;
+        height:95%;
+        overflow-x:hidden;
+        overflow-y:auto;
+    }
+
+    div #fileListView{
+        width:80%;
+        height:95%;
+        overflow-y: scroll; 
+    }
+
+    div #TransferTabs{
+        float:none;
+    }
+
+    div #DriveButtonListTab{
+        width:80%;
+        float:right;
+        overflow:hidden;
+    }
+
+    .column {
+        float: left;
+        padding: 5px;
+    }
+
+    .clearfix::after {
+        content: "";
+        clear: both;
+        display: table;
+     }
+
+    .menu {
+        width: 25%;
+    }
+
+    .content {
+        width: 75%;
+    }
+
+
+   .directoryView {
+            height: auto;
+   }
+
+/* file table */
+div.blueTable {
+  border: 1px solid #1C6EA4;
+  background-color: #EEEEEE;
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+.divTable.blueTable .divTableCell, .divTable.blueTable .divTableHead {
+  padding: 3px 2px;
+}
+.divTable.blueTable .divTableBody .divTableCell {
+  font-size: 13px;
+}
+.divTable.blueTable .divTableHeading {
+  background: #506555;
+  background: -moz-linear-gradient(top, #7c8b7f 0%, #617466 66%, #506555 100%);
+  background: -webkit-linear-gradient(top, #7c8b7f 0%, #617466 66%, #506555 100%);
+  background: linear-gradient(to bottom, #7c8b7f 0%, #617466 66%, #506555 100%);
+}
+.divTable.blueTable .divTableHeading .divTableHead {
+  font-size: 15px;
+  font-weight: bold;
+  color: #FFFFFF;
+  border-left: 2px solid #D0E4F5;
+}
+.divTable.blueTable .divTableHeading .divTableHead:first-child {
+  border-left: none;
+}
+
+.blueTable .tableFootStyle {
+  font-size: 14px;
+}
+.blueTable .tableFootStyle .links {
+     text-align: right;
+}
+.blueTable .tableFootStyle .links a{
+  display: inline-block;
+  background: #1C6EA4;
+  color: #FFFFFF;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.blueTable.outerTableFooter {
+  border-top: none;
+}
+.blueTable.outerTableFooter .tableFootStyle {
+  padding: 3px 5px; 
+}
+
+.divTable{ display: table; }
+.divTableRow { display: table-row; }
+.divTableHeading { display: table-header-group;}
+.divTableCell, .divTableHead { display: table-cell;}
+.divTableHeading { display: table-header-group;}
+.divTableFoot { display: table-footer-group;}
+.divTableBody { display: table-row-group;}
+
+/* progress bar */
+div #progress p.success {
+  background: #0c0 none 0 0 no-repeat;
+}
+
+div #progress p.failed {
+  background: #c00 none 0 0 no-repeat;
+}
+
+/* drag and drop */
+div #fileDragAndDrop {
+   border: 2px dashed #ccc;
+   border-radius: 20px;
+   width: 100%;
+   font-family: sans-serif;
+   margin: 2px auto;
+   padding: 5px;
+}
+
+div #fileDragAndDrop.highlight {
+  border-color: purple;
+}
+
+p {
+  margin-top: 0;
+}
+
+.dragAndDropForm {
+  margin-bottom: 10px;
+}
+
+.directoryButton {
+    display: inline-block;
+    margin-right: 0px;
+    background: #ccc;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    padding-top: 2px;
+    margin-left: 0px;
+    width: 225px;
+    margin-top: 1px;
+}
+
+.directoryButton:hover{
+ background: #ddd;
+}
+
+.directoryButton img {
+   float: left;
+}
+
+.directoryButton text {
+   float: left;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px;
+  background: #ccc;
+  cursor: pointer;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.button:hover {
+  background: #ddd;
+}
+
+div #fileElem {
+  display: none;
+}

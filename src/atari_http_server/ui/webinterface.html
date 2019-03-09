@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"> 
+<meta name="description" content="uIPTool web interface">
+<meta name="keywords" content="HTML,CSS,XML,JavaScript">
+<meta name="author" content="Sqward/Mystic Bytes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Atari ST/STe/TT/F030/F060">
+<title id='Description'>uIPTool ver. VERSION</title>
+
+<script type="text/javascript">
+"use strict";
+
+let img_favicon_src = 
+#include "img/favicon.dat"
+
+let img_logo_src =
+#include "img/uiplogo.dat"
+
+let img_floppy_active_src =
+#include "img/floppy_active.dat"
+
+let img_hd_active_src =
+#include "img/hd_active.dat"
+
+let img_dir_open_src =
+#include "img/dir_open.dat"
+
+let img_dir_close_src = 
+#include "img/dir_close.dat"
+
+let img_file_generic_src = 
+#include "img/file_generic.dat"
+
+let img_file_app_src = 
+#include "img/file_app.dat"
+
+
+#if RELEASE
+#include "js_minified.js"
+#else
+#include "js.js"
+#endif
+</script>
+
+<style type="text/css">
+#if RELEASE
+#include "css_minified.css"
+#else
+#include "css.css"
+#endif
+</style>
+
+</head>
+<body>
+
+<header>
+<font size="6">uIPTool</font> ver. VERSION    
+</header>
+<!-- Navigation interface -->
+<nav>
+    <div id="driveButtonListTab"/>
+    <div id="currentDirPath">
+        <input type="text" class="currentPathInput" id="currentPathInput" placeholder="Current GEMDOS path input" alt="Current GEMDOS path" size=128 maxlength=255 autofocus />
+    </div>
+</nav>
+
+<div id="mainSection" ondrop="event.preventDefault()" 
+                      ondragover="event.preventDefault()" 
+                      ondragenter="event.preventDefault()" class="clearfix">
+
+  <div id="fileManagementBlock">
+    <div id="directoryListView" class="column menu"></div>
+  
+    <div id="directoryView" class="column content">
+      <div class="fileActionsView" id="fileActionsView" />
+
+        <div id="fileDragAndDrop">
+          <form class="dragAndDropForm">
+            <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
+            <input type="file" id="fileElem" multiple onchange="uploadFiles(this.files)" />
+            <label class="button" for="fileElem">Select files to upload</label>
+          </form>
+          <progress id="progressBar" max=100 value=0></progress>
+       </div>
+
+      <div class="fileView" id="fileView"> </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target="_blank">Official uIPtool project page</a>UI design/programming: <a href="https://nokturnal.pl" target="_blank">[nokturnal]</a>, icons by: <a href="https://www.famfamfam.com/lab/icons/silk/" target="_blank">FamFamFam</a>  
+</footer>
+
+#if RELEASE!=0
+<div id="DebugOutput"/>
+#endif
+
+<script>
+    (function() {
+            
+            //init all elements
+            initMainView();
+
+            // test display
+            //initSampleData();
+            //updateDriveViewUI(driveDummyData);
+            //updateDirectoryViewUI(directoryDummyData);
+            //updateFileViewUI(fileDummyData);        
+            
+            // your page initialization code here
+            // the DOM will be available here
+
+            updateDriveListReq();
+})();
+</script>
+
+</body>
+</html>

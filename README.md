@@ -7,7 +7,22 @@ It is a self contained binary, including a TCP/IP based on uIP embedded stack wi
 
 # Building
 
-Project requires Scons and m68k-atari-mint toolchain. It's simply built with this commands:
+prerequisities:
+Cygwin or other Linux like environment
+m68k atari cross compiler (http://vincent.riviere.free.fr/soft/m68k-atari-mint)
+vasm m68k cross compiler (http://sun.hasenbraten.de/vasm)
+GNU make
+xxd
+
+```
+For CSS/JS minification automation in release builds:
+nodeJS 11.9.0 https://nodejs.org/en/ 
+from npm:
+	npm install uglify-js -g
+	npm install less -g
+```
+
+then:
 
 ```
 bash# mkdir uip-tools.build  
