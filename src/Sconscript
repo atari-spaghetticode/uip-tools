@@ -1,14 +1,14 @@
-
 Import('targetEnv')
+Import('hostEnv')
 import os.path
+
 SOURCES = [
 	 	Glob('*.c'),
 	 	Glob('uip/*.c'),
-	 	Glob('atari_http_server/*.c'),
+		targetEnv.SConscript("atari_http_server/SConscript", exports=['hostEnv', 'targetEnv'])
 	]
 
 targetEnv.Append( CPPPATH=[ Dir('./uip').srcnode().abspath ] )
-targetEnv.Append( CPPPATH=[ Dir('./atari_http_server').srcnode().abspath ] )
 targetEnv.Append( CPPPATH=[ Dir('./').srcnode().abspath ] )
 
 TARGETS = targetEnv.Program(

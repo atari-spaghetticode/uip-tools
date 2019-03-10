@@ -74,7 +74,7 @@
 #include <stdbool.h>
 
 // static content
-#include "index.h"
+#include "ui/index.html"
 
 #define ISO_nl      0x0a
 #define ISO_space   0x20
@@ -776,10 +776,10 @@ struct
   const unsigned int data_size;
   const char *content_type;
   const char *encoding_type;
-} static_url_mapping[] = {
-    {"", index_html_gz, index_html_gz_len, "text/html; charset=UTF-8", "gzip"},
-    {NULL, NULL, 0}
-};
+} static static_url_mapping[] = {
+    {"", index_html_gz, sizeof(index_html_gz), "text/html; charset=UTF-8", "gzip"},
+    {"index.html", index_html_gz, sizeof(index_html_gz), "text/html; charset=UTF-8", "gzip"},
+    {NULL, NULL, 0}};
 
 static void parse_get(struct atarid_state *s)
 {
