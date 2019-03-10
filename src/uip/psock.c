@@ -308,8 +308,7 @@ PT_THREAD(psock_readbuf_len(register struct psock *psock, uint32_t len))
       psock->readlen = uip_datalen();
     }
   } while(buf_bufdata(&psock->buf, psock->bufsize,
-          &psock->readptr, &psock->readlen) == BUF_NOT_FULL &&
-    psock_datalen(psock) < len);
+          &psock->readptr, &psock->readlen) == BUF_NOT_FULL && psock_datalen(psock) < len);
   
   if(psock_datalen(psock) == 0) {
     psock->state = STATE_NONE;

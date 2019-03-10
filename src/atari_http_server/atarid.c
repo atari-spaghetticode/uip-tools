@@ -60,6 +60,8 @@
 #include "atarid.h"
 #include "../logging.h"
 
+#include "psock.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -83,6 +85,49 @@
 #define ISO_period  0x2e
 #define ISO_slash   0x2f
 #define ISO_colon   0x3a
+
+#define HEAP_SIZE 4096
+#define INPUTBUF_SIZE (0x8000)
+
+/*---------------------------------------------------------------------------*/
+
+struct DataSource;
+
+typedef struct atarid_state {
+  const char* http_request_type;
+  int http_result_code;
+  const char* http_result_string;
+  struct psock sin;
+  uint8_t* inputbuf;
+  uint32_t inputbuf_size;
+  char query[256];
+  char filename[256];
+  char original_filename[256];
+  FILE* file;
+  size_t expected_file_length;
+  uint32_t expected_100_continue;
+
+  char multipart_encoded;
+
+  int32_t tosFileDateTime;
+  int32_t tosFileDateTimeData;
+
+  struct pt worker[4];
+  size_t temp_file_length;
+
+  void (*idle_run_handler)(struct atarid_state *s);
+  char storeCurrentPath[256];
+  char run_path[256];
+  int16_t storeCurrentDrive;
+
+  char(*handler_func)(struct pt* worker,struct atarid_state *s);
+
+  struct DataSource* handler_datasrc;
+
+  int16_t  fd;
+
+  uint8_t heap[HEAP_SIZE];
+} sAtariState;
 
 /*---------------------------------------------------------------------------*/
 int ensureFolderExists(const char* path, int stripFileName)
@@ -948,6 +993,10 @@ PT_THREAD(handle_input(struct atarid_state *s))
 static void
 handle_error(struct atarid_state *s)
 {
+  if (!s) {
+    return;
+  }
+
   if (Fclose_safe(&s->fd) != -1) {
     LOG_WARN("FClose -> failed\r\n");
   }
@@ -960,41 +1009,103 @@ handle_connection(struct atarid_state *s)
   return handle_input(s);
 }
 /*---------------------------------------------------------------------------*/
+struct atarid_state* atarid_get_state()
+{
+  return (struct atarid_state *)(uip_conn->appstate);
+}
+
+struct atarid_state* atarid_alloc_state()
+{
+  struct atarid_state *s = atarid_get_state();
+
+  LOG_TRACE("atarid_alloc_state\r\n");
+
+  if (s) {
+    LOG_WARN("atarid_alloc_state: connection already freed!");
+    return;
+  }
+
+  s = (struct atarid_state *)malloc(sizeof(struct atarid_state));
+  uip_conn->appstate = s;
+
+  memset(s, 0, sizeof(struct atarid_state));
+  s->inputbuf_size = INPUTBUF_SIZE;
+  s->inputbuf = malloc(INPUTBUF_SIZE);
+
+  LOG_TRACE("atarid_alloc_state: %p, buf: %p\r\n", s, s->inputbuf);
+
+  PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
+
+  return s;
+}
+
+static void atarid_free_state()
+{
+  struct atarid_state *s = atarid_get_state();
+
+  LOG_TRACE("atarid_free_state\r\n");
+
+  if (!s) {
+    LOG_WARN("atarid_free_state: connection already freed!");
+    return;
+  }
+
+  struct DataSource* src = s->handler_datasrc;
+  if (src) {
+      src->close(src);
+  }
+  /* free other details */
+  free(s->inputbuf);
+  free(s);
+  uip_conn->appstate = NULL;
+
+}
+
+/*---------------------------------------------------------------------------*/
+
 void
 atarid_appcall(void)
 {
-  struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
-  if (uip_timedout()) {
-    LOG_TRACE("Connection timeout\r\n");
-    handle_error(s);
-  } else if(uip_aborted()) {
-    LOG_TRACE("Connection aborted\r\n");
-  } else if(uip_closed()) {
-    LOG_TRACE("Connection closed\r\n");
-    /* allow connection handler to do it's cleanup if connection was closed while
-      calling into UIP which would result in this code being executed and thead
-      never resumed again so that it would have no chance of cleaning up after itself.
-      */
-    handle_connection(s);
-    /* now check if there's and outstanding error */
-    handle_error(s);
-  } else if(uip_connected()) {
-    LOG_TRACE("Connection established\r\n");
-    s->inputbuf_size = INPUTBUF_SIZE;
-    s->inputbuf = &s->inputbuf_data[0];
-    PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
-    s->timer = 0;
-  } else if (uip_is_idle()) {
-    if (s->idle_run_handler) {
-      s->idle_run_handler(s);
-    }
-  } else if(s != NULL) {
-    handle_connection(s);
-  } else {
-    LOG_WARN("Unknown condition, aborting connection\r\n");
-    uip_abort();
+  struct atarid_state *s = atarid_get_state();
+
+  if (uip_conn->lport != 80) {
+    return;
   }
 
+  if (s) {
+      /* connection is already established */
+      if (uip_timedout()) {
+        LOG_TRACE("Connection timeout\r\n");
+      } else if(uip_aborted()) {
+        LOG_TRACE("Connection aborted\r\n");
+      } else if(uip_closed()) {
+        LOG_TRACE("Connection closed\r\n");
+        /* allow connection handler to do it's cleanup if connection was closed while
+          calling into UIP which would result in this code being executed and thead
+          never resumed again so that it would have no chance of cleaning up after itself.
+          */
+        handle_connection(s);
+      } else if (uip_is_idle() && s->idle_run_handler) {
+        s->idle_run_handler(s);
+        return;
+      } else {
+        /* connection is active, service the connection*/
+        handle_connection(s);
+        return;
+      }
+      /* now check if there's and outstanding error */
+      handle_error(s);
+      atarid_free_state();
+      return;
+  }
+
+ if(uip_connected()) {
+    LOG_TRACE("Connection established\r\n");
+    /* new connection */
+    atarid_alloc_state();
+  } else {
+    // Unknown condition, do nothing
+  }
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -1006,9 +1117,6 @@ atarid_appcall(void)
 void
 atarid_init(void)
 {
-  struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
-  memset(s, sizeof(struct atarid_state), 0);
-  PT_INIT(PSOCK_GET_TREAD(&s->sin));
   uip_listen(HTONS(80));
 }
 /*---------------------------------------------------------------------------*/

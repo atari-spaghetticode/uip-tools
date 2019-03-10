@@ -159,6 +159,8 @@ typedef unsigned short uip_stats_t;
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/
 
+typedef void* uip_tcp_appstate_t;
+
 #endif /* __UIP_CONF_H__ */
 
 /** @} */

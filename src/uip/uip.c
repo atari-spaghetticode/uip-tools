@@ -383,6 +383,7 @@ uip_init(void)
   }
   for(c = 0; c < UIP_CONNS; ++c) {
     uip_conns[c].tcpstateflags = UIP_CLOSED;
+    memset(uip_conns[c].appstate, sizeof(uip_tcp_appstate_t), 0);
   }
 #if UIP_ACTIVE_OPEN
   lastport = 1024;

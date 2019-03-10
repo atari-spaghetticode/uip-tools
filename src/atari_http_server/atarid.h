@@ -35,55 +35,7 @@
 #ifndef __ATARID_H__
 #define __ATARID_H__
 
-#include "psock.h"
-#include "stdio.h"
-#define HEAP_SIZE 4096
-#define INPUTBUF_SIZE (0x8000)
-
-struct DataSource;
-
-typedef struct atarid_state {
-  const char* http_request_type;
-  int http_result_code;
-  const char* http_result_string;
-  unsigned char timer;
-  struct psock sin;
-  char* inputbuf;
-  char inputbuf_data[INPUTBUF_SIZE];
-  uint32_t inputbuf_size;
-  char query[256];
-  char filename[256];
-  char original_filename[256];
-  FILE* file;
-  size_t expected_file_length;
-  uint32_t expected_100_continue;
-
-  char multipart_encoded;
-
-  int32_t tosFileDateTime;
-  int32_t tosFileDateTimeData;
-
-  struct pt worker[4];
-  size_t temp_file_length;
-
-  void (*idle_run_handler)(struct atarid_state *s);
-  char storeCurrentPath[256];
-  char run_path[256];
-  int16_t storeCurrentDrive;
-
-  char(*handler_func)(struct pt* worker,struct atarid_state *s);
-
-  struct DataSource* handler_datasrc;
-
-  int16_t  fd;
-
-  uint8_t heap[HEAP_SIZE];
-} sAtariState;
-
 void atarid_init(void);
 void atarid_appcall(void);
-
-void atarid_log(char *msg);
-void atarid_log_file(u16_t *requester, char *file);
 
 #endif /* __ATARID_H__ */
