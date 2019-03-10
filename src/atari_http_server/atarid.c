@@ -965,12 +965,12 @@ atarid_appcall(void)
 {
   struct atarid_state *s = (struct atarid_state *)&(uip_conn->appstate);
   if (uip_timedout()) {
-    LOG_WARN("Connection timeout\r\n");
+    LOG_TRACE("Connection timeout\r\n");
     handle_error(s);
   } else if(uip_aborted()) {
-    LOG_WARN("Connection aborted\r\n");
+    LOG_TRACE("Connection aborted\r\n");
   } else if(uip_closed()) {
-    LOG_WARN("Connection closed\r\n");
+    LOG_TRACE("Connection closed\r\n");
     /* allow connection handler to do it's cleanup if connection was closed while
       calling into UIP which would result in this code being executed and thead
       never resumed again so that it would have no chance of cleaning up after itself.

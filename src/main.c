@@ -137,7 +137,7 @@ uip_configure_ip(
   const uip_ipaddr_t netmask,
   const uip_ipaddr_t default_router)
 {
-  LOG("%d.%d.%d.%d\r\n",
+  INFO("\33p%d.%d.%d.%d\33q\r\n",
 	  uip_ipaddr1(ipaddr), uip_ipaddr2(ipaddr),
 	  uip_ipaddr3(ipaddr), uip_ipaddr4(ipaddr));
 
@@ -151,7 +151,7 @@ dhcpc_configured(const struct dhcpc_state *s)
 {
   uip_configure_ip(s->ipaddr, s->netmask, s->default_router);
   if ( s->hostname[0] != 0 ) {
-    LOG("DHCP Hostname: %s\r\n", s->hostname);
+    INFO("DHCP Hostname: %s\r\n", s->hostname);
   }
 
   /*  resolv_conf(s->dnsaddr); */
@@ -240,7 +240,7 @@ read_config()
   config_data = malloc (size);
 
   if (!config_data) {
-    LOG ("Couldn't open/create the config file: %s\r\n", config_path);
+    LOG_WARN ("Couldn't open/create the config file: %s\r\n", config_path);
     return;
   }
 
@@ -260,7 +260,7 @@ read_config()
       &route[0], &route[1], &route[2], &route[3]);
 
     if(num_values != 13) {
-      LOG("Configuration file malformed! %d\r\n", num_values);
+      LOG_WARN("Configuration file malformed! %d\r\n", num_values);
       config_setup_default ();
     }
 
@@ -282,11 +282,11 @@ void
 configure_ip()
 {
   if (!config_static_ip) {
-    LOG("DHCP IP: ");
+    INFO("DHCP IP: ");
     dhcpc_init(uip_ethaddr.addr, 6);
   } else {
     dhcp_stop();
-    LOG("STATIC IP: ");
+    INFO("STATIC IP: ");
     uip_configure_ip (config_ip, config_netmask, config_router);
   }
 }
@@ -338,19 +338,19 @@ main(int argc, char *argv[])
   struct timer periodic_timer, arp_timer;
   uint32_t cpu_type = 0;  // assume MC68000
   
-  LOG("uIP tool, version %d\r\n", VERSION);
+  INFO("\33puIP tool, version %d\33q\r\n", VERSION);
 
   create_config_path(argv[0]);
 
   Super(0);
 
   if(get_cookie('MiNT', NULL)) {
-    LOG("uiptool doesn't work under MiNT, sorry!\r\n");
+    LOG_WARN("uiptool doesn't work under MiNT, sorry!\r\n");
     return 1;
   }
 
   if(get_cookie('STiK', NULL)) {
-    LOG("uiptool doesn't work with STiK, sorry!\r\n");
+    LOG_WARN("uiptool doesn't work with STiK, sorry!\r\n");
     return 1;
   }
 
@@ -358,9 +358,9 @@ main(int argc, char *argv[])
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  LOG("RTL8019 init ... ");
+  INFO("RTL8019 init ... ");
   if (!RTL8019dev_init(uip_ethaddr.addr, cpu_type) ) {
-    LOG("driver initialisation failed!\r\n");
+    LOG_WARN("driver initialisation failed!\r\n");
     return 1;
   }
 
