@@ -183,11 +183,19 @@ create_config_path(const char* app_path)
   file_ext = strrchr(config_path, '.');
   if (file_ext) {
     *file_ext = 0;
-    strcat(config_path, ".cnf");
-    LOG("config path: %s\r\n", config_path);
+    strcat(config_path, ".cfg");
   } else {
-    config_path[0] = 0;
+    /* if argc[0] is empty store config on c: */
+    uint32_t drv_map = Drvmap();
+    if (drv_map&0x4) {
+      strcat(config_path, "c:\\uip.cfg");
+    } else if (drv_map&0x1) {
+      strcat(config_path, "a:\\uip.cfg");
+    } else {
+      config_path[0] = 0;
+    }
   }
+  LOG("config path: %s\r\n", config_path);
 }
 
 void
