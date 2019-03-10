@@ -322,14 +322,14 @@ const char* file_stat_json(const char* path)
   char dos_path_helper[2] = { '\0', '\0' };
 
   Fsetdta (&dta);
-  memset(&dta,0,sizeof(dta));
+  memset(&dta, 0, sizeof(dta));
   response.malloc_block = (char*)malloc (response.size);
   *response.malloc_block = 0;
   response.current = response.malloc_block;
 
-  strncpy (dos_path,path,sizeof(dos_path));
+  strncpy (dos_path, path, sizeof(dos_path));
 
-  fstrcat(&response," [\r\n");
+  fstrcat(&response, " [\r\n");
 
   // this is a bit dodgy, I'm not sure why I need to do this:
   // it turns out that to scan the root of the drive I need to
@@ -357,7 +357,7 @@ const char* file_stat_json(const char* path)
           "    \"type\" : \"d\",\r\n");
         fstrcat(&response,
            "    \"name\" : \"%c\"\r\n", 'a' + i);
-        fstrcat(&response,"  }\r\n");
+        fstrcat(&response, "  }\r\n");
       }
       i++;
       drv_map >>=1;
@@ -368,20 +368,20 @@ const char* file_stat_json(const char* path)
     // ok so this is a folder
     if (strlen(dos_path) == 3 || (dta.dta_attribute&FA_DIR)) {
       if (dos_path[strlen(dos_path)-1] != '\\') {
-        strcat(dos_path,"\\");
+        strcat(dos_path, "\\");
       }
-      strcat(dos_path,"*.*");
+      strcat(dos_path, "*.*");
       if (0 == Fsfirst(dos_path, FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
         int first = 1;
         do {
           // skip .. and . pseudo folders
-          if (strcmp(dta.dta_name,"..") != 0
-              && strcmp(dta.dta_name,".") != 0
+          if (strcmp(dta.dta_name, "..") != 0
+              && strcmp(dta.dta_name, ".") != 0
           // && !dta.dta_attribute&FA_SYSTEM
               && !(dta.dta_attribute&FA_LABEL)
            ) {
             if (!first) {
-              fstrcat(&response,",\r\n");
+              fstrcat(&response, ",\r\n");
             }
             file_stat_single(&response);
             first = 0;
