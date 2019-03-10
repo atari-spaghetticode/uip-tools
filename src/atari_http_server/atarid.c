@@ -886,7 +886,7 @@ static void parse_expect(struct atarid_state *s)
 
 static void parse_urlencoded(struct atarid_state *s)
 {
-  s->multipart_encoded = 0;
+  s->multipart_encoded = 1;
 }
 
 #define HeaderEntry(str,func,type) {str, sizeof(str), func, type}
