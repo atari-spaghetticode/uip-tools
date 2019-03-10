@@ -54,14 +54,13 @@ SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']} )
 targetEnv = setupToolchain(hostEnv.Clone())
 
-# Optionally use libxmini
+# Optionally use libcmini
 detectLibCMini(targetEnv)
 
-#version:=$(shell git rev-list --count master)
 targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
-print "Building in: " + GetLaunchDir()
+print "Building in: " + builddir
 
 target = hostEnv.SConscript(
     "src/SConscript",
