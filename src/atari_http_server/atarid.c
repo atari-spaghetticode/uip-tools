@@ -444,7 +444,7 @@ ssize_t memSourceRead(struct DataSource* ds, size_t size, void* ptr)
 
   memcpy (ptr, &mem->ptr[mem->current], actual_size);
 
-  mem->current+=actual_size;
+  mem->current += actual_size;
 
   return actual_size;
 }
@@ -456,6 +456,7 @@ void memSourceClose (struct DataSource* ds)
     free ((void*) mem->ptr);
   }
   free ((void*) mem);
+  LOG_TRACE("memSourceClose %p\r\n", mem);
 }
 
 ssize_t memSourceSize(struct DataSource* ds)
@@ -482,6 +483,7 @@ struct DataSource* memSourceCreate (
   src->src.mime_type = mime_type;
   src->src.encoding_type = encoding_type;
   src->ownership = ownership;
+  LOG_TRACE("memSourceCreate %p\r\n", src);
   return (struct DataSource*)src;
 }
 
@@ -524,6 +526,8 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 
   } else {
     s->http_result_code = 404;
+    src->close(src);
+    s->handler_datasrc = NULL;
     LOG("\r\n");
     PT_EXIT(worker);
   }
@@ -663,12 +667,12 @@ void parse_url(struct atarid_state *s)
   fn = fn_end;
 
   /* skip to the end of line */
-  while (*fn_end != '\r' && *fn_end != '\n') {
+  while (*fn_end != '\r' && *fn_end != '\n' && *fn_end != '\0') {
     fn_end++;
   }
 
   /* We want to skip the last word if the line which would usually be something like "HTTP/1.0" */
-  while (*fn_end != ' ') {
+  while (*fn_end != ' ' && fn_end > fn) {
     --fn_end;
   }
 
@@ -783,6 +787,8 @@ struct
 
 static void parse_get(struct atarid_state *s)
 {
+  LOG_TRACE("request: %s\r\n", s->inputbuf);
+
   parse_url(s);
 
   s->handler_datasrc = NULL;
@@ -791,6 +797,7 @@ static void parse_get(struct atarid_state *s)
   if (s->query[0] == 0) {
     /* maybe request a static resource */
     for (size_t i = 0; static_url_mapping[i].url!=0 ; i++) {
+      LOG_TRACE("original request path: %s\r\n", s->original_filename);
       if (strcmp(static_url_mapping[i].url, s->original_filename) == 0) {
         s->handler_datasrc = memSourceCreate(
                               static_url_mapping[i].data_ptr,
@@ -798,12 +805,12 @@ static void parse_get(struct atarid_state *s)
                               static_url_mapping[i].content_type,
                               static_url_mapping[i].encoding_type,
                               0);
-        LOG(static_url_mapping[i].url);
+        LOG_TRACE(static_url_mapping[i].url);
         break;
       }
     }
     if (!s->handler_datasrc) {
-      LOG(s->filename);
+      LOG_TRACE(s->filename);
       s->handler_datasrc = fileSourceCreate(s->filename, "application/octet-stream","identity");
       if (!s->handler_datasrc) {
         // Couldn't create file source
@@ -886,6 +893,10 @@ PT_THREAD(handle_input(struct atarid_state *s))
     while (1) {
       // eat away the header
       PSOCK_READTO(&s->sin, ISO_nl);
+      {
+        size_t readlen = psock_datalen(&s->sin);
+        s->inputbuf[readlen] = 0;
+      }
 
       if (s->inputbuf[0] == '\r') {
         //got header, now get the data
