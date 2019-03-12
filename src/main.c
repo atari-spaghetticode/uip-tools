@@ -441,8 +441,7 @@ main(int argc, char *argv[])
     for(i = 0; i < UIP_UDP_CONNS; i++) {
       uip_udp_periodic(i);
       if(uip_len > 0) {
-        //uip_arp_out();
-        net_send();
+        tcpip_output();
       }
     }
     #endif /* UIP_UDP */
