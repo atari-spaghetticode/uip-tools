@@ -3,7 +3,9 @@ Import('hostEnv')
 import os.path
 
 SOURCES = [
-	 	Glob('*.c'),
+		"main.c",
+		"uip_arch.c",
+		"clock-arch.c",
 	 	Glob('uip/*.c'),
 		targetEnv.SConscript("atari_http_server/SConscript", exports=['hostEnv', 'targetEnv'])
 	]
@@ -11,8 +13,9 @@ SOURCES = [
 targetEnv.Append( CPPPATH=[ Dir('./uip').srcnode().abspath ] )
 targetEnv.Append( CPPPATH=[ Dir('./').srcnode().abspath ] )
 
-TARGETS = targetEnv.Program(
-	"uip.tos",
-	source = SOURCES)
+TARGETS =[
+	targetEnv.Program("uip.tos", source = SOURCES),
+	targetEnv.Program("romtest.tos", "romport-speed.c")
+]
 
 Return (["TARGETS"])
