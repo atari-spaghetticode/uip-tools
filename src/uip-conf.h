@@ -134,7 +134,7 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_UDP_CHECKSUMS   1
+#define UIP_CONF_UDP_CHECKSUMS   0
 
 /**
  * uIP statistics on or off
