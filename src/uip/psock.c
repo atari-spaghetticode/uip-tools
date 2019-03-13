@@ -261,6 +261,7 @@ psock_newdata(struct psock *s)
     return 0;
   }
 }
+
 /*---------------------------------------------------------------------------*/
 PT_THREAD(psock_readto(register struct psock *psock, unsigned char c))
 {
@@ -316,6 +317,17 @@ PT_THREAD(psock_readbuf_len(register struct psock *psock, uint32_t len))
   }
   PT_END(&psock->psockpt);
 } 
+
+/*---------------------------------------------------------------------------*/
+PT_THREAD(psock_readpacket(register struct psock *psock))
+{
+  PT_BEGIN(&psock->psockpt);
+
+  PT_WAIT_UNTIL(&psock->psockpt, psock_newdata(psock));
+  psock->state = STATE_READ;
+
+  PT_END(&psock->psockpt);
+}
 /*---------------------------------------------------------------------------*/
 void
 psock_init(register struct psock *psock, char *buffer, uint32_t buffersize)

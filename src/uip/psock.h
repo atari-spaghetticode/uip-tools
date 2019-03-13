@@ -276,6 +276,10 @@ PT_THREAD(psock_readbuf_len(struct psock *psock, uint32_t len));
 #define PSOCK_READBUF_LEN2(pt,psock, len)     \
   PT_WAIT_THREAD(pt, psock_readbuf_len(psock, len))
  
+PT_THREAD(psock_readpacket(register struct psock *psock));
+
+#define PSOCK_READPACKET(pt, psock)     \
+  PT_WAIT_THREAD(pt, psock_readpacket(psock))
 
 PT_THREAD(psock_readto(struct psock *psock, unsigned char c));
 /**
