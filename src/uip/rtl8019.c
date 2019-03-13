@@ -490,9 +490,9 @@ void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
             break;
     writeRTL(ISR, 1<<6);
     
-    currentRetreiveAddress += length;
-    if( currentRetreiveAddress >= 0x6000 )
-        currentRetreiveAddress = currentRetreiveAddress - (0x6000-0x4600) ;
+    // currentRetreiveAddress += length;
+    // if( currentRetreiveAddress >= 0x6000 )
+    //     currentRetreiveAddress = currentRetreiveAddress - (0x6000-0x4600) ;
 }
 
 void RTL8019endPacketRetreive(void)
@@ -567,7 +567,7 @@ void overrun(void)
 /*!
  * \brief Number of transmit buffers.
  */
-#define NIC_TX_BUFFERS  2
+#define NIC_TX_BUFFERS  1
 
 /*!
  * \brief Controller memory layout:
@@ -581,7 +581,7 @@ void overrun(void)
 /*!
  * \brief Standard sizing information
  */
-#define TX_PAGES 12         /* Allow for 2 back-to-back frames */
+#define TX_PAGES NIC_TX_PAGES         /* Allow for 2 back-to-back frames */
 
 static unsigned char mac[6] = {0x00,0x06,0x98,0x01,0x02,0x29};
 
@@ -721,7 +721,7 @@ bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
     writeRTL(NIC_PG0_ISR, 0xff);
     writeRTL(NIC_CR, NIC_CR_STP | NIC_CR_RD2 | NIC_CR_PS0 | NIC_CR_PS1);
     writeRTL(NIC_PG3_EECR, NIC_EECR_EEM0 | NIC_EECR_EEM1);
-    writeRTL(NIC_PG3_CONFIG3, 0);
+    writeRTL(NIC_PG3_CONFIG3, 0x80>>1);
     writeRTL(NIC_PG3_CONFIG2, NIC_CONFIG2_BSELB);
     writeRTL(NIC_PG3_EECR, 0);
 
@@ -733,7 +733,7 @@ bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
     writeRTL(NIC_PG0_RCR, NIC_RCR_MON);
     writeRTL(NIC_PG0_TCR, NIC_TCR_LB0);
     writeRTL(NIC_PG0_TPSR, NIC_FIRST_TX_PAGE);
-    writeRTL(NIC_PG0_BNRY, NIC_STOP_PAGE - 1);
+    writeRTL(NIC_PG0_BNRY, NIC_FIRST_RX_PAGE - 1);
     writeRTL(NIC_PG0_PSTART, NIC_FIRST_RX_PAGE);
     writeRTL(NIC_PG0_PSTOP, NIC_STOP_PAGE);
     writeRTL(NIC_PG0_ISR, 0xff);
