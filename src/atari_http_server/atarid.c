@@ -893,6 +893,7 @@ struct {
   { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
   { 404, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" },
   { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
+  { 500, "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n" },
   { 1200, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n" },
 };
 
@@ -959,7 +960,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
         PSOCK_SEND_STR(&s->sin, s->http_result_string);
           /* this wont work, connection needs to be closed first */
       } else {
-        LOG_WARN("Error: no result string for the code");
+        LOG_WARN("Error: no result string for the code: %d\r\n", s->http_result_code);
       }
     }
   } while (s->http_result_code < 299);
