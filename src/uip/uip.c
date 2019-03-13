@@ -1178,13 +1178,13 @@ uip_process(u8_t flag)
 
   /* Start of TCP input header processing code. */
   
-  if(uip_tcpchksum() != 0xffff) {   /* Compute and check the TCP
-                                       checksum. */
-    UIP_STAT(++uip_stat.tcp.drop);
-    UIP_STAT(++uip_stat.tcp.chkerr);
-    UIP_LOG("tcp: bad checksum.");
-    goto drop;
-  }
+  // if(uip_tcpchksum() != 0xffff) {   /* Compute and check the TCP
+  //                                      checksum. */
+  //   UIP_STAT(++uip_stat.tcp.drop);
+  //   UIP_STAT(++uip_stat.tcp.chkerr);
+  //   UIP_LOG("tcp: bad checksum.");
+  //   goto drop;
+  // }
   
   
   /* Demultiplex this segment. */
