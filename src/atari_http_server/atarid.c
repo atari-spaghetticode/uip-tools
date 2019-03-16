@@ -679,6 +679,21 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 
 /*---------------------------------------------------------------------------*/
 
+static
+PT_THREAD(handle_delete(struct pt* worker, struct atarid_state *s))
+{
+  PT_BEGIN(worker);
+
+  if(Fdelete (s->filename)) {
+    s->http_result_code = 400;
+  } else {
+    s->http_result_code = 200;
+  }
+
+  LOG_TRACE("delete: %s %d\r\n", s->filename, s->http_result_code);
+  PT_END(worker);
+}
+
 void parse_url(struct atarid_state *s)
 {
   char* fn_end = s->inputbuf;
@@ -854,7 +869,8 @@ static void parse_content_len(struct atarid_state *s)
 
 static void parse_delete(struct atarid_state *s)
 {
-
+  parse_url(s);
+  s->handler_func = handle_delete;
 }
 
 static void parse_expect(struct atarid_state *s)
