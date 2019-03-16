@@ -694,6 +694,8 @@ PT_THREAD(handle_delete(struct pt* worker, struct atarid_state *s))
   PT_END(worker);
 }
 
+/*---------------------------------------------------------------------------*/
+
 void parse_url(struct atarid_state *s)
 {
   char* fn_end = s->inputbuf;
@@ -904,10 +906,10 @@ struct {
   const int http_result_code;
   const char* http_response_string;
 } static http_responses[] = {
-  { 200, "HTTP/1.1 200 OK" },
+  { 200, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n" },
   { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
-  { 400, "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n" },
-  { 404, "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n" },
+  { 400, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n" },
+  { 404, "HTTP/1.1 404 Not Found\r\nnContent-Length: 0\r\n\r\n" },
   { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
   { 500, "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n" },
   { 1200, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n" },
@@ -972,11 +974,15 @@ PT_THREAD(handle_input(struct atarid_state *s))
           break;
         }
       }
+
       if (s->http_result_string) {
         PSOCK_SEND_STR(&s->sin, s->http_result_string);
-          /* this wont work, connection needs to be closed first */
       } else {
         LOG_WARN("Error: no result string for the code: %d\r\n", s->http_result_code);
+      }
+      /* Keep the main loop spinning for anything other then 500 */
+      if (s->http_result_code < 500) {
+        s->http_result_code = 0;
       }
     }
   } while (s->http_result_code < 299);
