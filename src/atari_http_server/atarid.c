@@ -37,6 +37,7 @@
 #include "uip.h"
 #include "atarid.h"
 #include "../logging.h"
+#include "../ioredirect.h"
 
 #include "psock.h"
 
@@ -97,6 +98,7 @@ typedef struct atarid_state {
   char storeCurrentPath[256];
   char run_path[256];
   int16_t storeCurrentDrive;
+  uip_ipaddr_t remote_ipaddr;
 
   char(*handler_func)(struct pt* worker,struct atarid_state *s);
 
@@ -590,21 +592,30 @@ void handle_idle_run(struct atarid_state *s)
   /* Process arguments */
   s->idle_run_handler = NULL;
 
-  char* args = strchr(s->query, '=');
-  if (args)  {
+  uint8_t* args = strchr(s->query, '=');
+
+  if (args) {
+    LOG_TRACE("args: %s\r\n", args);
     const size_t max_args_len = 124;
     size_t args_len = strlen(args+1);
     if (args_len > max_args_len) {
       LOG_WARN("Command line too long!");
       args_len = max_args_len;
     }
-    *args = (uint8_t) args_len;
+    *args = (uint8_t)args_len;
+    LOG_TRACE("args len: %d\r\n");
   }
 
-  // Bconmap(7);
-  void* basepage = (void*)Pexec(PE_LOAD, s->run_path, args, "");
-  //Fforce(1, 2);
-  int16_t pexec_ret = Pexec(PE_GO_FREE, 0, basepage, 0);
+  void* basepage = (void*)Pexec(PE_LOAD, s->run_path, args, NULL);
+
+  if (basepage) {
+    ioredirect_start(uip_ipaddr1(&s->remote_ipaddr), uip_ipaddr2(&s->remote_ipaddr),
+      uip_ipaddr3(&s->remote_ipaddr), uip_ipaddr4(&s->remote_ipaddr));
+
+    int16_t pexec_ret = Pexec(PE_GO_FREE, 0, basepage, 0);
+
+    ioredirect_stop();
+  }
 
   while( -1 == Cconis() ) Cconin ();
   Dsetdrv (s->storeCurrentDrive);
@@ -614,7 +625,7 @@ void handle_idle_run(struct atarid_state *s)
 static
 PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 {
-  char temp_path[256];
+  char temp_path[256] = {"\0"};
   bool path_ok = false;
 
   PT_BEGIN(worker);
@@ -629,6 +640,8 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
     temp_path[i] = '\0';
   }
 
+  LOG_TRACE("handle_run: %s in %s\r\n", s->filename, temp_path);
+
   Dgetpath (s->storeCurrentPath, 0);
   s->storeCurrentDrive = Dgetdrv ();
 
@@ -640,29 +653,33 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
     uint32_t drv_bit = 1 << drv_num;
 
     if (drv_bit&drv_map) {
-      char cwd[256];
       Dsetdrv (drv_num);
+    }
 
+    {
+      char cwd[256] = {"\0"};
       Dgetpath (cwd, 0);
       /* We want to convert to lower case and skip first backslash */
       for (int i = 0; i < strlen(cwd); i++) {
-        cwd[i] = tolower (cwd[i+1]);
+        cwd[i] = tolower (cwd[i]);
       }
 
-      const char* path_no_drive = &temp_path[3];
+      const char* path_no_drive = &temp_path[2];
 
       path_ok = true;
 
       if (strcmp(cwd, path_no_drive) != 0) {
         // set cwd
         int ret = Dsetpath(path_no_drive);
-        path_ok = ret == 0 ? true: false;
+        path_ok = ret == 0 ? true : false;
+        LOG_TRACE("handle_run (%d): cwd: %s, path_no_drive: %s\r\n",
+          ret, cwd, path_no_drive);
       }
     }
   }
 
   if (!path_ok) {
-    LOG_WARN("Path set failed: %s\r\n", s->filename);
+    LOG_WARN("Path set failed (%d) for: %s\r\n", path_ok, s->filename);
     s->http_result_code = 400;
     PSOCK_EXIT2(worker, &s->sin);
   }
@@ -670,9 +687,8 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
   /* Close connection first */
   PSOCK_SEND_STR2(worker, &s->sin, "HTTP/1.0 200 OK\r\nConnection: close\r\n");
   PSOCK_CLOSE(&s->sin);
-  //PSOCK_WAIT_UNTIL2(worker, &s->sin, !uip_conn_active_current());
-  //PT_YIELD(worker);
   s->idle_run_handler = handle_idle_run;
+  uip_ipaddr_copy(s->remote_ipaddr, uip_conn->ripaddr);
   strcpy(s->run_path, s->filename);
   PT_END(worker);
 }
@@ -760,6 +776,7 @@ static int query_dir(struct atarid_state *s)
 static int query_run(struct atarid_state *s)
 {
   s->handler_func = handle_run;
+  return 1;
 }
 
 static int query_newfolder(struct atarid_state *s)
@@ -769,6 +786,7 @@ static int query_newfolder(struct atarid_state *s)
   if (0 != ensureFolderExists(s->filename, 0)) {
     s->http_result_code = 400;
   }
+  return 1;
 }
 
 static int query_setfiledate(struct atarid_state *s)
@@ -1022,8 +1040,8 @@ struct atarid_state* atarid_alloc_state()
   LOG_TRACE("atarid_alloc_state\r\n");
 
   if (s) {
-    LOG_WARN("atarid_alloc_state: connection already freed!");
-    return;
+    LOG_WARN("atarid_alloc_state: connection already allocated!");
+    return s;
   }
 
   s = (struct atarid_state *)malloc(sizeof(struct atarid_state));
@@ -1073,7 +1091,10 @@ atarid_appcall(void)
     return;
   }
 
+
   if (s) {
+      void (*idle_run_handler)(struct atarid_state *s);
+      idle_run_handler = s->idle_run_handler;
       /* connection is already established */
       if (uip_timedout()) {
         LOG_TRACE("Connection timeout\r\n");
@@ -1086,9 +1107,6 @@ atarid_appcall(void)
           never resumed again so that it would have no chance of cleaning up after itself.
           */
         handle_connection(s);
-      } else if (uip_is_idle() && s->idle_run_handler) {
-        s->idle_run_handler(s);
-        return;
       } else {
         /* connection is active, service the connection*/
         handle_connection(s);
@@ -1097,6 +1115,10 @@ atarid_appcall(void)
       /* now check if there's and outstanding error */
       handle_error(s);
       atarid_free_state();
+
+      if(idle_run_handler){
+        idle_run_handler(s);
+      }
       return;
   }
 

@@ -136,6 +136,8 @@ typedef unsigned short uip_stats_t;
  */
 #define UIP_CONF_UDP_CHECKSUMS   0
 
+#define UIP_CONF_UDP_CONNS 8
+
 /**
  * uIP statistics on or off
  *
@@ -149,6 +151,15 @@ typedef unsigned short uip_stats_t;
 #define UIP_EXTERNAL_CHECKSUM 1
 #define UIP_ARCH_CHKSUM 1
 
+#define UIP_UDP_APPCALL udp_appcall
+
+void udp_appcall (void);
+void tcpip_output();
+
+#define UIP_UDP_APPCALL udp_appcall
+
+void udp_appcall (void);
+void tcpip_output();
 
 /* Here we include the header file for the application(s) we use in
    our project. */
@@ -157,10 +168,18 @@ typedef unsigned short uip_stats_t;
 /*#include "telnetd.h"*/
 #include "atariserv.h"
 #include "dhcpc.h"
+#include "ioredirect.h"
 /*#include "resolv.h"*/
 /*#include "webclient.h"*/
 
 typedef void* uip_tcp_appstate_t;
+
+union uip_udp_appstate {
+    struct dhcpc_state dhcp;
+    struct ioredirect_state ioredir;
+};
+
+typedef union uip_udp_appstate uip_udp_appstate_t;
 
 #endif /* __UIP_CONF_H__ */
 

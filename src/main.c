@@ -167,6 +167,8 @@ uip_ipaddr_t config_router;
 bool config_static_ip;
 char config_path[256];
 
+void save_config();
+
 void
 toggle_ip_config()
 {
@@ -426,14 +428,12 @@ main(int argc, char *argv[])
         uip_arp_ipin();
         uip_input();
         if(uip_len > 0) {
-          //uip_arp_out();
           net_send();
         }
       } else if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
         uip_arp_arpin();
         if(uip_len > 0) {
           RTL8019dev_send();
-          //net_send();
         }
       }
       probeEnd(&netInput);
@@ -444,7 +444,6 @@ main(int argc, char *argv[])
       for(i = 0; i < UIP_CONNS; i++) {
         uip_periodic(i);
         if(uip_len > 0) {
-         // uip_arp_out();
           net_send();
         }
       }
@@ -486,3 +485,19 @@ main(int argc, char *argv[])
   return 0;
 }
 /*---------------------------------------------------------------------------*/
+
+void udp_appcall (void)
+{
+  switch(uip_udp_conn->lport) {
+   // case HTONS(67):
+    case HTONS(68):
+      dhcpc_appcall();
+      break;
+    case HTONS(33334):
+    case HTONS(33332):
+      ioredirect_appcall();
+      break;
+    default:
+      /* pass */;
+  }
+}

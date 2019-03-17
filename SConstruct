@@ -1,13 +1,33 @@
 import os
+import SCons.Builder
+
 
 def setupToolchain(targetEnv):   
     CROSS_PREFIX = 'm68k-atari-mint-'
     targetEnv["CC"] = CROSS_PREFIX + 'gcc'
-    targetEnv['CCFLAGS'] = '-m68000 -Os -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
-    targetEnv['LINKFLAGS'] = '-m68000 -Os -std=gnu99 -fno-exceptions -fno-rtti -fomit-frame-pointer -s '
+    targetEnv['CCFLAGS'] = '-m68000 -O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
+    targetEnv['LINKFLAGS'] = '-m68000 -O3 -s '
 
     # Add sensible toolchain detection?
     targetEnv['ENV']['PATH'] = "/opt/cross-mint/bin:" + targetEnv['ENV']['PATH']
+
+    _vasm_builder = SCons.Builder.Builder(
+        action = SCons.Action.Action('$VASM_COM' ,'$VASM_COMSTR'),
+        suffix = '$VASM_OUTSUFFIX',
+        src_suffix = '$VASM_SUFFIX')
+
+    targetEnv.SetDefault(
+
+        VASM_FLAGS = SCons.Util.CLVar('-Faout  -quiet '),
+
+        VASM_OUTSUFFIX = '.o',
+        VASM_SUFFIX = '.s',
+
+        VASM_COM = 'vasmm68k_mot $VASM_FLAGS -I ${SOURCE.dir} -o $TARGET $SOURCE',
+        VASM_COMSTR = ''
+        )
+
+    targetEnv.Append(BUILDERS = {'Vasm' : _vasm_builder})
 
     return targetEnv
 
@@ -58,6 +78,7 @@ targetEnv = setupToolchain(hostEnv.Clone())
 detectLibCMini(targetEnv)
 
 targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
+targetEnv.Append(CPPDEFINES={'DEBUG' : 0})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
 print "Building in: " + builddir
