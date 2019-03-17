@@ -33,7 +33,7 @@ class http_io:
         response.read()
         if response.status != 201:
             print "Error (HTTP code: " + str(response.status) + ")"
-            exit(1)
+            sys.exit(1)
 
     def del_file(self, file_name):
         remote_path = self.remote_dir + file_name
@@ -43,7 +43,7 @@ class http_io:
         response.read()
         if response.status != 200:
             print "Error (HTTP code: " + str(response.status) + ")"
-            exit(1)
+            sys.exit(1)
 
     def upload_files(self, file_list):
         for file in file_list:
@@ -87,33 +87,38 @@ def get_local_files(path):
     local_files.sort(key=key_func)
     return local_files
 
-def get_new_files(remote_list, local_list):
-    # create new lists without checkums to find orphaned files
+def get_changes(remote_list, local_list):
+    # create ne w lists without checkums to find orphaned files
     stripped_remote_list = [(e[0], e[1], 0) for e in remote_list]
     stripped_local_list = [(e[0], e[1], 0) for e in local_list]
     delete_files = list(set(stripped_remote_list) - set(stripped_local_list))
     upload_files = list(set(local_list) - set(remote_list))
     return upload_files, delete_files
 
-if len(sys.argv) != 3:
-    print_usage();
-    exit(1);
+def main(args):
+    if len(args) != 3:
+        print_usage();
+        return 1
+    # Inputs
+    local_dir = args[1]
+    remote = args[2]
+    remote_host = remote.split('/', 1)[0]
+    remote_dir = '/' + remote.split('/', 1)[1]
+    # Grab local file list
+    local_files = get_local_files(local_dir)
+    # Connect
+    connection = http_io(remote_host, remote_dir)
+    remote_files = get_remote_file_list(connection)
+    # Calculate changes
+    upload_list, delete_list = get_changes(remote_files, local_files)
+    # Execute remote requests
+    if upload_list or delete_list:
+        connection.delete_files(delete_list)
+        connection.upload_files(upload_list)
+        send_remote_file_list(connection, local_files)
+    else:
+        print("All up-to-date.")
+    return 0
 
-local_dir = sys.argv[1]
-remote = sys.argv[2]
-
-remote_host = remote.split('/', 1)[0]
-remote_dir = '/' + remote.split('/', 1)[1]
-
-local_files = get_local_files(local_dir)
-connection = http_io(remote_host, remote_dir)
-remote_files = get_remote_file_list(connection)
-
-upload_list, delete_list = get_new_files(remote_files, local_files)
-
-if upload_list or delete_list:
-    connection.delete_files(delete_list)
-    connection.upload_files(upload_list)
-    send_remote_file_list(connection, local_files)
-else:
-    print("All up-to-date.")
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
