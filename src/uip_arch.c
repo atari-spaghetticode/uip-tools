@@ -50,10 +50,10 @@
 u16_t
 upper_layer_chksum(int proto)
 {
-  uint8_t* dgram = (uint8_t*)&uip_buf[UIP_IPH_LEN + UIP_LLH_LEN];
-  uint16_t len = (((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - UIP_IPH_LEN;
-  uint32_t srcadr = *((uint32_t*)BUF->srcipaddr);
-  uint32_t dstadr = *((uint32_t*)BUF->destipaddr);
+	uint8_t* dgram = (uint8_t*)&uip_buf[UIP_IPH_LEN + UIP_LLH_LEN];
+	uint16_t len = (((u16_t)(BUF->len[0]) << 8) + BUF->len[1]) - UIP_IPH_LEN;
+	uint32_t srcadr = *((uint32_t*)BUF->srcipaddr);
+	uint32_t dstadr = *((uint32_t*)BUF->destipaddr);
 	uint32_t sum = 0;
 
 	/*
