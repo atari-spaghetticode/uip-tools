@@ -1,47 +1,4 @@
 
-// <!-- this will be gone after http interfaces resurrection -->
-        var driveDummyData = [];         
-        var directoryDummyData = []; 
-        var fileDummyData = []; 
-
-        function initSampleData(){
-            // sample drive data
-
-            driveDummyData.push({ name: 'A', type: 'd' });
-            driveDummyData.push({ name: 'B', type: 'd' });
-            driveDummyData.push({ name: 'C', type: 'd' });
-            driveDummyData.push({ name: 'D', type: 'd' });
-            driveDummyData.push({ name: 'E', type: 'd' });
-            driveDummyData.push({ name: 'F', type: 'd' });
-            driveDummyData.push({ name: 'G', type: 'd' });
-            driveDummyData.push({ name: 'H', type: 'd' });
-            driveDummyData.push({ name: 'I', type: 'd' });
-            driveDummyData.push({ name: 'J', type: 'd' });
-            driveDummyData.push({ name: 'K', type: 'd' });
-            driveDummyData.push({ name: 'L', type: 'd' });
-            driveDummyData.push({ name: 'M', type: 'd' });
-            driveDummyData.push({ name: 'N', type: 'd' });
-            driveDummyData.push({ name: 'O', type: 'd' });
-            driveDummyData.push({ name: 'P', type: 'd' });
-
-            // sample current dir data
-            directoryDummyData.push({ name: 'root', type: 'd' });
-            directoryDummyData.push({ name: 'AUTO', type: 'd' });
-            directoryDummyData.push({ name: 'NVDI', type: 'd' });
-            directoryDummyData.push({ name: 'CPX', type: 'd' });
-            directoryDummyData.push({ name: 'NEW.FLD', type: 'd' });
-
-            // sample file data
-            fileDummyData.push({ name: 'DESKTOP.INF', type: 'f', date: '29-03-80', size: 12234 });
-            fileDummyData.push({ name: 'ZENON.ACC', type: 'f', date: '29-03-80', size: 3434 });
-            fileDummyData.push({ name: 'DEMO.TOS', type: 'f', date: '29-03-80', size: 32000 });
-            fileDummyData.push({ name: 'PIC.NeO', type: 'f', date: '29-03-80', size: 32000 });
-            fileDummyData.push({ name: 'README.TXT', type: 'f', date: '29-03-80', size: 1312322 });
-        }
-
-
-// <!-- ----------------------------------------------------------------------------------------- -->
-
         var CURRENT_GEMDOS_PATH=null;
         var FILE_LIST_REF=null;
         var FILE_VIEW_REF=null;
@@ -108,7 +65,7 @@
           if(this.readyState==4){
             if(this.status == 200 || this.status == 201){
                // Done. Inform the user
-              console.log("Success: upload done."); 
+               console.log("Success: upload done."); 
                //TODO: refresh dir ui 
 
               return;            
@@ -593,7 +550,6 @@
             var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);            
         }
 
-
     // This returns at least 32bit int with date encoded for DOSTIME struct
     // typedef struct
     // {
@@ -602,7 +558,6 @@
     // } DOSTIME;
     
     function convertDateToAtariTOSFormat(date) {
-        
         var tosYear = (date.getFullYear() - 1980);
 
         tosYear = tosYear < 0 ? 0 : tosYear;
@@ -616,6 +571,11 @@
         var tosTime = (tosHours << 11) | (tosMinutes<<5) | tosSeconds;
         return ((tosTime<<16) | tosDate) >>> 0;
      }
+
+    function startup(){
+        initMainView();
+        updateDriveListReq();
+    }
 
      // debug output functions
      function DebugOutput(msg) {

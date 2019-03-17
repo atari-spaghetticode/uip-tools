@@ -1,15 +1,3 @@
-# $(SRC_IMG_DIR)/%.dat: $(SRC_IMG_DIR)/%.png
-# 	base64 -w 0 $< > $@
-# 	sed -i '1s;^;\";' $@
-# 	echo "\"" >>$@
-
-# index.h: webinterface.html $(DEST_IMG_FILES)
-# 	$(CPP) -traditional-cpp -DRELEASE=0 -DVERSION=$(version) -P -o index.html $<
-# 	gzip -9 -f index.html -c > index.html.gz
-# 	xxd -i index.html.gz > $@
-# 	sed -i -e 's/unsigned/static const unsigned/g' $@
-# 	lessc ../apps/atari/css.css ../apps/atari/css_minified.css
-# 	uglifyjs ../apps/atari/js.js --verbose --compress --mangle -o ../apps/atari/js_minified.js
 
 Import('targetEnv')
 Import('hostEnv')
@@ -31,13 +19,16 @@ images = [
 ]
 
 index = hostEnv.Command("index.html",  "webinterface.html", 
-        ["cpp -E -P -CC -undef -nostdinc -DRELEASE=0 -DVERSION=" 
+        ["lessc ./src/atari_http_server/ui/css.css ./src/atari_http_server/ui/cssc.css",
+         "uglifyjs ./src/atari_http_server/ui/js.js --verbose --compress --mangle -o ./src/atari_http_server/ui/jsc.js",
+         "cpp -E -P -CC -undef -nostdinc -DRELEASE=0 -DVERSION=" 
             + str(targetEnv["CPPDEFINES"]["VERSION"])
             + " -I" + Dir(".").path + " -o ${TARGET}.cpp $SOURCE",
          "gzip -9 -f ${TARGET}.cpp -c > ${TARGET}.gz",
          "xxd -i ${TARGET}.gz > $TARGET",
          "sed -i -e 's/unsigned/static unsigned/g' $TARGET",
-         "sed -i -e 's/_.*_ui_//g' $TARGET"])
+         "sed -i -e 's/_.*_ui_//g' $TARGET"
+         ])
 
 Depends(index, images)
 

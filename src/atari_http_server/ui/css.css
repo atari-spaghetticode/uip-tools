@@ -53,6 +53,14 @@ a:active {
         font-size: xx-small;
     }
 
+    div #breadcrumb{
+      width:100%;
+      float:none;
+      background:black;
+      clear:both;
+      font-size: xx-small;
+    }
+
     div #mainSection{
       height:768px;
     }
