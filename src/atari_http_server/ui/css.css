@@ -222,6 +222,7 @@ div #fileDragAndDrop {
    font-family: sans-serif;
    margin: 2px auto;
    padding: 5px;
+   display: none;
 }
 
 div #fileDragAndDrop.highlight {

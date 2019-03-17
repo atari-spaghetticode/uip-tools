@@ -56,7 +56,6 @@
           FILE_UPLOAD_PROGRESSBAR.value = total;
         }
 
-
         function convertFileNameToGemdos(filename){
           return filename;
         }
@@ -184,6 +183,9 @@
           }
 
           CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
+
+          //hide drag and drop section
+          DRAGNDROP_AREA_REF.style.display="none";        
         }
 
         function processDirectoryListReq(responseText){
@@ -205,13 +207,13 @@
             // .. parent dir
 
         function requestChDrive(btn){
-    
             // request dir status
             var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name,'dir', 'GET', true, processDirectoryListReq);
             
             //todo: check request result
             CURRENT_GEMDOS_PATH = btn.name + ':'; 
             CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
+            DRAGNDROP_AREA_REF.style.display="block";        
         }
 
         function requestChDir(btn){
