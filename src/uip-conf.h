@@ -149,6 +149,7 @@ typedef unsigned short uip_stats_t;
 #define UIP_EXTERNAL_CHECKSUM 1
 #define UIP_ARCH_CHKSUM 1
 
+
 /* Here we include the header file for the application(s) we use in
    our project. */
 /*#include "smtp.h"*/

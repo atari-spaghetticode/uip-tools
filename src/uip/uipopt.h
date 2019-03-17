@@ -305,22 +305,6 @@
 #define UIP_TCP_MSS     (UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN)
 
 /**
- * The size of the advertised receiver's window.
- *
- * Should be set low (i.e., to the size of the uip_buf buffer) is the
- * application is slow to process incoming data, or high (32768 bytes)
- * if the application processes data quickly.
- *
- * \hideinitializer
- */
-
-#ifndef UIP_CONF_RECEIVE_WINDOW
-#define UIP_RECEIVE_WINDOW (UIP_TCP_MSS)
-#else
-#define UIP_RECEIVE_WINDOW UIP_CONF_RECEIVE_WINDOW
-#endif
-
-/**
  * How long a connection should stay in the TIME_WAIT state.
  *
  * This configiration option has no real implication, and it should be

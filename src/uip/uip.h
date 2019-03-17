@@ -1498,6 +1498,7 @@ struct __attribute__ ((__packed__)) uip_udpip_hdr {
 };
 
 
+extern u16_t uip_receive_window;
 
 /**
  * The buffer size available for user data in the \ref uip_buf buffer.

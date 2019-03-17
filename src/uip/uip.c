@@ -193,6 +193,8 @@ u8_t uip_acc32[4];
 static u8_t c, opt;
 static u16_t tmp16;
 
+u16_t uip_receive_window = UIP_CONF_BUFFER_SIZE*2;
+
 /* Structures and definitions. */
 #define TCP_FIN 0x01
 #define TCP_SYN 0x02
@@ -1852,8 +1854,8 @@ uip_process(u8_t flag)
        window so that the remote host will stop sending data. */
     BUF->wnd[0] = BUF->wnd[1] = 0;
   } else {
-    BUF->wnd[0] = ((UIP_RECEIVE_WINDOW) >> 8);
-    BUF->wnd[1] = ((UIP_RECEIVE_WINDOW) & 0xff);
+    BUF->wnd[0] = ((uip_receive_window) >> 8);
+    BUF->wnd[1] = ((uip_receive_window) & 0xff);
   }
 
  tcp_send_noconn:

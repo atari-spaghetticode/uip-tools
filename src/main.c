@@ -338,6 +338,23 @@ bool get_cookie(uint32_t cookie, uint32_t *value)
 
 /*---------------------------------------------------------------------------*/
 
+static void
+config_cpu_options(cpu_type)
+{
+  /* Tune the stack based on the cpu type.
+   * These values were chosen experimentally.
+   */
+  if (cpu_type == 60) {
+    /* For 68060 smaller window size yields better overall throughput */
+    uip_receive_window = UIP_CONF_BUFFER_SIZE;
+  } else {
+    /* For slower CPUs larger window size yields better overall throughput */
+    uip_receive_window = UIP_CONF_BUFFER_SIZE * 2;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 int
 main(int argc, char *argv[])
 {
@@ -363,6 +380,7 @@ main(int argc, char *argv[])
   }
 
   get_cookie('_CPU', &cpu_type);
+  config_cpu_options(cpu_type);
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
