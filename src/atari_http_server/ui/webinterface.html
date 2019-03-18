@@ -64,7 +64,6 @@ let img_file_app_src =
     <div id="currentDirPath">
         <input type="text" class="currentPathInput" id="currentPathInput" placeholder="Current GEMDOS path input" alt="Current GEMDOS path" size=128 maxlength=255 autofocus />
     </div>
-    <div id="breadcrumb"></div>
 </nav>
 
 <div id="mainSection" ondrop="event.preventDefault()" 
@@ -75,7 +74,8 @@ let img_file_app_src =
     <div id="directoryListView" class="column menu"></div>
   
     <div id="directoryView" class="column content">
-      <div class="fileActionsView" id="fileActionsView" />
+      <div id="dirBreadcrumb">dir >> dir >> dir</div>
+      <div class="fileActionsView" id="fileActionsView"> <div/>
       <div class="fileView" id="fileView"> </div>
       <div id="fileDragAndDrop">
           <form class="dragAndDropForm">

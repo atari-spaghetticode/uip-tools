@@ -53,12 +53,13 @@ a:active {
         font-size: xx-small;
     }
 
-    div #breadcrumb{
+    div #dirBreadcrumb{
       width:100%;
       float:none;
       background:black;
       clear:both;
-      font-size: xx-small;
+      font-size: x-small;
+      color:white;
     }
 
     div #mainSection{

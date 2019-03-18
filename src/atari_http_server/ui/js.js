@@ -3,6 +3,7 @@
         var FILE_LIST_REF=null;
         var FILE_VIEW_REF=null;
         var CURRENT_PATH_INPUT_REF=null;
+        var DIR_BREADCRUMB_REF=null;
         var DIR_LIST_REF=null;
         var DIR_LIST_VIEW_REF=null;
         var DRIVE_BUTTON_LIST_TAB_REF=null;
@@ -143,6 +144,7 @@
             DRAGNDROP_AREA_REF = $id("fileDragAndDrop");
             CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
+            DIR_BREADCRUMB_REF = $id("dirBreadcrumb");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
             FILE_UPLOAD_PROGRESSBAR = $id("progressBar");
             DEBUG_OUTPUT_REF = $id("debugOutput");
