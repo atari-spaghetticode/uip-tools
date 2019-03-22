@@ -576,9 +576,29 @@
         return ((tosTime<<16) | tosDate) >>> 0;
      }
 
+    function update(progress) {
+        // Update 
+    }
+
+    function draw() {
+       
+    }
+
+    var TS_LAST_RENDER = 0;
+
+    function mainLoop(timestamp) {
+      var progress = timestamp - TS_LAST_RENDER;
+      update(progress);
+      draw();
+      TS_LAST_RENDER = timestamp
+      window.requestAnimationFrame(mainLoop)
+    }
+
     function startup(){
         initMainView();
         updateDriveListReq();
+
+        window.requestAnimationFrame(mainLoop);
     }
 
      // debug output functions
