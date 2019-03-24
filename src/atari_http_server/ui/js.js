@@ -225,10 +225,10 @@
           DIR_BREADCRUMB_REF.innerHTML  = GemdosPath;
         }
 
-        function requestChDir(btn){
+        function requestChangeDir(dirStr){
             var pathPrefix='';
 
-            if(btn.name=='ROOT'){
+            if(dirStr=='ROOT'){
 
               var pathArray = CURRENT_GEMDOS_PATH.replace(/\/$/, "").split('/');
               
@@ -246,16 +246,14 @@
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
             }else{
-                          
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
-              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ btn.name,'dir', 'GET', true, processDirectoryListReq);
+              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ dirStr,'dir', 'GET', true, processDirectoryListReq);
 
               //todo: check request result
-              CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
+              CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + dirStr;
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
-              
             }
             
         }
@@ -318,7 +316,7 @@
 
         // directory view generation
         function handleDirectoryOnClick(){
-            requestChDir(this);
+            requestChangeDir(this.name);
             return false;
         }
 
