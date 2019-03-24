@@ -1,42 +1,34 @@
-   html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0px;
-            padding: 0px;
-            overflow: hidden;
-            clear:both;
-    }
+
+html, body {
+  padding: 0; margin: 0; height: 100%;
+}
 
 * {
   box-sizing: border-box;
 }
 
- /* unvisited link */
 a:link {
   color: green;
   text-decoration: none
 }
 
-/* visited link */
 a:visited {
   color: green;
 }
 
-/* mouse over link */
 a:hover {
   color: red;
 }
 
-/* selected link */
 a:active {
   color: yellow;
 } 
-
 
     nav {
         background-color: black;
         color: white;
         width:100%;
+        height:auto;
         border: 0px;
         margin-right:10px;
         padding-left:10px;
@@ -44,6 +36,7 @@ a:active {
 
     footer {
         width:100%;
+        height:auto;
         float:none;
         background:black;
         color:white;    
@@ -63,24 +56,26 @@ a:active {
     }
 
     div #mainSection{
-      height:768px;
+      height: 100vh; max-height: 768px;
     }
 
-    div #CurrentDirPath{
+    div #currentDirPath {
         width:100%;
+        height:auto;
         border:0px;
         margin:0px;
         padding:2px;
+        float:none;
         clear:both;
     }
 
     div #currentPathInput{
         width:100%;
-        border:0px;
-        margin:0px;
-        padding:2px;
-        clear:both;
-    };
+        border: 0px;
+        margin: 0px;
+        padding: 2px;
+        float: none;
+    }
 
     input #currentPathInput{
         width:80%;
@@ -88,13 +83,9 @@ a:active {
         border:1px;
     }
 
-    div #mainSection{
-        width:100%;
-        height:auto;
-    }
-
     div #fileManagementBlock{
         width:100%;
+        height: 100vh;
         min-height:760px;
         max-height:760px;
         overflow-x:hidden;
@@ -103,9 +94,13 @@ a:active {
 
     div #directoryListView{
         width:15%;
-        height:95%;
+        height:100%;
         overflow-x:hidden;
         overflow-y:auto;
+    }
+
+    div  #directoryView {
+         height: auto;
     }
 
     div #fileListView{
@@ -114,19 +109,26 @@ a:active {
         overflow-y: scroll; 
     }
 
-    div #TransferTabs{
+    div #driveButtonListTab{
+        width:100%;
         float:none;
-    }
-
-    div #DriveButtonListTab{
-        width:80%;
-        float:right;
+        clear:both;
         overflow:hidden;
     }
 
     .column {
         float: left;
-        padding: 5px;
+        padding: 2px;
+    }
+
+    .menu {
+        width: 25%;
+        height: 100vh;
+    }
+
+    .content {
+        width: 75%;
+        height: 100vh;
     }
 
     .clearfix::after {
@@ -134,19 +136,6 @@ a:active {
         clear: both;
         display: table;
      }
-
-    .menu {
-        width: 25%;
-    }
-
-    .content {
-        width: 75%;
-    }
-
-
-   .directoryView {
-            height: auto;
-   }
 
 /* file table */
 div.blueTable {
@@ -252,7 +241,7 @@ p {
 }
 
 .directoryButton:hover{
- background: #ddd;
+  background: #ddd;
 }
 
 .directoryButton img {
