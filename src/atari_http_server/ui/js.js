@@ -11,6 +11,9 @@
         var FILE_UPLOAD_PROGRESSBAR=null;
         var DEBUG_OUTPUT_REF=null;
 
+        var NO_DIRECTORIES_MSG = "No directories found.";
+        var NO_FILES_MSG = "No files found.";
+
         function $id(id) {
           return document.getElementById(id);
         }
@@ -335,7 +338,6 @@
             img.alt = "folder closed icon";
             img.src = 'data:image/png;base64,' + img_dir_close_src;
             rootbtn.appendChild(img);
-
             node.appendChild(rootbtn);
           }
 
@@ -365,7 +367,7 @@
            }
           };
            
-           if(entriesFound==0) node.innerHTML+='[Empty]<br/>' ;
+           if(entriesFound==0) node.innerHTML+= NO_DIRECTORIES_MSG + '<br/>' ;
                  
         }
 
@@ -496,7 +498,7 @@
           };
         }
             if(entriesFound==0) 
-              node.innerHTML += '[EMPTY]<br/>';
+              node.innerHTML += NO_FILES_MSG + '<br/>';
         }
 
 
