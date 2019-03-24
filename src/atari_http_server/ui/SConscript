@@ -18,17 +18,40 @@ images = [
     BuildImage("img/uiplogo.png")
 ]
 
-index = hostEnv.Command("index.html",  "webinterface.html", 
-        ["lessc ./src/atari_http_server/ui/css.css ./src/atari_http_server/ui/cssc.css",
-         "uglifyjs ./src/atari_http_server/ui/js.js --verbose --compress --mangle -o ./src/atari_http_server/ui/jsc.js",
-         "cpp -E -P -CC -undef -nostdinc -DRELEASE=0 -DVERSION=" 
-            + str(targetEnv["CPPDEFINES"]["VERSION"])
-            + " -I" + Dir(".").path + " -o ${TARGET}.cpp $SOURCE",
-         "gzip -9 -f ${TARGET}.cpp -c > ${TARGET}.gz",
-         "xxd -i ${TARGET}.gz > $TARGET",
-         "sed -i -e 's/unsigned/static unsigned/g' $TARGET",
-         "sed -i -e 's/_.*_ui_//g' $TARGET"
-         ])
+def binaryExists(name):
+    path = hostEnv.WhereIs(name)
+    if path:
+        print name + " detected at: " + path
+        return True
+    else:
+        print name + " not found"
+
+lessc_cmd = [ "lessc ./src/atari_http_server/ui/css.css ./src/atari_http_server/ui/cssc.css" ]
+uglifyjs_cmd = [ "uglifyjs ./src/atari_http_server/ui/js.js --verbose --compress --mangle -o ./src/atari_http_server/ui/jsc.js" ]
+
+lessc_present = binaryExists('lessc')
+uglifyjs_present = binaryExists('uglifyjs')
+
+cmd_string = \
+        [
+            "cpp -E -P -CC -undef -nostdinc -DVERSION="
+                + str(targetEnv["CPPDEFINES"]["VERSION"])
+                + " -I" + Dir(".").path + " -o ${TARGET}.cpp $SOURCE"
+                + " -DUSE_LESSC=" + ("1" if lessc_present == True  else "0")
+                + " -DUSE_UGLIFYJS=" + ("1" if uglifyjs_present == True  else "0"),
+            "gzip -9 -f ${TARGET}.cpp -c > ${TARGET}.gz",
+            "xxd -i ${TARGET}.gz > $TARGET",
+            "sed -i -e 's/unsigned/static unsigned/g' $TARGET",
+            "sed -i -e 's/_.*_ui_//g' $TARGET"
+        ]
+
+if(lessc_present):
+    cmd_string = lessc_cmd + cmd_string
+
+if(uglifyjs_present):
+    cmd_string = uglifyjs_cmd + cmd_string
+
+index = hostEnv.Command("index.html",  "webinterface.html", cmd_string)
 
 Depends(index, images)
 

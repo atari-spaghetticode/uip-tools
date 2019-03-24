@@ -37,7 +37,7 @@ let img_file_app_src =
 #include "img/file_app.dat"
 
 
-#if RELEASE
+#if USE_UGLIFYJS==1
 #include "jsc.js"
 #else
 #include "js.js"
@@ -45,7 +45,7 @@ let img_file_app_src =
 </script>
 
 <style type="text/css">
-#if RELEASE
+#if USE_LESSC==1
 #include "cssc.css"
 #else
 #include "css.css"
