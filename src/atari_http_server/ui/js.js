@@ -209,12 +209,12 @@
             // . - current dir
             // .. parent dir
 
-        function requestChDrive(btn){
+        function requestChangeDrive(driveLetter){
             // request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + btn.name,'dir', 'GET', true, processDirectoryListReq);
+            var dirListJsonResult = sendHttpReq(location.host + '/' + driveLetter,'dir', 'GET', true, processDirectoryListReq);
             
             //todo: check request result
-            CURRENT_GEMDOS_PATH = btn.name + ':'; 
+            CURRENT_GEMDOS_PATH = driveLetter + ':'; 
             updateBreadcrumb(CURRENT_GEMDOS_PATH);
             DRAGNDROP_AREA_REF.style.display="block";        
         }
@@ -272,7 +272,7 @@
 
 
         function handleDriveOnClick(){
-          requestChDrive(this);            
+          requestChangeDrive(this.name);            
           return false;
         }
 
@@ -602,7 +602,7 @@
     function startup(){
         initMainView();
         updateDriveListReq();
-
+        requestChangeDrive('C');
         window.requestAnimationFrame(mainLoop);
     }
 
