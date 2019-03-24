@@ -2,7 +2,6 @@
         var CURRENT_GEMDOS_PATH=null;
         var FILE_LIST_REF=null;
         var FILE_VIEW_REF=null;
-        var CURRENT_PATH_INPUT_REF=null;
         var DIR_BREADCRUMB_REF=null;
         var DIR_LIST_REF=null;
         var DIR_LIST_VIEW_REF=null;
@@ -90,7 +89,7 @@
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
             gemdosName = convertFileNameToGemdos(fileArray[i].name);
 
-            var request = CURRENT_PATH_INPUT_REF.value + '/' + gemdosName;
+            var request =  CURRENT_GEMDOS_PATH + '/' + gemdosName;
             request = sanitizeGemdosPath(request);
             
             var current_date = new Date();
@@ -145,7 +144,6 @@
             FILE_LIST_REF = $id("fileList");
             FILE_VIEW_REF = $id("fileView");
             DRAGNDROP_AREA_REF = $id("fileDragAndDrop");
-            CURRENT_PATH_INPUT_REF = $id("currentPathInput");
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DIR_BREADCRUMB_REF = $id("dirBreadcrumb");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
@@ -187,7 +185,6 @@
             FILE_LIST_REF=null;
           }
 
-          CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
           updateBreadcrumb(CURRENT_GEMDOS_PATH);
 
           //hide drag and drop section
@@ -218,7 +215,6 @@
             
             //todo: check request result
             CURRENT_GEMDOS_PATH = btn.name + ':'; 
-            CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
             updateBreadcrumb(CURRENT_GEMDOS_PATH);
             DRAGNDROP_AREA_REF.style.display="block";        
         }
@@ -247,9 +243,6 @@
               //request dir status
               var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
 
-              //todo: check request result
-              CURRENT_PATH_INPUT_REF.value = '';
-              CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH.replace(/\/$/, "").replace(/\/\//g,'/');;
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
             }else{
@@ -261,7 +254,6 @@
 
               //todo: check request result
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
-              CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
               
             }
