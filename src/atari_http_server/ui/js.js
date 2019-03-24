@@ -70,10 +70,10 @@
                // Done. Inform the user
                console.log("Success: upload done."); 
                //TODO: refresh dir ui 
-
               return;            
             }else{
                 // Error. Inform the user
+                alert("Error: upload failed." + this.responseText);
                 console.log("Error: upload failed." + this.responseText);  
             }
          }
@@ -188,6 +188,7 @@
           }
 
           CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
+          updateBreadcrumb(CURRENT_GEMDOS_PATH);
 
           //hide drag and drop section
           DRAGNDROP_AREA_REF.style.display="none";        
@@ -218,7 +219,14 @@
             //todo: check request result
             CURRENT_GEMDOS_PATH = btn.name + ':'; 
             CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
+            updateBreadcrumb(CURRENT_GEMDOS_PATH);
             DRAGNDROP_AREA_REF.style.display="block";        
+        }
+
+        // get gemdos path and generate links based on folder hierarchy
+        // with embedded change directory requests
+        function updateBreadcrumb(GemdosPath){
+          DIR_BREADCRUMB_REF.innerHTML  = GemdosPath;
         }
 
         function requestChDir(btn){
@@ -242,7 +250,8 @@
               //todo: check request result
               CURRENT_PATH_INPUT_REF.value = '';
               CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH.replace(/\/$/, "").replace(/\/\//g,'/');;
-
+              updateBreadcrumb(CURRENT_GEMDOS_PATH);
+          
             }else{
                           
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
@@ -253,6 +262,8 @@
               //todo: check request result
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + btn.name;
               CURRENT_PATH_INPUT_REF.value = CURRENT_GEMDOS_PATH;
+              updateBreadcrumb(CURRENT_GEMDOS_PATH);
+              
             }
             
         }
