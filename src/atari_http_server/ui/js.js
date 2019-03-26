@@ -14,6 +14,7 @@
         var NO_FILES_MSG = "No files found.";
         var GEMDOS_DRIVES_NUM = 0;
         var INIT = true;
+        var REQUEST_PENDING = false; 
 
         function $id(id) {
           return document.getElementById(id);
@@ -198,6 +199,7 @@
 
           updateDirectoryViewUI(DirListArray);
           updateFileViewUI(DirListArray);
+          REQUEST_PENDING = false;
         }
 
             // TOS drives: A/B(floppy), C-P
@@ -331,8 +333,13 @@
 
         // directory view generation
         function handleDirectoryOnClick(){
+          
+          if(REQUEST_PENDING!=true){
+            REQUEST_PENDING=true;
             requestChangeDir(this.name);
-            return false;
+          }
+
+          return false;
         }
 
         function createDirectoryEntries(node, DirectoryArray){
