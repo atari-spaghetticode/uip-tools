@@ -12,6 +12,8 @@
 
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
+        var GEMDOS_DRIVES_NUM = 0;
+        var INIT = true;
 
         function $id(id) {
           return document.getElementById(id);
@@ -276,7 +278,9 @@
 
         function createDriveButtons(node, DriveArray){
           var buttonStr = null;
-          
+
+          GEMDOS_DRIVES_NUM = DriveArray.length;
+
           for(var i=0;i<DriveArray.length;++i){
 
              buttonStr = DriveArray[i].name.toUpperCase();
@@ -303,6 +307,17 @@
              node.appendChild(button);
           };
 
+            if(INIT==true){
+
+              if(GEMDOS_DRIVES_NUM > 2){
+                requestChangeDrive('C');
+              }else if( (GEMDOS_DRIVES_NUM <= 2) && (GEMDOS_DRIVES_NUM>0) ){
+                requestChangeDrive('A');
+              }
+
+              INIT = false;
+
+            }
         }
 
         function updateDriveViewUI(DriveArray){
@@ -600,7 +615,7 @@
     function startup(){
         initMainView();
         updateDriveListReq();
-        requestChangeDrive('C');
+
         window.requestAnimationFrame(mainLoop);
     }
 
