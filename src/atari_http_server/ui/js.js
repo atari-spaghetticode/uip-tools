@@ -314,7 +314,7 @@
               if(GEMDOS_DRIVES_NUM > 2){
                 requestChangeDrive('C');
               }else if( (GEMDOS_DRIVES_NUM <= 2) && (GEMDOS_DRIVES_NUM>0) ){
-                requestChangeDrive('A');
+                requestChangeDrive(DriveArray[0].name.toUpperCase());
               }
 
               INIT = false;
