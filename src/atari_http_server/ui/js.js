@@ -461,7 +461,7 @@
           tableHead3.classList.add('divTableHead');
 
           var headNameText1=document.createTextNode('filename');
-          var headNameText2=document.createTextNode('size');
+          var headNameText2=document.createTextNode('size (bytes)');
           var headNameText3=document.createTextNode('date');
  
           tableHead1.appendChild(headNameText1);
