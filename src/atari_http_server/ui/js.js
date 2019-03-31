@@ -197,11 +197,44 @@
           DRAGNDROP_AREA_REF.style.display="none";        
         }
 
-        function processDirectoryListReq(responseText){
-          var DirListArray = JSON.parse(responseText);
+        function sortAlphabetically(a,b){
+            if(a.name < b.name) { return -1; }
+            if(a.name > b.name) { return 1; }
+         return 0;
+        }
 
-          updateDirectoryViewUI(DirListArray);
-          updateFileViewUI(DirListArray);
+        function processDirectoryListReq(responseText){
+          var responseArray = JSON.parse(responseText);
+          var dirArray = [];
+          var fileArray = [];
+          var tempVal=null;
+          
+          //preprocess data
+          for(var i=0;i<responseArray.length;++i){
+             tempVal = responseArray[i];
+
+             if(tempVal.type.toLowerCase()=='d'){
+                dirArray.push({ 
+                  name: tempVal.name.toUpperCase(), 
+                });
+             }
+
+             if(tempVal.type.toLowerCase()=='f'){
+                fileArray.push({ 
+                  name: tempVal.name.toUpperCase(), 
+                  size: tempVal.size,
+                  date: tempVal.date 
+                });
+             }
+          }
+
+          //sort alphabetically files / directories
+          //TODO: add other options: unordered, sort by date / time, by extension
+          dirArray.sort(sortAlphabetically);
+          fileArray.sort(sortAlphabetically);
+
+          updateDirectoryViewUI(dirArray);
+          updateFileViewUI(fileArray);
           REQUEST_PENDING = false;
         }
 
@@ -348,8 +381,7 @@
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
           var directoryReqStr=null;
-          var entriesFound=0;
-
+          
           if(CURRENT_GEMDOS_PATH.length > 2){
             var rootbtn = document.createElement("button");
             var rootbtnNode = document.createTextNode('..');
@@ -368,9 +400,7 @@
           }
 
           for(var i=0;i<DirectoryArray.length;++i){
-             if(DirectoryArray[i].type.toLowerCase()=='d'){
-                ++entriesFound;
-                directoryStr = DirectoryArray[i].name.toUpperCase();
+                directoryStr = DirectoryArray[i].name;
                 directoryReqStr=directoryStr;
                 if(directoryStr=='ROOT') directoryStr='..';
                 if(directoryReqStr=='ROOT') directoryReqStr='';
@@ -390,10 +420,10 @@
                 button.onclick = handleDirectoryOnClick;
                 button.className ='directoryButton';
                 node.appendChild(button);
-           }
+           
           };
            
-           if(entriesFound==0) node.innerHTML+= NO_DIRECTORIES_MSG + '<br/>' ;
+           if(DirectoryArray.length==0) node.innerHTML+= NO_DIRECTORIES_MSG + '<br/>' ;
                  
         }
 
@@ -439,8 +469,6 @@
           var fileStr = null;
           var fileSize=0;
           var fileDate="";
-
-          var entriesFound=0;
           
           var tableDiv = document.createElement('div');
           tableDiv.classList.add('divTable');
@@ -478,14 +506,11 @@
           var tableBody = document.createElement('div');
           tableBody.classList.add('divTableBody');
           tableDiv.appendChild(tableBody);
+          
           /* add entries to tableBody */
           node.appendChild(tableDiv);
 
           for(var i=0;i<FileArray.length;++i){
-           
-            if(FileArray[i].type.toLowerCase()=='f'){
-              ++entriesFound;
-             
              var fileRow = document.createElement('div');
              fileRow.classList.add('divTableRow');
 
@@ -520,18 +545,17 @@
              cell3.innerHTML = fileDate;
              
              createFileDownloadLink(div,fileStr);
-             
-          };
-        }
-            if(entriesFound==0) 
+          }
+
+          if(FileArray.length==0) 
               node.innerHTML += NO_FILES_MSG + '<br/>';
         }
-
 
         function updateFileViewUI(FileJsonArray){
 
           var div = document.createElement("div");
           div.id="fileList"
+
           createFileEntries(div, FileJsonArray)
 
           if(FILE_LIST_REF!=null){
