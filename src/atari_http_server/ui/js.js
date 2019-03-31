@@ -208,7 +208,7 @@
           var dirArray = [];
           var fileArray = [];
           var tempVal=null;
-          
+
           //preprocess data
           for(var i=0;i<responseArray.length;++i){
              tempVal = responseArray[i];
@@ -235,6 +235,11 @@
 
           updateDirectoryViewUI(dirArray);
           updateFileViewUI(fileArray);
+
+          responseArray = [];
+          dirArray = [];
+          fileArray = [];
+
           REQUEST_PENDING = false;
         }
 
