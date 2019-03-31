@@ -561,8 +561,7 @@
             
             xhr.onreadystatechange = function() { 
               if (xhr.readyState == 4 && xhr.status == 200)
-               requestHandler(xhr.responseText);
-              }
+                requestHandler(xhr.responseText);              
             }
 
             xhr.open(requestType, 'http://' + addr + params, true);
