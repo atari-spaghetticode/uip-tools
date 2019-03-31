@@ -16,6 +16,9 @@
         var INIT = true;
         var REQUEST_PENDING = false; 
 
+        var UPLOAD_PROCESS_LIST = [];
+        var UPLOAD_FAILED_REQUEST_LIST = [];
+
         function $id(id) {
           return document.getElementById(id);
         }
@@ -215,7 +218,7 @@
 
         function requestChangeDrive(driveLetter){
             // request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + driveLetter,'dir', 'GET', true, processDirectoryListReq);
+            var dirListJsonResult = sendHttpReq(location.host + '/' + driveLetter,'dir', 'GET', processDirectoryListReq);
             
             //todo: check request result
             CURRENT_GEMDOS_PATH = driveLetter + ':'; 
@@ -245,7 +248,7 @@
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
-              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', true, processDirectoryListReq);
+              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', processDirectoryListReq);
 
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
@@ -253,7 +256,7 @@
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
-              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ dirStr,'dir', 'GET', true, processDirectoryListReq);
+              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ dirStr,'dir', 'GET', processDirectoryListReq);
 
               //todo: check request result
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + dirStr;
@@ -269,7 +272,7 @@
             pathPrefix = sanitizeGemdosPath(pathPrefix);
  
             // request file download
-            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', true, processFileDownloadReq);
+            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', processFileDownloadReq);
         } 
 
 
@@ -540,15 +543,13 @@
           FILE_LIST_REF=$id("fileList");
         }
 
-
         function processDriveListReq(responseText) {
           var DriveArray = JSON.parse(responseText);
           updateDriveViewUI(DriveArray);  
         }
 
-
-        // send http request 
-        function sendHttpReq(addr, params, requestType, isAsync, requestHandler){
+        // send async http request 
+        function sendHttpReq(addr, params, requestType, requestHandler){
 
             var xhr = new XMLHttpRequest();
             
@@ -557,26 +558,21 @@
             } else{
               params = '/?' + params;
             }
-
-            if(isAsync!=true){
-                xhr.open(requestType, 'http://' + addr + params, isAsync);
-                xhr.send();
-                return xhr.responseText; 
-            }else{
-                xhr.onreadystatechange = function() { 
-                    if (xhr.readyState == 4 && xhr.status == 200)
-                       requestHandler(xhr.responseText);
-                    }
-
-                xhr.open(requestType, 'http://' + addr + params, isAsync);
-                xhr.send();
+            
+            xhr.onreadystatechange = function() { 
+              if (xhr.readyState == 4 && xhr.status == 200)
+               requestHandler(xhr.responseText);
+              }
             }
+
+            xhr.open(requestType, 'http://' + addr + params, true);
+            xhr.send();
 
             return null;
         }
 
         function updateDriveListReq(){
-            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', true, processDriveListReq);            
+            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', processDriveListReq);            
         }
 
     // This returns at least 32bit int with date encoded for DOSTIME struct
