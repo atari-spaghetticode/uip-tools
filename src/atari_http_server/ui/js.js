@@ -256,7 +256,7 @@
 
         function requestChangeDrive(driveLetter){
             // request dir status
-            var dirListJsonResult = sendHttpReq(location.host + '/' + driveLetter,'dir', 'GET', processDirectoryListReq);
+            sendHttpReq(location.host + '/' + driveLetter,'dir', 'GET', processDirectoryListReq);
             
             //todo: check request result
             CURRENT_GEMDOS_PATH = driveLetter + ':'; 
@@ -286,7 +286,7 @@
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
-              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', processDirectoryListReq);
+              sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', processDirectoryListReq);
 
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
@@ -294,7 +294,7 @@
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
-              var dirListJsonResult = sendHttpReq(location.host + '/' + pathPrefix + '/'+ dirStr,'dir', 'GET', processDirectoryListReq);
+              sendHttpReq(location.host + '/' + pathPrefix + '/'+ dirStr,'dir', 'GET', processDirectoryListReq);
 
               //todo: check request result
               CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + '/' + dirStr;
@@ -310,7 +310,7 @@
             pathPrefix = sanitizeGemdosPath(pathPrefix);
  
             // request file download
-            var result = sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', processFileDownloadReq);
+            sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', processFileDownloadReq);
         } 
 
 
@@ -595,12 +595,10 @@
 
             xhr.open(requestType, 'http://' + addr + params, true);
             xhr.send();
-
-            return null;
         }
 
         function updateDriveListReq(){
-            var driveListJsonResult = sendHttpReq(location.host,'dir', 'GET', processDriveListReq);            
+            sendHttpReq(location.host,'dir', 'GET', processDriveListReq);            
         }
 
     // This returns at least 32bit int with date encoded for DOSTIME struct
