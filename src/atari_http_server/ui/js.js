@@ -1,4 +1,3 @@
-
         var CURRENT_GEMDOS_PATH=null;
         var FILE_LIST_REF=null;
         var FILE_VIEW_REF=null;
@@ -24,8 +23,8 @@
         }
 
         function dnd_preventDefaults (e) {
-          e.preventDefault()
-          e.stopPropagation()
+          e.preventDefault();
+          e.stopPropagation();
         }
 
         function dnd_highlight(e) {
@@ -36,17 +35,46 @@
           DRAGNDROP_AREA_REF.classList.remove('active')
         }
 
+        function traverseFileTree(item, path, fileArray) {
+          path = path || "";
+  
+          if (item.isFile) {
+              item.file(function(file) {
+                console.log("File:", path + file.name);
+                fileArray.push(file);
+            });
+            
+          } else if (item.isDirectory) {
+              var dirReader = item.createReader();
+
+              dirReader.readEntries(function(entries) {
+                for (var i=0; i<entries.length; ++i) {
+                  traverseFileTree(entries[i], path + item.name + "/", fileArray);
+                }
+              });
+          }
+        }
+
         function dnd_handleDrop(e) {
-          var dt = e.dataTransfer
-          var files = dt.files
-          uploadFiles(files)
+         e.preventDefault();
+          
+          var fileList=[];
+          var items = e.dataTransfer.items;
+
+          for (var i=0; i<items.length; ++i) {
+            var item = items[i].webkitGetAsEntry();
+              if (item) {
+                traverseFileTree(item, '', fileList);
+              }
+          }
+          
+          uploadFiles(fileList)
         }
 
         // progress bar handling
         var uploadProgress = [];
 
         function initializeProgress(numFiles) {
-          
           FILE_UPLOAD_PROGRESSBAR.value = 0;
           uploadProgress = [];
           
@@ -55,21 +83,11 @@
           }
         }
 
-        function sum(total, value){
-          return total + value;
-        }
-        
-        function updateProgress(fileNumber, percent) {
-          uploadProgress[fileNumber] = percent;
-          var total = (uploadProgress.reduce(sum,0) / uploadProgress.length);
-          FILE_UPLOAD_PROGRESSBAR.value = total;
-        }
-
         function convertFileNameToGemdos(filename){
           return filename;
         }
 
-        function handleUploadError(e){
+        function handleUploadReqStateChange(e){
           if(this.readyState==4){
             if(this.status == 200 || this.status == 201){
                // Done. Inform the user
@@ -78,47 +96,65 @@
               return;            
             }else{
                 // Error. Inform the user
-                alert("Error: upload failed." + this.responseText);
                 console.log("Error: upload failed." + this.responseText);  
             }
          }
         }
 
+        function sum(total, value){
+          return total + value;
+        }
+
+        function updateProgress(fileNumber, percent) {
+          uploadProgress[fileNumber] = percent;
+          var total = (uploadProgress.reduce(sum,0) / uploadProgress.length);
+          FILE_UPLOAD_PROGRESSBAR.value = total;
+        }
+
+        function handleUploadProgress(e){
+          updateProgress(i, (e.loaded * 100.0 / e.total) || 100);
+        } 
+
         function uploadFiles(files) {
-          var fileArray = Array.from(files);
-          initializeProgress(fileArray.length); 
+          initializeProgress(files.length); 
  
           var gemdosName = null;
           
-          for (var i = 0; i < fileArray.length; ++i) {
+          for (var i = 0; i < files.length; ++i) {
             // upload file request
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
-            gemdosName = convertFileNameToGemdos(fileArray[i].name);
+            gemdosName = convertFileNameToGemdos(files[i].name);
 
             var request =  CURRENT_GEMDOS_PATH + '/' + gemdosName;
             request = sanitizeGemdosPath(request);
             
             var current_date = new Date();
-            request = request+"?setfiledate=" + convertDateToAtariTOSFormat(current_date);
+            request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
+            
+            console.log("UI: Upload request: " + request);  
             
             var reader = new FileReader();
+            
             reader.onload = (function(request) {
             
             return function(event) {
                 var xhr = new XMLHttpRequest;
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
                 
-                xhr.onreadystatechange = handleUploadError;
-                xhr.upload.onprogress= (function onUpdateProgressBar(e) {
-                   updateProgress(i, (e.loaded * 100.0 / e.total) || 100)
-                });
+                xhr.onreadystatechange = handleUploadReqStateChange;
                 
+                xhr.upload.onprogress = function(i) {
+                  return function(evt) {
+                    updateProgress(i, (evt.loaded * 100 / evt.total) || 100);
+                  };
+                }(i);
+
                 xhr.open('POST', request, true);
                 xhr.send(blob);
               };
             })(request);
 
-            reader.readAsArrayBuffer(fileArray[i]);
+            reader.readAsArrayBuffer(files[i]);
           }
         }
 
