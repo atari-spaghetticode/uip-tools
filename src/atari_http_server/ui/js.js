@@ -123,12 +123,13 @@
           for (var i = 0; i < files.length; ++i) {
             // upload file request
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
-            gemdosName = convertFileNameToGemdos(files[i].name);
+            gemdosName = convertFileNameToGemdos(files[i].webkitRelativePath);
 
             var request =  CURRENT_GEMDOS_PATH + '/' + gemdosName;
             request = sanitizeGemdosPath(request);
             
             var current_date = new Date();
+            request = '/' + request;
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
             console.log("UI: Upload request: " + request);  
