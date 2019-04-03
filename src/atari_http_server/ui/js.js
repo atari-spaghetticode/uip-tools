@@ -12,9 +12,11 @@
         var GEMDOS_DRIVES_NUM;
         var INIT;
         var REQUEST_PENDING; 
+        var TS_LAST_RENDER;
+
         var UPLOAD_PROCESS_LIST;
         var UPLOAD_FAILED_REQUEST_LIST;
-
+        
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
 
@@ -32,6 +34,8 @@
           GEMDOS_DRIVES_NUM = 0;
           INIT = true;
           REQUEST_PENDING = false; 
+          TS_LAST_RENDER = 0;
+
           UPLOAD_PROCESS_LIST = [];
           UPLOAD_FAILED_REQUEST_LIST = [];
         }
@@ -342,7 +346,6 @@
 
               //request dir status
               sendHttpReq(location.host + '/' + pathPrefix ,'dir', 'GET', processDirectoryListReq);
-
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
             }else{
@@ -678,15 +681,15 @@
         return ((tosTime<<16) | tosDate) >>> 0;
      }
 
+    // Update 
     function update(progress) {
-        // Update 
+        if(UPLOAD_PROCESS_LIST.length != 0){
+            // process upload requests
+            // TODO
+        }
     }
 
-    function draw() {
-       
-    }
-
-    var TS_LAST_RENDER = 0;
+    function draw() {}
 
     function mainLoop(timestamp) {
       var progress = timestamp - TS_LAST_RENDER;
