@@ -1,22 +1,40 @@
-        var CURRENT_GEMDOS_PATH=null;
-        var FILE_LIST_REF=null;
-        var FILE_VIEW_REF=null;
-        var DIR_BREADCRUMB_REF=null;
-        var DIR_LIST_REF=null;
-        var DIR_LIST_VIEW_REF=null;
-        var DRIVE_BUTTON_LIST_TAB_REF=null;
-        var DRAGNDROP_AREA_REF=null;
-        var FILE_UPLOAD_PROGRESSBAR=null;
-        var DEBUG_OUTPUT_REF=null;
+        
+        var CURRENT_GEMDOS_PATH;
+        var FILE_LIST_REF;
+        var FILE_VIEW_REF;
+        var DIR_BREADCRUMB_REF;
+        var DIR_LIST_REF;
+        var DIR_LIST_VIEW_REF;
+        var DRIVE_BUTTON_LIST_TAB_REF;
+        var DRAGNDROP_AREA_REF;
+        var FILE_UPLOAD_PROGRESSBAR;
+        var DEBUG_OUTPUT_REF;
+        var GEMDOS_DRIVES_NUM;
+        var INIT;
+        var REQUEST_PENDING; 
+        var UPLOAD_PROCESS_LIST = [];
+        var UPLOAD_FAILED_REQUEST_LIST = [];
 
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
-        var GEMDOS_DRIVES_NUM = 0;
-        var INIT = true;
-        var REQUEST_PENDING = false; 
 
-        var UPLOAD_PROCESS_LIST = [];
-        var UPLOAD_FAILED_REQUEST_LIST = [];
+        function initInternals(){
+          CURRENT_GEMDOS_PATH=null;
+          FILE_LIST_REF=null;
+          FILE_VIEW_REF=null;
+          DIR_BREADCRUMB_REF=null;
+          DIR_LIST_REF=null;
+          DIR_LIST_VIEW_REF=null;
+          DRIVE_BUTTON_LIST_TAB_REF=null;
+          DRAGNDROP_AREA_REF=null;
+          FILE_UPLOAD_PROGRESSBAR=null;
+          DEBUG_OUTPUT_REF=null;
+          GEMDOS_DRIVES_NUM = 0;
+          INIT = true;
+          REQUEST_PENDING = false; 
+          UPLOAD_PROCESS_LIST = [];
+          UPLOAD_FAILED_REQUEST_LIST = [];
+        }
 
         function $id(id) {
           return document.getElementById(id);
@@ -679,9 +697,9 @@
     }
 
     function startup(){
+        initInternals();
         initMainView();
         updateDriveListReq();
-
         window.requestAnimationFrame(mainLoop);
     }
 
