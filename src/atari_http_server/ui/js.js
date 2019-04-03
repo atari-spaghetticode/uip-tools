@@ -12,8 +12,8 @@
         var GEMDOS_DRIVES_NUM;
         var INIT;
         var REQUEST_PENDING; 
-        var UPLOAD_PROCESS_LIST = [];
-        var UPLOAD_FAILED_REQUEST_LIST = [];
+        var UPLOAD_PROCESS_LIST;
+        var UPLOAD_FAILED_REQUEST_LIST;
 
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
