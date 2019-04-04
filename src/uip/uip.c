@@ -1100,6 +1100,7 @@ uip_process(u8_t flag)
     goto drop;
   }
 #else /* UIP_UDP_CHECKSUMS */
+  uip_len = (UDPBUF->len[0] << 8) | UDPBUF->len[1];
   uip_len = uip_len - UIP_IPUDPH_LEN;
 #endif /* UIP_UDP_CHECKSUMS */
 
