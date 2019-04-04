@@ -29,47 +29,47 @@
 
 bool RTL8019dev_init(uint8_t* macaddr, uint32_t cpu_type)
 {
-	return initRTL8019(macaddr, cpu_type);
+        return initRTL8019(macaddr, cpu_type);
 }
 
 
 void RTL8019dev_send(void)
 {
-  RTL8019beginPacketSend(uip_len);
-  
+  RTL8019beginPacketSend (uip_len);
+
   // send packet, using data in uip_appdata if over the IP+TCP header size
-  if( uip_len <= TOTAL_HEADER_LENGTH ) {
-    RTL8019sendPacketData(uip_buf, uip_len);
+  if (uip_len <= TOTAL_HEADER_LENGTH) {
+        RTL8019sendPacketData (uip_buf, uip_len);
   } else {
-    RTL8019sendPacketData(uip_buf, TOTAL_HEADER_LENGTH);
-    RTL8019sendPacketData((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH );
+        RTL8019sendPacketData (uip_buf, TOTAL_HEADER_LENGTH);
+        RTL8019sendPacketData ((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH);
   }
-  
-  RTL8019endPacketSend();
+
+    RTL8019endPacketSend ();
 }
 
 
 
 unsigned int RTL8019dev_poll(void)
 {
-	unsigned int packetLength;
-	
-	packetLength = RTL8019beginPacketRetreive();
+    unsigned int packetLength;
 
-	// if there's no packet or an error - exit without ending the operation
-	if( !packetLength )
-	  return 0;
+    packetLength = RTL8019beginPacketRetreive ();
 
-	// drop anything too big for the buffer
-	if( packetLength > UIP_BUFSIZE )
-	{
-	  RTL8019endPacketRetreive();
+    // if there's no packet or an error - exit without ending the operation
+    if (!packetLength)
       return 0;
-	}
-	
-	// copy the packet data into the uIP packet buffer
-	RTL8019retreivePacketData( uip_buf, packetLength );
-	RTL8019endPacketRetreive();
-		
-	return packetLength;
+
+    // drop anything too big for the buffer
+    if (packetLength > UIP_BUFSIZE)
+    {
+        RTL8019endPacketRetreive ();
+        return 0;
+    }
+
+    // copy the packet data into the uIP packet buffer
+    RTL8019retreivePacketData (uip_buf, packetLength);
+    RTL8019endPacketRetreive ();
+
+    return packetLength;
 }
