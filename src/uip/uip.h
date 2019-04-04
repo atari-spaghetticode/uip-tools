@@ -398,6 +398,8 @@ void uip_setipid(u16_t id);
 #define uip_udp_periodic_conn(conn) do { uip_udp_conn = conn; \
                                          uip_process(UIP_UDP_TIMER); } while (0)
 
+#define uip_udp_receive_conn(conn) do { uip_udp_conn = conn; \
+                                         uip_process(UIP_UDP_RECEIVE_CONN); } while (0)
 
 #endif /* UIP_UDP */
 
@@ -1376,7 +1378,9 @@ void uip_process(u8_t flag);
 				   uip_buf buffer. */
 #if UIP_UDP
 #define UIP_UDP_TIMER     5
+#define UIP_UDP_RECEIVE_CONN 6
 #endif /* UIP_UDP */
+
 
 /* The TCP states used in the uip_conn->tcpstateflags. */
 #define UIP_CLOSED      0

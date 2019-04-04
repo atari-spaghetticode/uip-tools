@@ -691,8 +691,14 @@ uip_process(u8_t flag)
     goto udp_send;
   }
 #endif /* UIP_UDP */
-  
+
   uip_sappdata = uip_appdata = &uip_buf[UIP_IPTCPH_LEN + UIP_LLH_LEN];
+
+#if UIP_UDP
+  if(flag == UIP_UDP_RECEIVE_CONN) {
+    goto udp_input_maybe;
+  }
+#endif /* UIP_UDP */
 
   /* Check if we were invoked because of a poll request for a
      particular connection. */
@@ -958,8 +964,12 @@ uip_process(u8_t flag)
   }
 
 #if UIP_UDP
+udp_input_maybe:
   if(BUF->proto == UIP_PROTO_UDP) {
     goto udp_input;
+  } else if (flag == UIP_UDP_RECEIVE_CONN) {
+    /* Special hack for uiptool where only UDP is required */
+    goto drop;
   }
 #endif /* UIP_UDP */
 
@@ -1138,6 +1148,7 @@ uip_process(u8_t flag)
   if(uip_slen == 0) {
     goto drop;
   }
+
   uip_len = uip_slen + UIP_IPUDPH_LEN;
 
 #if UIP_CONF_IPV6
