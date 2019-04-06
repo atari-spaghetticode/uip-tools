@@ -100,10 +100,11 @@ def main(args):
         print_usage();
         return 1
     # Inputs
-    local_dir = args[1]
+    local_dir = os.path.join(args[1], '')
     remote = args[2]
     remote_host = remote.split('/', 1)[0]
-    remote_dir = '/' + remote.split('/', 1)[1]
+    # add optional trailing slash with os.path.join
+    remote_dir = os.path.join('/' + remote.split('/', 1)[1], '')
     # Grab local file list
     local_files = get_local_files(local_dir)
     # Connect
