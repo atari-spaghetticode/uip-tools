@@ -93,7 +93,6 @@ def main(args):
     remote_path = "/" + args[1].split('/', 1)[1]
 
     remote_ip = socket.gethostbyname(remote_host)
-    print("IP: " + remote_ip)
 
     rec_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.getprotobyname('udp'))
     rec_sock.bind(("", REC_UDP_PORT))
@@ -104,7 +103,7 @@ def main(args):
 
     conn = httplib.HTTPConnection(remote_ip)
     conn.connect()
-    print ("running: " + remote_path)
+    print (inverse_seq + "running: " + normal_seq + remote_path)
     conn.request("GET", remote_path + "?run=" + " ".join(args[2:]))
     response = conn.getresponse()
     response.read()
