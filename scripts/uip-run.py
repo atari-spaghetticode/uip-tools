@@ -21,16 +21,6 @@ class NonBlockingConsole(object):
     def __exit__(self, type, value, traceback):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
 
-    def get_data(self):
-        try:
-            data = ""
-            while select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
-                data = data + sys.stdin.read(32)
-            return data
-        except:
-            return '[CTRL-C]'
-        return False
-
 curses.setupterm()
 inverse_seq = curses.tigetstr('rev').decode("utf-8")
 normal_seq = curses.tigetstr('sgr0').decode("utf-8")
@@ -128,16 +118,22 @@ def main(args):
         try:
             c = ""
             while 1:
+
                 try:
-                    data, addr = rec_sock.recvfrom(1500)
-                    if len(data) == 1 and data[0] == '\0':
-                        return
-                    translate_and_print(data)
+                    read, write, exp = select.select([sys.stdin, rec_sock], [], [])
+                    for ready in read:
+                        if type(ready) == type(sys.stdin):
+                            c = c + sys.stdin.read(32)
+                        elif type(ready) == type(rec_sock):
+                            data, addr = rec_sock.recvfrom(1500)
+                            if len(data) == 1 and data[0] == '\0':
+                                return
+                            translate_and_print(data)
                 except KeyboardInterrupt:
-                    pass
+                    c = '[CTRL-C]'
                 except:
                     pass
-                c = c + nbc.get_data()
+
                 if len(c) > 0 and c != False:
                     if c == '[CTRL-C]':
                         # send spece key just in case remote app would exit on that
