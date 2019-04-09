@@ -6,10 +6,60 @@ import os
 import zlib
 import pickle
 import time
+import curses
+import time
+
+curses.setupterm()
+STORE_POS = curses.tigetstr('sc').decode("utf-8") # restore cursor pos
+RESTORE_POS = curses.tigetstr('rc').decode("utf-8") # save cursor pos
+CLEAR_TO_END = curses.tigetstr('el').decode("utf-8") # clear to end of line
+CURRS_ON = curses.tigetstr('cnorm').decode("utf-8") # cursor on
+CURRS_OFF = curses.tigetstr('civis').decode("utf-8") # cursor off
 
 def print_usage():
     print("Usage:")
     print(sys.argv[0] + " local_dir remote_dir")
+
+def progress(count, total, status=''):
+    bar_len = 40
+    filled_len = int(round(bar_len * count / float(total)))
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + ' ' * (bar_len - filled_len)
+    sys.stdout.write('[%s]  %s%s  %0.1fKB/s%s' % (bar, percents, '%', status, CLEAR_TO_END))
+
+class file_wrapper(object):
+    def __init__(self, obj):
+        self._wrapped_obj = obj
+        obj.seek(0, os.SEEK_END)
+        self.size = obj.tell()
+        obj.seek(0, os.SEEK_SET)
+        self.pos = 0
+
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        pass
+
+    def read(self, size):
+        data = self._wrapped_obj.read(size)
+        self.pos = self.pos + len(data)
+        # Show upload progress only for files larger then 128KB
+        # Otherwise the output is too noisy and random
+        if self.size > 0x20000:
+            elapsed_time = float(time.time() - self.start_time)
+            rate = float(self.pos) / 1024 / elapsed_time
+            sys.stdout.write (STORE_POS + "  ")
+            progress(self.pos, self.size, rate)
+            sys.stdout.write (RESTORE_POS)
+            sys.stdout.flush()
+        return data
+
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return getattr(self, attr)
+        return getattr(self._wrapped_obj, attr)
 
 class http_io:
     def __init__(self, remote_host, remote_dir):
@@ -27,13 +77,14 @@ class http_io:
 
     def put_file(self, file_name, data):
         remote_path = self.remote_dir + file_name
-        print ("put: " + remote_path)
+        sys.stdout.write("put: " + remote_path + CURRS_OFF)
         self.conn.request("PUT", remote_path, data)
         response = self.conn.getresponse()
         response.read()
         if response.status != 201:
             print "Error (HTTP code: " + str(response.status) + ")"
             sys.exit(1)
+        print(CLEAR_TO_END + CURRS_ON)
 
     def del_file(self, file_name):
         remote_path = self.remote_dir + file_name
@@ -47,7 +98,7 @@ class http_io:
 
     def upload_files(self, file_list):
         for file in file_list:
-            with open(file[0], "rb") as f:
+            with file_wrapper(open(file[0], "rb")) as f:
                 self.put_file(file[1], f)
 
     def delete_files(self, file_list):
