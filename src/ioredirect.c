@@ -144,7 +144,7 @@ send_udp_done_packet()
 {
     ioredirect_out_len = 1;
     ioredirect_out_ptr = ioredirect_out_buff;
-    ioredirect_out_ptr[0] = 0;
+    ioredirect_out_ptr[0] = 0xff;
     send_udp_data();
 }
 

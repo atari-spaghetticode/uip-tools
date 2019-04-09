@@ -9,7 +9,7 @@ import sys, select, tty, termios
 import httplib
 import curses
 
-class NonBlockingConsole(object):
+class non_blocking_console(object):
     def __enter__(self):
         self.old_settings = termios.tcgetattr(sys.stdin)
         tty.setcbreak(sys.stdin.fileno())
@@ -113,11 +113,10 @@ def main(args):
 
     print(inverse_seq + "Remote output:" + normal_seq)
 
-    with NonBlockingConsole() as nbc:
+    with non_blocking_console() as nbc:
         try:
             c = ""
             while 1:
-
                 try:
                     read, write, exp = select.select([sys.stdin, rec_sock], [], [])
                     for ready in read:
@@ -125,22 +124,20 @@ def main(args):
                             c = c + sys.stdin.read(32)
                         elif type(ready) == type(rec_sock):
                             data, addr = rec_sock.recvfrom(1500)
-                            if len(data) == 1 and data[0] == '\0':
+                            if len(data) == 1 and data[0] == '\xff':
                                 return
                             translate_and_print(data)
                 except KeyboardInterrupt:
-                    c = '[CTRL-C]'
+                    # send spece key just in case remote app would exit on that
+                    # TODO: send a sequence which remove terminal redirection
+                    rec_sock.send(" ")
+                    return
                 except:
                     pass
 
                 if len(c) > 0 and c != False:
-                    if c == '[CTRL-C]':
-                        # send spece key just in case remote app would exit on that
-                        # TODO: send a sequence which remove terminal redirection
-                        rec_sock.send(" ")
-                        return
-                    elif c[0] != '\x1b' and c[0] != '\x7f':
-                        code = '\0\0\0' + c[0]
+                    if c[0] != '\x1b' and c[0] != '\x7f':
+                        code = '\x00\x00\x00' + c[0]
                         rec_sock.send(code)
                         c = ""
                     else:
