@@ -325,9 +325,33 @@
 
         // get gemdos path and generate links based on folder hierarchy
         // with embedded change directory requests
-        function updateBreadcrumb(GemdosPath){
-          DIR_BREADCRUMB_REF.innerHTML  = GemdosPath;
+        function updateBreadcrumb(GemdosPath) {
+          
+          var pathArray = sanitizeGemdosPath(GemdosPath).replace(/\/$/, "").split('/');
+          var btnLink='';            
+          
+          DIR_BREADCRUMB_REF.innerHTML='';
+          var accuStr='';
+
+          for(var elem=0;elem<pathArray.length;++elem){
+            accuStr+=pathArray[elem]; 
+            btnLink='<button type="button" class="BcrmbButton" name="' + accuStr + '" onclick="handleBcOnClick(this.name)">' + pathArray[elem] + '</button>';
+            DIR_BREADCRUMB_REF.innerHTML += btnLink + '&#32;&#47;&#32;';
+            accuStr+='/';
+          }
+
         }
+
+        function requestChangePath(pathStr){
+              //request dir status
+              sendHttpReq(location.host + '/'+ pathStr,'dir','GET', processDirectoryListReq);
+
+              //todo: check request result
+              CURRENT_GEMDOS_PATH = pathStr;
+              updateBreadcrumb(CURRENT_GEMDOS_PATH);
+        }
+
+
 
         function requestChangeDir(dirStr){
             var pathPrefix='';
@@ -349,6 +373,7 @@
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
           
             }else{
+
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
 
               //request dir status
@@ -432,7 +457,6 @@
 
         // directory view generation
         function handleDirectoryOnClick(){
-          
           if(REQUEST_PENDING!=true){
             REQUEST_PENDING=true;
             requestChangeDir(this.name);
@@ -440,6 +464,17 @@
 
           return false;
         }
+
+        function handleBcOnClick(name){
+          if(REQUEST_PENDING!=true){
+            REQUEST_PENDING=true;
+            requestChangePath(name);
+          }
+
+          return false;
+        }
+
+
 
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
