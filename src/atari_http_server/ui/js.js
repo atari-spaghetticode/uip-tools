@@ -481,20 +481,22 @@
           var directoryReqStr=null;
           
           if(CURRENT_GEMDOS_PATH.length > 2){
-            var rootbtn = document.createElement("button");
-            var rootbtnNode = document.createTextNode('..');
-                
-            rootbtn.appendChild(rootbtnNode);
-            rootbtn.type='button';
-            rootbtn.name = 'ROOT';
-            rootbtn.className ='directoryButton';
-            rootbtn.onclick = handleDirectoryOnClick;
+            var button = document.createElement("button");
+            var textNode = document.createTextNode('..');
 
             var img = document.createElement('img');
             img.alt = "folder closed icon";
             img.src = 'data:image/png;base64,' + img_dir_close_src;
-            rootbtn.appendChild(img);
-            node.appendChild(rootbtn);
+            
+            button.appendChild(img);
+            button.appendChild(textNode);
+
+            button.type='button';
+            button.name = 'ROOT';
+            button.className ='directoryButton';
+            button.onclick = handleDirectoryOnClick;
+            
+            node.appendChild(button);
           }
 
           for(var i=0;i<DirectoryArray.length;++i){
@@ -511,17 +513,20 @@
                 img.alt = "folder closed icon";
                 img.src = 'data:image/png;base64,' + img_dir_close_src;
                 button.appendChild(img);
-
                 button.appendChild(textNode);
+
                 button.type='button';
                 button.name = requestStr;
-                button.onclick = handleDirectoryOnClick;
                 button.className ='directoryButton';
+                button.onclick = handleDirectoryOnClick;
+
                 node.appendChild(button);
-           
           };
            
-           if(DirectoryArray.length==0) node.innerHTML+= NO_DIRECTORIES_MSG + '<br/>' ;
+           if(DirectoryArray.length==0) {
+              var tn = document.createTextNode(NO_DIRECTORIES_MSG);
+              node.appendChild(tn);    
+           }
                  
         }
 
