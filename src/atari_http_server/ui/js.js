@@ -1,4 +1,4 @@
-        
+               
         var CURRENT_GEMDOS_PATH;
         var FILE_LIST_REF;
         var FILE_VIEW_REF;
@@ -7,18 +7,38 @@
         var DIR_LIST_VIEW_REF;
         var DRIVE_BUTTON_LIST_TAB_REF;
         var DRAGNDROP_AREA_REF;
-        var FILE_UPLOAD_PROGRESSBAR;
         var DEBUG_OUTPUT_REF;
         var GEMDOS_DRIVES_NUM;
         var INIT;
         var REQUEST_PENDING; 
+        var UPLOAD_INPROGRESS;
+        var UPLOAD_QUE_FINISHED;
+        
+        var UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT;
         var TS_LAST_RENDER;
 
         var UPLOAD_PROCESS_LIST;
-        var UPLOAD_FAILED_REQUEST_LIST;
-        
+        var UPLOAD_FAILED_REQUEST_LIST;        
+
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
+
+        var DBGLOGGER = (function () {
+          return {
+            log: function() {
+              var args = Array.prototype.slice.call(arguments);
+              console.log.apply(console, args);
+           },
+            warn: function() {
+            var args = Array.prototype.slice.call(arguments);
+            console.warn.apply(console, args);
+           },
+            error: function() {
+            var args = Array.prototype.slice.call(arguments);
+            console.error.apply(console, args);
+          }
+        }
+        }());
 
         function initInternals(){
           CURRENT_GEMDOS_PATH=null;
@@ -29,13 +49,14 @@
           DIR_LIST_VIEW_REF=null;
           DRIVE_BUTTON_LIST_TAB_REF=null;
           DRAGNDROP_AREA_REF=null;
-          FILE_UPLOAD_PROGRESSBAR=null;
           DEBUG_OUTPUT_REF=null;
           GEMDOS_DRIVES_NUM = 0;
           INIT = true;
           REQUEST_PENDING = false; 
           TS_LAST_RENDER = 0;
-
+          UPLOAD_INPROGRESS=false;
+          UPLOAD_QUE_FINISHED=false;
+          UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
           UPLOAD_PROCESS_LIST = [];
           UPLOAD_FAILED_REQUEST_LIST = [];
         }
@@ -62,7 +83,7 @@
   
           if (item.isFile) {
               item.file(function(file) {
-                console.log("File:", path + file.name);
+                DBGLOGGER.log("File:", path + file.name);
                 fileArray.push(file);
             });
             
@@ -77,69 +98,8 @@
           }
         }
 
-        function dnd_handleDrop(e) {
-         e.preventDefault();
-          
-          var fileList=[];
-          var items = e.dataTransfer.items;
+function uploadFiles(files) {
 
-          for (var i=0; i<items.length; ++i) {
-            var item = items[i].webkitGetAsEntry();
-              if (item) {
-                traverseFileTree(item, '', fileList);
-              }
-          }
-          
-          uploadFiles(fileList)
-        }
-
-        // progress bar handling
-        var uploadProgress = [];
-
-        function initializeProgress(numFiles) {
-          FILE_UPLOAD_PROGRESSBAR.value = 0;
-          uploadProgress = [];
-          
-          for(var i = 0; i < numFiles; ++i) {
-            uploadProgress.push(0);
-          }
-        }
-
-        function convertFileNameToGemdos(filename){
-          return filename;
-        }
-
-        function handleUploadReqStateChange(e){
-          if(this.readyState==4){
-            if(this.status == 200 || this.status == 201){
-               // Done. Inform the user
-               console.log("Success: upload done."); 
-               //TODO: refresh dir ui 
-              return;            
-            }else{
-                // Error. Inform the user
-                console.log("Error: upload failed." + this.responseText);  
-            }
-         }
-        }
-
-        function sum(total, value){
-          return total + value;
-        }
-
-        function updateProgress(fileNumber, percent) {
-          uploadProgress[fileNumber] = percent;
-          var total = (uploadProgress.reduce(sum,0) / uploadProgress.length);
-          FILE_UPLOAD_PROGRESSBAR.value = total;
-        }
-
-        function handleUploadProgress(e){
-          updateProgress(i, (e.loaded * 100.0 / e.total) || 100);
-        } 
-
-        function uploadFiles(files) {
-          initializeProgress(files.length); 
- 
           var gemdosName = null;
           
           for (var i = 0; i < files.length; ++i) {
@@ -154,53 +114,113 @@
             request = '/' + request;
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
-            console.log("UI: Upload request: " + request);  
-            
             var reader = new FileReader();
             
-            reader.onload = (function(request) {
+            if(reader!=null){
             
-            return function(event) {
-                var xhr = new XMLHttpRequest;
+              reader.onload = (function(request) {
+              return function(event) {
+                // insert request / data into a que
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
-                
-                xhr.onreadystatechange = handleUploadReqStateChange;
-                
-                xhr.upload.onprogress = function(i) {
-                  return function(evt) {
-                    updateProgress(i, (evt.loaded * 100 / evt.total) || 100);
-                  };
-                }(i);
-
-                xhr.open('POST', request, true);
-                xhr.send(blob);
+                var requestData={'request':request,'data':blob};
+                DBGLOGGER.log("UI: Que upload http request: ",request);
+                UPLOAD_PROCESS_LIST.push(requestData);
               };
-            })(request);
+              })(request);
 
-            reader.readAsArrayBuffer(files[i]);
+              reader.readAsArrayBuffer(files[i]);
+            }
           }
+        }
+
+        function dnd_handleDrop(e) {
+         e.preventDefault();
+         
+         var fileList=[];
+          
+          var items = e.dataTransfer.items;
+
+          for (var i=0; i<items.length; ++i) {
+            var item = items[i].webkitGetAsEntry();
+              if (item) {
+                traverseFileTree(item, '', fileList);
+              }
+          }
+          
+          uploadFiles(fileList)
+          
+        }
+
+        function convertFileNameToGemdos(filename){
+          return filename;
+        }
+
+        function httpReadyStateToStr(id){
+          switch(id){
+              case 0:   return 'UNSENT';break;            //Client has been created. open() not called yet.
+              case 1:   return 'OPENED';break;            //open() has been called.
+              case 2:   return 'HEADERS_RECEIVED';break;  //send() has been called, and headers and status are available.
+              case 3:   return 'LOADING';break;           //Downloading; responseText holds partial data.
+              case 4:   return 'DONE'; break;
+              default: return ''; break; 
+          };
+        }
+
+
+        function handleUploadReqStateChange(){
+
+          var httpReadyState = this.readyState;
+          var httpStatus = this.status;
+          var httpResponse = this.responseText;
+
+          DBGLOGGER.log("UPLOAD HTTP ready state/status ", httpReadyStateToStr(httpReadyState), httpStatus);
+
+          if(httpReadyState == 4){
+            if(httpStatus == 200 || httpStatus == 201){
+               // Done. Inform the user
+               DBGLOGGER.log("Success: upload done.");
+               //refreshCurrentDirView();
+          
+            }else{
+                // Error. Push currenntly processed and failed request object to fail que
+                UPLOAD_FAILED_REQUEST_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
+                DBGLOGGER.warn("Error: upload failed.", httpResponse, 'http status:', httpStatus);
+            }
+            
+            UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
+            UPLOAD_INPROGRESS = false;
+
+            if(UPLOAD_QUE_FINISHED==true){
+                UPLOAD_QUE_FINISHED=false;
+                refreshCurrentDirView();
+            }
+
+         }
+
         }
 
         function initDragAndDropControl(){
             // Prevent default drag behaviors
-            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_preventDefaults, false)   
-            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_preventDefaults, false)   
-            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_preventDefaults, false)   
-            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_preventDefaults, false)   
+            var useCapture = false;
+
+            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_preventDefaults, useCapture)   
+            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_preventDefaults, useCapture)   
+            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_preventDefaults, useCapture)   
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_preventDefaults, useCapture)   
             
-            document.body.addEventListener('dragenter', dnd_preventDefaults, false);
-            document.body.addEventListener('dragover', dnd_preventDefaults, false);
-            document.body.addEventListener('dragleave', dnd_preventDefaults, false);
-            document.body.addEventListener('drop', dnd_preventDefaults, false);
+            document.body.addEventListener('dragenter', dnd_preventDefaults, useCapture);
+            document.body.addEventListener('dragover', dnd_preventDefaults, useCapture);
+            document.body.addEventListener('dragleave', dnd_preventDefaults, useCapture);
+            document.body.addEventListener('drop', dnd_preventDefaults, useCapture);
 
             // Highlight drop area when item is dragged over it
-            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_highlight, false);
-            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_highlight, false);
-            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_unhighlight, false);
-            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_unhighlight, false);
+            DRAGNDROP_AREA_REF.addEventListener('dragenter', dnd_highlight, useCapture);
+            DRAGNDROP_AREA_REF.addEventListener('dragover', dnd_highlight, useCapture);
+            DRAGNDROP_AREA_REF.addEventListener('dragleave', dnd_unhighlight, useCapture);
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_unhighlight, useCapture);
 
             // Handle dropped files
-            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_handleDrop, false);
+            DRAGNDROP_AREA_REF.addEventListener('drop', dnd_handleDrop, useCapture);
         }
 
         function initGlobalReferences(){
@@ -212,7 +232,6 @@
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DIR_BREADCRUMB_REF = $id("dirBreadcrumb");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
-            FILE_UPLOAD_PROGRESSBAR = $id("progressBar");
             DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
@@ -351,6 +370,10 @@
               updateBreadcrumb(CURRENT_GEMDOS_PATH);
         }
 
+        function refreshCurrentDirView(){
+              var currDir = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
+              sendHttpReq(location.host + '/'+ currDir,'dir','GET', processDirectoryListReq);
+        }
 
 
         function requestChangeDir(dirStr){
@@ -473,8 +496,6 @@
 
           return false;
         }
-
-
 
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
@@ -721,11 +742,32 @@
         return ((tosTime<<16) | tosDate) >>> 0;
      }
 
+     function onUploadProgress(evt){
+        DBGLOGGER.log("File upload progress:",(evt.loaded * 100 / evt.total) || 100);
+     }
+
+     function sendUploadHttpRequest(uploadRequestObject){
+         // insert blob into http request que
+         var xhr = new XMLHttpRequest;
+         xhr.onreadystatechange = handleUploadReqStateChange;
+         xhr.upload.onprogress = onUploadProgress;
+         xhr.open('POST', uploadRequestObject.request, true);
+         xhr.send(uploadRequestObject.blob);
+         DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
+     }
+
     // Update 
     function update(progress) {
-        if(UPLOAD_PROCESS_LIST.length != 0){
-            // process upload requests
-            // TODO
+        if((UPLOAD_PROCESS_LIST.length != 0) && (UPLOAD_INPROGRESS!=true)){
+          UPLOAD_INPROGRESS = true; // get first from array
+          UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = UPLOAD_PROCESS_LIST.shift();
+          sendUploadHttpRequest(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
+
+          if(UPLOAD_PROCESS_LIST.length==0){
+            // pushed all requests, refresh UI view after request finishes
+            UPLOAD_QUE_FINISHED=true;
+          }
+
         }
     }
 
@@ -740,6 +782,7 @@
     }
 
     function startup(){
+        DBGLOGGER.log("[STARTUP] Page reload event");
         initInternals();
         initMainView();
         updateDriveListReq();
