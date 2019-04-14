@@ -104,6 +104,15 @@
     this.abort();
   }
 
+
+ function uploadFiles(files){
+
+    for (var i=0;i<files.length;++i){
+      addFileToUploadQue(files[i]);
+    }
+
+ }
+
   function addFileToUploadQue(file) {
 
           var gemdosName = null;
