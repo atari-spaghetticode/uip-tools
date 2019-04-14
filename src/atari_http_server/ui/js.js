@@ -78,37 +78,40 @@
           DRAGNDROP_AREA_REF.classList.remove('active')
         }
 
-        function traverseFileTree(item, path, fileArray) {
+        function traverseFileTree(item, path) {
           path = path || "";
   
           if (item.isFile) {
-              item.file(function(file) {
+              
+             item.file( function(file) {
                 DBGLOGGER.log("File:", path + file.name);
-                fileArray.push(file);
-            });
+                addFileToUploadQue(file);
+              });
             
           } else if (item.isDirectory) {
               var dirReader = item.createReader();
 
-              dirReader.readEntries(function(entries) {
-                for (var i=0; i<entries.length; ++i) {
-                  traverseFileTree(entries[i], path + item.name + "/", fileArray);
-                }
+              dirReader.readEntries( function(entries) {
+                    for (var i=0; i<entries.length; ++i) {
+                        traverseFileTree(entries[i], path + item.name + "/");
+                    }
               });
           }
         }
 
-function uploadFiles(files) {
+  function fileLoadOnError(event){
+    DBGLOGGER.log("UI: file load error. Abort.");
+    this.abort();
+  }
+
+  function addFileToUploadQue(file) {
 
           var gemdosName = null;
           var gemdosPath = null; 
           var current_date = new Date(); 
 
-          for (var i = 0; i < files.length; ++i) {
-            
-            // upload file request
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
-            gemdosName = convertFileNameToGemdos(files[i].webkitRelativePath);
+            gemdosName = convertFileNameToGemdos(file.webkitRelativePath);
             gemdosPath = CURRENT_GEMDOS_PATH + '/' + gemdosName;
 
             var request = sanitizeGemdosPath(gemdosPath);
@@ -117,47 +120,38 @@ function uploadFiles(files) {
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
             var reader = new FileReader();
+            
+            reader.onerror = fileLoadOnError;
+
             reader.onload = (function(gemdosPath, request) {
+              
               return function(event) {
+
                 // insert request / data into a que
-                var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
-                
                 var requestData = {
                   'filePath' : gemdosPath,
                   'request':request,
-                  'data':blob
+                  'data':event.target.result
                 };
 
                 DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
               }
+
             })(gemdosPath, request);
 
-              reader.readAsArrayBuffer(files[i]);
-
-              while(reader.readyState!=2){
-                DBGLOGGER.log(".");
-              } 
-            
-          }
+            reader.readAsArrayBuffer(file);
         }
-
+        
         function dnd_handleDrop(e) {
          e.preventDefault();
-         
-         var fileList=[];
-          
+
+          var path='';
           var items = e.dataTransfer.items;
 
           for (var i=0; i<items.length; ++i) {
             var item = items[i].webkitGetAsEntry();
-              if (item) {
-                traverseFileTree(item, '', fileList);
-              }
-          }
-          
-          uploadFiles(fileList)
-          
+            if (item != null) traverseFileTree(item, path);          }
         }
 
         function convertFileNameToGemdos(filename){
@@ -174,7 +168,6 @@ function uploadFiles(files) {
               default: return ''; break; 
           };
         }
-
 
         function handleUploadReqStateChange(){
 
@@ -576,7 +569,6 @@ function uploadFiles(files) {
         }
 
         // file view generation
-
         function handleFileOnClick(){
             requestFileDownload(this);
             return false;            
@@ -758,10 +750,12 @@ function uploadFiles(files) {
      function sendUploadHttpRequest(uploadRequestObject){
          // insert blob into http request que
          var xhr = new XMLHttpRequest;
+         var uploadBinaryBlob = new Blob([uploadRequestObject.data], {type: 'application/octet-binary'});
+
          xhr.onreadystatechange = handleUploadReqStateChange;
          xhr.upload.onprogress = onUploadProgress;
          xhr.open('POST', uploadRequestObject.request, true);
-         xhr.send(uploadRequestObject.blob);
+         xhr.send(uploadBinaryBlob);
          DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
      }
 
