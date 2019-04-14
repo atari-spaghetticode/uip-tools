@@ -101,16 +101,18 @@
 function uploadFiles(files) {
 
           var gemdosName = null;
-          
+          var gemdosPath = null; 
+          var current_date = new Date(); 
+
           for (var i = 0; i < files.length; ++i) {
+            
             // upload file request
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
             gemdosName = convertFileNameToGemdos(files[i].webkitRelativePath);
+            gemdosPath = CURRENT_GEMDOS_PATH + '/' + gemdosName;
 
-            var request =  CURRENT_GEMDOS_PATH + '/' + gemdosName;
-            request = sanitizeGemdosPath(request);
+            var request = sanitizeGemdosPath(gemdosPath);
             
-            var current_date = new Date();
             request = '/' + request;
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
@@ -122,8 +124,14 @@ function uploadFiles(files) {
               return function(event) {
                 // insert request / data into a que
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
-                var requestData={'request':request,'data':blob};
-                DBGLOGGER.log("UI: Que upload http request: ",request);
+                
+                var requestData={
+                  'filePath' : gemdosPath,
+                  'request':request,
+                  'data':blob
+                };
+
+                DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
               };
               })(request);
@@ -176,15 +184,15 @@ function uploadFiles(files) {
           DBGLOGGER.log("UPLOAD HTTP ready state/status ", httpReadyStateToStr(httpReadyState), httpStatus);
 
           if(httpReadyState == 4){
+            
             if(httpStatus == 200 || httpStatus == 201){
                // Done. Inform the user
-               DBGLOGGER.log("Success: upload done.");
-               //refreshCurrentDirView();
-          
+               DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
             }else{
                 // Error. Push currenntly processed and failed request object to fail que
                 UPLOAD_FAILED_REQUEST_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
-                DBGLOGGER.warn("Error: upload failed.", httpResponse, 'http status:', httpStatus);
+                DBGLOGGER.warn("Error: upload failed of ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath, 
+                  httpResponse, 'http status:', httpStatus);
             }
             
             UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
