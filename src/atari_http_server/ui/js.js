@@ -111,7 +111,12 @@
           var current_date = new Date(); 
 
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
-            gemdosName = convertFileNameToGemdos(file.webkitRelativePath);
+            if(file.webkitRelativePath === ""){
+              gemdosName = convertFileNameToGemdos(file.name);
+            }else{
+              gemdosName = convertFileNameToGemdos(file.webkitRelativePath);
+            }
+
             gemdosPath = CURRENT_GEMDOS_PATH + '/' + gemdosName;
 
             var request = sanitizeGemdosPath(gemdosPath);
@@ -193,6 +198,8 @@
             UPLOAD_INPROGRESS = false;
 
             if(UPLOAD_QUE_FINISHED==true){
+                DBGLOGGER.log("UI: Finished upload que. Sending refresh view request.");
+           
                 UPLOAD_QUE_FINISHED=false;
                 refreshCurrentDirView();
             }
