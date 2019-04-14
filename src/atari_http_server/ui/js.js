@@ -117,15 +117,12 @@ function uploadFiles(files) {
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
             var reader = new FileReader();
-            
-            if(reader!=null){
-            
-              reader.onload = (function(request) {
+            reader.onload = (function(gemdosPath, request) {
               return function(event) {
                 // insert request / data into a que
                 var blob = new Blob([event.target.result], {type: 'application/octet-binary'});
                 
-                var requestData={
+                var requestData = {
                   'filePath' : gemdosPath,
                   'request':request,
                   'data':blob
@@ -133,11 +130,15 @@ function uploadFiles(files) {
 
                 DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
-              };
-              })(request);
+              }
+            })(gemdosPath, request);
 
               reader.readAsArrayBuffer(files[i]);
-            }
+
+              while(reader.readyState!=2){
+                DBGLOGGER.log(".");
+              } 
+            
           }
         }
 
