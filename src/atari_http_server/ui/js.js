@@ -19,6 +19,7 @@
 
         var UPLOAD_PROCESS_LIST;
         var UPLOAD_FAILED_REQUEST_LIST;        
+        var UPLOAD_COMPLETED_LIST;        
 
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
@@ -59,6 +60,7 @@
           UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
           UPLOAD_PROCESS_LIST = [];
           UPLOAD_FAILED_REQUEST_LIST = [];
+          UPLOAD_COMPLETED_LIST = [];
         }
 
         function $id(id) {
@@ -196,6 +198,8 @@
             if(httpStatus == 200 || httpStatus == 201){
                // Done. Inform the user
                DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
+               UPLOAD_COMPLETED_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filepath);
+
             }else{
                 // Error. Push currenntly processed and failed request object to fail que
                 UPLOAD_FAILED_REQUEST_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
