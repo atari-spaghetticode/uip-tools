@@ -7,6 +7,7 @@
         var DIR_LIST_VIEW_REF;
         var DRIVE_BUTTON_LIST_TAB_REF;
         var DRAGNDROP_AREA_REF;
+        var UPLOAD_STATEINFO_REF;
         var DEBUG_OUTPUT_REF;
         var GEMDOS_DRIVES_NUM;
         var INIT;
@@ -50,6 +51,7 @@
           DIR_LIST_VIEW_REF=null;
           DRIVE_BUTTON_LIST_TAB_REF=null;
           DRAGNDROP_AREA_REF=null;
+          UPLOAD_STATEINFO_REF=null;
           DEBUG_OUTPUT_REF=null;
           GEMDOS_DRIVES_NUM = 0;
           INIT = true;
@@ -194,11 +196,11 @@
           DBGLOGGER.log("UPLOAD HTTP ready state/status ", httpReadyStateToStr(httpReadyState), httpStatus);
 
           if(httpReadyState == 4){
-            
+
             if(httpStatus == 200 || httpStatus == 201){
                // Done. Inform the user
                DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
-               UPLOAD_COMPLETED_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filepath);
+               UPLOAD_COMPLETED_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
 
             }else{
                 // Error. Push currenntly processed and failed request object to fail que
@@ -254,6 +256,7 @@
             DIR_LIST_VIEW_REF = $id("directoryListView");
             DIR_BREADCRUMB_REF = $id("dirBreadcrumb");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
+            UPLOAD_STATEINFO_REF = $id("uploadStateInformation");
             DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
@@ -779,8 +782,60 @@
          DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
      }
 
+     // update status info     
+     function updateUploadStateInformation(dt){
+
+
+      if(UPLOAD_PROCESS_LIST==null||
+        UPLOAD_FAILED_REQUEST_LIST==null||
+        UPLOAD_COMPLETED_LIST==null) return;
+
+      while (UPLOAD_STATEINFO_REF.hasChildNodes()) {
+          UPLOAD_STATEINFO_REF.removeChild(UPLOAD_STATEINFO_REF.lastChild);
+      }
+
+      var divProgress = document.createElement("div");
+      divProgress.style.width = "100%";
+      divProgress.style.minHeight = "100px";
+      divProgress.style.background = "blue";
+      divProgress.style.color = "white";
+      divProgress.innerHTML = "Processing que:<br/>";
+
+      var divFailed = document.createElement("div");
+      divFailed.style.width = "100%";
+      divFailed.style.minHeight = "100px";
+      divFailed.style.background = "red";
+      divFailed.style.color = "white";
+      divFailed.innerHTML = "Failed:<br/>";
+      
+      var divCompleted = document.createElement("div");
+      divCompleted.style.width = "100%";
+      divCompleted.style.minHeight = "100px";
+      divCompleted.style.background = "green";
+      divCompleted.style.color = "white";
+      divCompleted.innerHTML = "Completed:<br/>";
+      
+      UPLOAD_STATEINFO_REF.appendChild(divProgress);
+      UPLOAD_STATEINFO_REF.appendChild(divFailed);
+      UPLOAD_STATEINFO_REF.appendChild(divCompleted);      
+
+      for(var i=0;i<UPLOAD_PROCESS_LIST.length;++i){
+        divProgress.innerHTML +=  UPLOAD_PROCESS_LIST[i].filePath+"<br/>";      
+       }  
+       
+       for(var i=0;i<UPLOAD_FAILED_REQUEST_LIST.length;++i){
+        divFailed.innerHTML +=  UPLOAD_FAILED_REQUEST_LIST[i].filePath+"<br/>";      
+       
+       }  
+       
+       for(var i=0;i<UPLOAD_COMPLETED_LIST.length;++i){
+        divCompleted.innerHTML +=  UPLOAD_COMPLETED_LIST[i]+"<br/>";             
+       }  
+
+     } 
+
     // Update 
-    function update(progress) {
+    function update(dt) {
         if((UPLOAD_PROCESS_LIST.length != 0) && (UPLOAD_INPROGRESS!=true)){
           UPLOAD_INPROGRESS = true; // get first from array
           UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = UPLOAD_PROCESS_LIST.shift();
@@ -794,12 +849,11 @@
         }
     }
 
-    function draw() {}
 
     function mainLoop(timestamp) {
-      var progress = timestamp - TS_LAST_RENDER;
-      update(progress);
-      draw();
+      var dt = timestamp - TS_LAST_RENDER;
+      update(dt);
+      updateUploadStateInformation(dt);
       TS_LAST_RENDER = timestamp
       window.requestAnimationFrame(mainLoop)
     }
