@@ -246,3 +246,24 @@ p {
 div #fileElem {
   display: none;
 }
+
+.divHorizontal {
+  width :33%;
+  min-height: 100px;
+  float:left;
+  overflow-x:hidden;
+  overflow-y:auto; background : blue;
+  color : white;
+}
+
+.progressQue{
+  background: blue;
+}
+
+.failedQue {
+  background: red;
+}
+
+.completedList{
+  background: green;
+}

@@ -795,30 +795,22 @@
       }
 
       var divProgress = document.createElement("div");
-      divProgress.style.width = "33%";
-      divProgress.style.minHeight = "100px";
-      divProgress.style.float='left';
-      divProgress.style.overflowY = 'auto';
-      divProgress.style.background = "blue";
-      divProgress.style.color = "white";
+      divProgress.id = 'progressQue';
+
+      divProgress.classList.add('divHorizontal');
+      divProgress.classList.add('progressQue');
       divProgress.innerHTML = "Processing que:<br/>";
       
       var divFailed = document.createElement("div");
-      divFailed.style.width = "33%";
-      divFailed.style.minHeight = "100px";
-      divFailed.style.overflowY = 'auto';
-      divFailed.style.background = "red";
-      divFailed.style.float='left';       
-      divFailed.style.color = "white";
+      divFailed.id = 'failedQue';
+      divFailed.classList.add('divHorizontal');
+      divFailed.classList.add('failedQue');
       divFailed.innerHTML = "Failed:<br/>";      
       
       var divCompleted = document.createElement("div");
-      divCompleted.style.width = "33%";
-      divCompleted.style.float = 'left';      
-      divCompleted.style.overflowY = 'auto';
-      divCompleted.style.minHeight = "100px";
-      divCompleted.style.background = "green";
-      divCompleted.style.color = "white";
+      divCompleted.id = 'completedList';
+      divCompleted.classList.add('divHorizontal');
+      divCompleted.classList.add('completedList');
       divCompleted.innerHTML = "Completed:<br/>";
       
       UPLOAD_STATEINFO_REF.appendChild(divProgress);
