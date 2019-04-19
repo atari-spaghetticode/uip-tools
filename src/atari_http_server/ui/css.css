@@ -247,23 +247,41 @@ div #fileElem {
   display: none;
 }
 
+div #lowerBar{
+  width: 100%;
+  height: 100%;
+  bottom: 25px;
+  overflow-x: hidden;
+  overflow-y: auto; 
+  background: black;
+}
+
 .divHorizontal {
   width :33%;
-  min-height: 100px;
+  min-height: 250px;
   float:left;
-  overflow-x:hidden;
-  overflow-y:auto; background : blue;
   color : white;
+  padding-bottom:25px;
+  padding-left:2px;
+  font-size: 9px;
+  font-family: sans-serif;
+  display:block;
+}
+
+.uploadStateInfo{
+  background: black;
+  float: left; 
+  width: 66%;
 }
 
 .progressQue{
-  background: blue;
+   background: black;
 }
 
 .failedQue {
-  background: red;
+   background: black;
 }
 
 .completedList{
-  background: green;
+ background: black;
 }

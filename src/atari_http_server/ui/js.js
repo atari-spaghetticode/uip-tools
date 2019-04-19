@@ -785,7 +785,6 @@
      // update status info     
      function updateUploadStateInformation(dt){
 
-
       if(UPLOAD_PROCESS_LIST==null||
         UPLOAD_FAILED_REQUEST_LIST==null||
         UPLOAD_COMPLETED_LIST==null) return;
@@ -799,19 +798,19 @@
 
       divProgress.classList.add('divHorizontal');
       divProgress.classList.add('progressQue');
-      divProgress.innerHTML = "Processing que:<br/>";
+      divProgress.innerHTML = "<h3>Processing que:</h3>";
       
       var divFailed = document.createElement("div");
       divFailed.id = 'failedQue';
       divFailed.classList.add('divHorizontal');
       divFailed.classList.add('failedQue');
-      divFailed.innerHTML = "Failed:<br/>";      
+      divFailed.innerHTML = "<h3>Failed:</h3>";      
       
       var divCompleted = document.createElement("div");
       divCompleted.id = 'completedList';
       divCompleted.classList.add('divHorizontal');
       divCompleted.classList.add('completedList');
-      divCompleted.innerHTML = "Completed:<br/>";
+      divCompleted.innerHTML = "<h3>Completed:</h3>";
       
       UPLOAD_STATEINFO_REF.appendChild(divProgress);
       UPLOAD_STATEINFO_REF.appendChild(divFailed);
