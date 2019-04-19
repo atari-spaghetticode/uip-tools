@@ -67,7 +67,15 @@ let img_file_app_src =
                       ondragenter="event.preventDefault()" class="clearfix">
 
   <div id="fileManagementBlock">
-    <div id="directoryListView" class="column menu"></div>
+    <div id="directoryListView" class="column menu">
+      <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" style="margin-top:8px;margin-left:15px; margin-right: auto;">
+
+      <input type="hidden" name="cmd" value="_s-xclick" />
+      <input type="hidden" name="hosted_button_id" value="L766684U4EYJW" />
+      <input type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+      <img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1" />
+    </form>
+    </div>
   
     <div id="directoryView" class="column content">
       <div id="dirBreadcrumb"></div>
@@ -90,7 +98,7 @@ let img_file_app_src =
   </div>
 </div>  
 <footer>
-uIPTool ver. VERSION by Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target="_blank">Official uIPtool project page</a>UI design/programming: <a href="https://nokturnal.pl" target="_blank">[nokturnal]</a>, icons by: <a href="https://www.famfamfam.com/lab/icons/silk/" target="_blank">FamFamFam</a>
+uIPTool ver. VERSION by Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target="_blank">Official uIPtool project page</a> UI design/programming: <a href="https://nokturnal.pl" target="_blank">[nokturnal]</a>, icons by: <a href="https://www.famfamfam.com/lab/icons/silk/" target="_blank">FamFamFam</a>
 </footer>
 
 #if RELEASE!=0

@@ -587,7 +587,7 @@
             DIR_LIST_REF=null;
           }
 
-          DIR_LIST_VIEW_REF.appendChild(div);
+          DIR_LIST_VIEW_REF.insertBefore(div, DIR_LIST_VIEW_REF.childNodes[0]); 
           DIR_LIST_REF=$id("directoryList");
         }
 
