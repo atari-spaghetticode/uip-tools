@@ -73,22 +73,24 @@ let img_file_app_src =
       <div id="dirBreadcrumb"></div>
       <div class="fileActionsView" id="fileActionsView"> <div/>
       <div class="fileView" id="fileView"> </div>
-      <div id="fileDragAndDrop">
-          <form class="dragAndDropForm">
-            <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
-            <input type="file" id="fileElem" multiple onchange="uploadFiles(this.files)" />
-            <label class="button" for="fileElem">Select files to upload</label>
-          </form>
-       </div>
-      <div id="uploadStateInformation"></div>
-
     </div>
   </div>
 </div>
 </div>
 </div>
+
+<div id="lowerBar">
+<div id="uploadStateInformation" style="float: left; width: 66%;"></div>
+<div id="fileDragAndDrop" style="float: left; width: 33%;">
+  <form class="dragAndDropForm">
+    <p>Upload multiple files with the file dialog or by dragging and dropping files onto the dashed region</p>
+    <input type="file" id="fileElem" multiple onchange="uploadFiles(this.files)" />
+    <label class="button" for="fileElem">Select files to upload</label>
+   </form>
+  </div>
+</div>  
 <footer>
-uIPTool ver. VERSION by Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target="_blank">Official uIPtool project page</a>UI design/programming: <a href="https://nokturnal.pl" target="_blank">[nokturnal]</a>, icons by: <a href="https://www.famfamfam.com/lab/icons/silk/" target="_blank">FamFamFam</a>  
+uIPTool ver. VERSION by Mystic Bytes &copy;2019, <a href="https://bitbucket.org/sqward/uip-tools" target="_blank">Official uIPtool project page</a>UI design/programming: <a href="https://nokturnal.pl" target="_blank">[nokturnal]</a>, icons by: <a href="https://www.famfamfam.com/lab/icons/silk/" target="_blank">FamFamFam</a>
 </footer>
 
 #if RELEASE!=0

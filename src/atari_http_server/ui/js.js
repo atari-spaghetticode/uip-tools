@@ -795,21 +795,27 @@
       }
 
       var divProgress = document.createElement("div");
-      divProgress.style.width = "100%";
+      divProgress.style.width = "33%";
       divProgress.style.minHeight = "100px";
+      divProgress.style.float='left';
+      divProgress.style.overflowY = 'auto';
       divProgress.style.background = "blue";
       divProgress.style.color = "white";
       divProgress.innerHTML = "Processing que:<br/>";
-
+      
       var divFailed = document.createElement("div");
-      divFailed.style.width = "100%";
+      divFailed.style.width = "33%";
       divFailed.style.minHeight = "100px";
+      divFailed.style.overflowY = 'auto';
       divFailed.style.background = "red";
+      divFailed.style.float='left';       
       divFailed.style.color = "white";
-      divFailed.innerHTML = "Failed:<br/>";
+      divFailed.innerHTML = "Failed:<br/>";      
       
       var divCompleted = document.createElement("div");
-      divCompleted.style.width = "100%";
+      divCompleted.style.width = "33%";
+      divCompleted.style.float = 'left';      
+      divCompleted.style.overflowY = 'auto';
       divCompleted.style.minHeight = "100px";
       divCompleted.style.background = "green";
       divCompleted.style.color = "white";
