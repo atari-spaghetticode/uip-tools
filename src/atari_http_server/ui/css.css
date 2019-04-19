@@ -70,11 +70,12 @@ a:active {
         overflow-y:auto;
     }
 
-    div #directoryListView{
+    div #directoryListView {
         width:15%;
         height:100%;
         overflow-x:hidden;
         overflow-y:auto;
+        padding-top:2em;
     }
 
     div  #directoryView {
