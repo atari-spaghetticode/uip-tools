@@ -37,6 +37,8 @@ a:active {
     footer {
         width:100%;
         height:auto;
+        position: fixed; 
+        bottom:0px;
         float:none;
         background:black;
         color:white;    
@@ -50,6 +52,7 @@ a:active {
       width:100%;
       float:none;
       background:black;
+      bottom:0px;
       clear:both;
       font-size: x-small;
       color:white;
