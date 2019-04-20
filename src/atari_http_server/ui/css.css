@@ -219,11 +219,13 @@ div #fileDragAndDrop .button {
   background-color: #728276;
   color: white;
   border: 0;
+  padding: 5px;
   height: 2em;
 }
 
-div #fileDragAndDrop .button{
+div #fileDragAndDrop .button:hover{
   background-color: #ddd;
+  cursor: pointer;
 }
 
 p {
