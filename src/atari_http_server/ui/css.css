@@ -39,13 +39,20 @@ a:active {
     }   
 
     footer {
-        width:100%;
-        height:2em;
+        width: 100%;
+        height: 20vh;
+        float:none;
         position: fixed; 
         bottom:0px;
-        float:none;
+        border:0px;
+        padding:2px;
         background:black;
         color:white;    
+        clear:both;
+    }
+
+    footer .credits {
+        height:2em;
         border:0px;
         padding:2px;
         clear:both;
@@ -63,22 +70,22 @@ a:active {
     }
 
     div #mainSection{
-      height: 80vh; 
+      height: auto; 
     }
 
     div #fileManagementBlock{
         width:100%;
-        height: 100%;
+        height: 76vh;
         overflow-x:hidden;
         overflow-y:auto;
     }
 
     div #directoryListView {
-        width:185px;
-        height:100%;
-        overflow-x:hidden;
-        overflow-y:auto;
-        padding-top:18px;
+       width:185px;
+       height: 76vh;
+       overflow-x:hidden;
+       overflow-y:auto;
+       padding-top:18px;
     }
 
     div  #directoryView {
@@ -105,12 +112,12 @@ a:active {
 
     .menu {
         width: 25%;
-        height: 100vh;
+        height: 65vh;
     }
 
     .content {
         width: 75%;
-        height: 100vh;
+        height: 65vh;
     }
 
     .clearfix::after {
@@ -203,6 +210,11 @@ div #fileDragAndDrop.highlight {
   border-color: purple;
 }
 
+
+div #fileDragAndDrop .button{
+background-color: pink;  
+}
+
 p {
   margin-top: 0;
 }
@@ -270,47 +282,50 @@ div #fileElem {
 
 div #lowerBar{
   width: 100%;
-  height: 20vh;
-  overflow-x: hidden;
-  overflow-y: auto; 
+  height: 400px;
+  overflow: hidden;
   background: black;
-  position: fixed; 
-  bottom:0px;
+  margin: 0px;
+  padding: 0px;
 }
 
-.divHorizontal {
-  width :33%;
-  min-height: 250px;
-  max-height:400px;
+.transferStateColumn {
+  width: 33%;
   float:left;
-  color : white;
-  padding-bottom:25px;
-  padding-left:2px;
+  min-height: 400px;
+  max-height: 400px;
+  padding-bottom: 25px;
+  padding-left: 2px;
+  color: white;
+  display: block;
   font-size: 9px;
   font-family: sans-serif;
-  display:block;
-  overflow:auto;
 }
 
 .uploadStateInfo{
-  background: black;
-  float: left; 
   width: 66%;
+  float: left; 
+  background: black;
+  height:auto;
 }
 
 .progressQue{
    background: black;
+   overflow-x:hidden;
+   overflow-y:auto;
 }
 
 .failedQue {
    background: black;
-}
+   overflow-x:hidden;
+   overflow-y:auto;
+ }
 
 .completedList{
- background: black;
+  background: black;
+  overflow:auto;
 }
 
 .ppDonate{
   padding-top:5px;
 }
-

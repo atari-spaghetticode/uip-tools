@@ -776,7 +776,7 @@
      }
 
      function onUploadProgress(evt){
-        DBGLOGGER.log("File upload progress:",(evt.loaded * 100 / evt.total) || 100);
+        DBGLOGGER.log("File: ",UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath,", upload progress: ",(evt.loaded * 100 / evt.total) || 100);
      }
 
      function sendUploadHttpRequest(uploadRequestObject){
@@ -805,19 +805,19 @@
       var divProgress = document.createElement("div");
       divProgress.id = 'progressQue';
 
-      divProgress.classList.add('divHorizontal');
+      divProgress.classList.add('transferStateColumn');
       divProgress.classList.add('progressQue');
       divProgress.innerHTML = "<h3>Processing que:</h3>";
       
       var divFailed = document.createElement("div");
       divFailed.id = 'failedQue';
-      divFailed.classList.add('divHorizontal');
+      divFailed.classList.add('transferStateColumn');
       divFailed.classList.add('failedQue');
       divFailed.innerHTML = "<h3>Failed:</h3>";      
       
       var divCompleted = document.createElement("div");
       divCompleted.id = 'completedList';
-      divCompleted.classList.add('divHorizontal');
+      divCompleted.classList.add('transferStateColumn');
       divCompleted.classList.add('completedList');
       divCompleted.innerHTML = "<h3>Completed:</h3>";
       
