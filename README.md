@@ -40,11 +40,19 @@ This cuts about 100KB of the executable size.
 
 If UPX is detected during the build then it will be used to compress the resulting in even smaller binary.
 
-# User Interface
+# Web interface
+Interface relies on HTML5, so only modern browsers are supported (Firefox / Chrome). 
 
 ![uIP web interface](docs/uipToolScrn.png) 
 
-TBD
+In upper part there is a list of GEMDOS drives detected. Clicking on them changes current GEMDOS drive and displays it's root directory. 
+By default "C" drive is displayed, if there is no hard drive, only floppy drives are displayed and "A" drive is set as default active drive.
+Below hard drive list on the left side there is list of folders, on the right side there is a list of files in current path. 
+By clicking on directory in left panel or on breadcrumb elements above file view user can navigate through folder hierarchy on remote Atari machine. By clicking on file download to PC is initiated.
+
+Bottom part is divided into two parts. 
+Files and whole folders can be drag and dropped onto bottom / right part to initiate upload to currently set GEMDOS path. Alternatively clicking "Select files to upload" button will bring up system file selector, so desired files can be selected and uploaded.
+Right portion of bottom panel displays the processing of upload que, shows failed and completed transfers.
 
 # Available REST API
 
