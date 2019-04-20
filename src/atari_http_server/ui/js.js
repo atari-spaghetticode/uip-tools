@@ -8,6 +8,7 @@
         var DRIVE_BUTTON_LIST_TAB_REF;
         var DRAGNDROP_AREA_REF;
         var UPLOAD_STATEINFO_REF;
+        var FILE_UPLOAD_STATE_INFO_REF;
         var DEBUG_OUTPUT_REF;
         var GEMDOS_DRIVES_NUM;
         var INIT;
@@ -52,6 +53,7 @@
           DRIVE_BUTTON_LIST_TAB_REF=null;
           DRAGNDROP_AREA_REF=null;
           UPLOAD_STATEINFO_REF=null;
+          FILE_UPLOAD_STATE_INFO_REF=null;
           DEBUG_OUTPUT_REF=null;
           GEMDOS_DRIVES_NUM = 0;
           INIT = true;
@@ -201,12 +203,13 @@
                // Done. Inform the user
                DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
                UPLOAD_COMPLETED_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
-
-            }else{
+              destroyProgressBar();
+            } else {
                 // Error. Push currenntly processed and failed request object to fail que
                 UPLOAD_FAILED_REQUEST_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
                 DBGLOGGER.warn("Error: upload failed of ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath, 
                   httpResponse, 'http status:', httpStatus);
+                destroyProgressBar();
             }
             
             UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
@@ -257,6 +260,8 @@
             DIR_BREADCRUMB_REF = $id("dirBreadcrumb");
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
             UPLOAD_STATEINFO_REF = $id("uploadStateInformation");
+            FILE_UPLOAD_STATE_INFO_REF = $id("fileTransferProgressInfo");
+
             DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
@@ -782,8 +787,33 @@
         return ((tosTime<<16) | tosDate) >>> 0;
      }
 
+     function createProgressBar(node, filename){
+        var progress = document.createElement("progress");
+        var span = document.createElement("span");
+        var textNode = document.createTextNode(filename);
+
+        progress.id = "fileUploadProgresBar";
+        span.appendChild(textNode);
+        node.appendChild(progress);
+        node.appendChild(span);
+    
+        progress.value = 0;
+        progress.max=100;
+     }
+
+     function destroyProgressBar(){
+        while (FILE_UPLOAD_STATE_INFO_REF.hasChildNodes()) {
+          FILE_UPLOAD_STATE_INFO_REF.removeChild(FILE_UPLOAD_STATE_INFO_REF.lastChild);
+        }
+     }
+
+
      function onUploadProgress(evt){
-        DBGLOGGER.log("File: ",UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath,", upload progress: ",(evt.loaded * 100 / evt.total) || 100);
+
+        var progressBar = $id("fileUploadProgresBar");
+        progressBar.value = evt.loaded * 100 / evt.total;
+
+        DBGLOGGER.log("File: ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath,", upload progress: ",(evt.loaded * 100 / evt.total) || 100);
      }
 
      function sendUploadHttpRequest(uploadRequestObject){
@@ -795,6 +825,10 @@
          xhr.upload.onprogress = onUploadProgress;
          xhr.open('POST', uploadRequestObject.request, true);
          xhr.send(uploadBinaryBlob);
+
+         // create progress bar 
+         createProgressBar(FILE_UPLOAD_STATE_INFO_REF, uploadRequestObject.filePath);
+
          DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
      }
 
@@ -838,7 +872,6 @@
        
        for(var i=0;i<UPLOAD_FAILED_REQUEST_LIST.length;++i){
         divFailed.innerHTML +=  UPLOAD_FAILED_REQUEST_LIST[i].filePath+"<br/>";      
-       
        }  
        
        for(var i=0;i<UPLOAD_COMPLETED_LIST.length;++i){
@@ -852,13 +885,10 @@
      }
 
      function requeFailedTransfers(){
-
       for(var i=0;i<UPLOAD_FAILED_REQUEST_LIST.lenght;++i){
         UPLOAD_PROCESS_LIST.push(UPLOAD_FAILED_REQUEST_LIST[i]);
       }
-
       UPLOAD_FAILED_REQUEST_LIST=[];
-      
      }
 
     // Update 
@@ -875,7 +905,6 @@
 
         }
     }
-
 
     function mainLoop(timestamp) {
       var dt = timestamp - TS_LAST_RENDER;
