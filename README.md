@@ -15,51 +15,11 @@ You can support development of this tool via PayPal:
 
 [TOC]
 
+# Downloads:
+
+ [Files can be downloaded here](https://bitbucket.org/sqward/uip-tools/downloads/)
 
 
-
-
-# Building
-
-## Prerequisites
-
-In order to build **uiptool** following prerequisites are needed:
-
-* Cygwin or Linux environment
-* m68k-atari-mint cross compiler (http://vincent.riviere.free.fr/soft/m68k-atari-mint)
-* vasm m68k cross compiler (http://sun.hasenbraten.de/vasm)
-* Scons
-* xxd
-
-For CSS/JS automatic minificationin release builds nodeJS version 11.9.0 is required (https://nodejs.org/en/) with the following packages installed:
-
-
-```
-npm install uglify-js -g
-npm install less -g
-```
-
-## Invoking the build system
-
-then finally building the source with following commands:
-
-```
-bash# mkdir uip-tools.build
-bash# cd uip-tools.build
-bash# scons -C ../uip-tools
-```
-
-## Optional tools and dependencies
-
-It's possible to build the project with libcmini (https://github.com/mfro0/libcmini) like follows:
-
-```
-bash#  LIBCMINI=/path/libcmini/libcmini/build/ scons -C ../uip-tools
-```
-
-This cuts about 100KB of the executable size.
-
-If UPX is detected during the build then it will be used to compress the resulting in even smaller binary. If environment variable **NOUPX** is present then UPX will not be used.
 
 # Requirements
 
@@ -91,7 +51,7 @@ Right portion of bottom panel displays the processing of upload que, shows faile
 
 ## DHCP and STATIC IP Operating Mode
 
-**uiptool** can operate in two modes: **DHCP** or **STATIC IP** modes. In general it is advised to use **DHCP** mode as this requires no additional configuration from the user and network access will be configured automatically. However, for special purposes, **STATIC IP** mode has been added. This can be useful when no DHCP server is available. For example, if there's no router available and user wants to transfer files directly from their laptop. This should work fine if both machines are manually configured and a crossover cable or [auto MDI-X](https://en.wikipedia.org/wiki/Auto_MDI-X) is available.
+**Uiptool** can operate in two modes: **DHCP** or **STATIC IP** modes. In general it is advised to use **DHCP** mode as this requires no additional configuration from the user and network access will be configured automatically. However, for special purposes, **STATIC IP** mode has been added. This can be useful when no DHCP server is available. For example, if there's no router available and user wants to transfer files directly from their laptop. This should work fine if both machines are manually configured and a crossover cable or [auto MDI-X](https://en.wikipedia.org/wiki/Auto_MDI-X) is available.
 
 Once **STATIC IP** is toggled you should see something like this:
 
@@ -103,7 +63,7 @@ To toggle between **DHCP** and **STATIC IP** use **F1** key. When toggled for th
 
 In addition to the HTML based user interface, **uiptool** allows you to use a simple **API** to do a range of operations. All examples are provided as curl shell invocations.
 
-### Upload a file
+### Upload a File
 
 ```
 curl -0T filename.tos 192.168.1.1/d/filename.tos
@@ -111,7 +71,7 @@ curl -0T filename.tos 192.168.1.1/d/filename.tos
 
 Note that you need to specify not only destination folder but also a file name!
 
-### Download a file
+### Download a File
 
 ```
 curl -0 192.168.1.1/c/filename.tos
@@ -125,26 +85,26 @@ curl -0 192.168.1.1/c/filename.tos?run="command line"
 
 The executable needs to be already present on the recent machine.
 
-### Delete a file:
+### Delete a File:
 
 ```
 curl -0X DELETE 192.168.1.1/c/filename.tos
 ```
 
-### Create a folder
+### Create a Folder
 
 ```
 curl -0 192.168.1.1/c/foldername?newfolder
 ```
 
-### Request file info or directory listing in JSON format
+### Request File Info or Directory Listing in JSON Format
 
 ```
 curl -0 192.168.1.1/c/filename.tos?dir
 curl -0 192.168.1.1/c/foldername?dir
 ```
 
-## Usage as a development tool
+## Usage as a Development Tool
 
 Two convenience scripts are provided with **uiptool**:
 
@@ -160,7 +120,11 @@ Two convenience scripts are provided with **uiptool**:
             uip-run.py host/drive/path/binary.tos
   ```
 
-These two scripts used together can organise deployment and execution of local builds and significantly speed up development process.
+These two scripts used together can organize deployment and execution of local builds and significantly speed up development process.
+
+Scripts can be found [here](https://bitbucket.org/sqward/uip-tools/src/master/scripts/)
+
+
 
 # Performance
 
@@ -176,6 +140,47 @@ Transfer performance can vary greatly depending on machine configuration. Hard d
 ## Impact of USB drivers on uiptool performance
 
 Because **USB** is rather demanding protocol for an old systems like TOS machines, running **USB** drivers for **NetUSBee** alongside **uiptool** will reduce network transfers by as much as 40%! It is strongly advised users do not use these drivers when using **uiptool** for **optimal performance**.  
+
+# Building
+
+## Prerequisites
+
+In order to build **uiptool** following prerequisites are needed:
+
+- Cygwin or Linux environment
+- m68k-atari-mint cross compiler (http://vincent.riviere.free.fr/soft/m68k-atari-mint)
+- vasm m68k cross compiler (http://sun.hasenbraten.de/vasm)
+- Scons
+- xxd
+
+For CSS/JS automatic minificationin release builds nodeJS version 11.9.0 is required (https://nodejs.org/en/) with the following packages installed:
+
+```
+npm install uglify-js -g
+npm install less -g
+```
+
+## Invoking the build system
+
+then finally building the source with following commands:
+
+```
+bash# mkdir uip-tools.build
+bash# cd uip-tools.build
+bash# scons -C ../uip-tools
+```
+
+## Optional tools and dependencies
+
+It's possible to build the project with libcmini (https://github.com/mfro0/libcmini) like follows:
+
+```
+bash#  LIBCMINI=/path/libcmini/libcmini/build/ scons -C ../uip-tools
+```
+
+This cuts about 100KB of the executable size.
+
+If UPX is detected during the build then it will be used to compress the resulting in even smaller binary. If environment variable **NOUPX** is present then UPX will not be used.
 
 # Thanks and acknowledgments
 
