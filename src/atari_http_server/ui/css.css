@@ -70,7 +70,7 @@ a:active {
     }
 
     div #mainSection{
-      height: auto; 
+      height: 76vh;
     }
 
     div #fileManagementBlock{
@@ -82,7 +82,7 @@ a:active {
 
     div #directoryListView {
        width:185px;
-       height: 76vh;
+       height: auto;
        overflow-x:hidden;
        overflow-y:auto;
        padding-top:18px;
