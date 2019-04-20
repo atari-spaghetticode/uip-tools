@@ -43,18 +43,22 @@ a:active {
         height: 21vh;
         float:none;
         position: fixed; 
-        bottom:0px;
-        border:0px;
-        padding:2px;
+        bottom: 0px;
+        border: 0px;
+        padding: 0px;
+        margin: 0px;
+        overflow-y:auto;
         background:black;
         color:white;    
         clear:both;
     }
 
     footer .credits {
-        height:2em;
-        border:0px;
-        padding:2px;
+        height: 2em;
+        border: 0px;
+        padding:1px;
+        margin:0px;
+        
         clear:both;
         font-size: xx-small;
     }
@@ -198,8 +202,8 @@ div #fileDragAndDrop {
    border: 2px dashed #ccc;
    border-radius: 20px;
    width: auto;
-   height: auto;
-   min-height: 20vh;
+   height: 18vh;
+   min-height: 18vh;
    font-family: sans-serif;
    margin: 2px auto;
    padding: 5px;
@@ -282,7 +286,7 @@ div #fileElem {
 
 div #lowerBar{
   width: 100%;
-  height: 20vh;
+  height: 18vh;
   overflow: hidden;
   background: black;
   margin: 0px;
@@ -292,8 +296,8 @@ div #lowerBar{
 .transferStateColumn {
   width: 33%;
   float:left;
-  min-height: 20vh;
-  max-height: 20vh;
+  min-height: 18vh;
+  max-height: 18vh;
   padding-bottom: 25px;
   padding-left: 2px;
   color: white;
@@ -306,7 +310,7 @@ div #lowerBar{
   width: 66%;
   float: left; 
   background: black;
-  height:auto;
+  height: 18vh;
 }
 
 .progressQue{
@@ -323,7 +327,7 @@ div #lowerBar{
 
 .completedList{
   background: black;
-  overflow:auto;
+  overflow: auto;
 }
 
 .ppDonate{
