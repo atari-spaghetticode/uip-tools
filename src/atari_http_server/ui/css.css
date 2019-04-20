@@ -12,6 +12,10 @@ a:link {
   text-decoration: none
 }
 
+a:link span {
+  padding-left:5px;
+}
+
 a:visited {
   color: green;
 }
@@ -127,7 +131,7 @@ div.blueTable {
   padding: 3px 2px;
 }
 .divTable.blueTable .divTableBody .divTableCell {
-  font-size: 13px;
+  font-size: 1.2em;
 }
 .divTable.blueTable .divTableHeading {
   background: #506555;
@@ -305,3 +309,8 @@ div #lowerBar{
 .completedList{
  background: black;
 }
+
+.ppDonate{
+  padding-top:5px;
+}
+

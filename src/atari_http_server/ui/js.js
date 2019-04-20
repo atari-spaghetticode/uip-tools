@@ -606,9 +606,9 @@
 
         function createFileDownloadLink(node, fileName){
             var a = document.createElement('a');
+            var span = document.createElement('span');           
             var linkText = document.createTextNode(fileName);
-            a.appendChild(linkText);
-
+            
             var pathPrefix = CURRENT_GEMDOS_PATH;
             pathPrefix += '/' + fileName;
             
@@ -617,6 +617,8 @@
             a.href = pathPrefix;  
             a.download = fileName;
 
+            span.appendChild(linkText)
+            a.appendChild(span);
             node.appendChild(a);
         }
 
