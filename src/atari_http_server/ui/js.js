@@ -378,10 +378,15 @@
           var accuStr='';
 
           for(var elem=0;elem<pathArray.length;++elem){
-            accuStr+=pathArray[elem]; 
-            btnLink='<button type="button" class="BcrmbButton" name="' + accuStr + '" onclick="handleBcOnClick(this.name)">' + pathArray[elem] + '</button>';
-            DIR_BREADCRUMB_REF.innerHTML += btnLink + '&#32;&#47;&#32;';
-            accuStr+='/';
+            accuStr += pathArray[elem]; 
+            btnLink='<button type="button" class="BcrmbButton" name="' + accuStr + '" onclick="handleBcOnClick(this.name)">' +'<span>'+ pathArray[elem] +'</span>'+ '</button>';
+            DIR_BREADCRUMB_REF.innerHTML += btnLink;
+            
+            if(elem==0)
+              DIR_BREADCRUMB_REF.innerHTML += '&#32;&#58;&#32;'
+            else
+              DIR_BREADCRUMB_REF.innerHTML += '&#32;&#47;&#32;'
+
           }
 
         }
