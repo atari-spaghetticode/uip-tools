@@ -63,14 +63,24 @@ a:active {
         font-size: xx-small;
     }
 
-    div #dirBreadcrumb{
-      width:100%;
+    div #dirBreadcrumb {
+      width: 100%;
       float:none;
-      background:black;
-      bottom:0px;
+      bottom: 0px;
       clear:both;
-      font-size: x-small;
+      background:black;
       color:white;
+      padding: 2px;
+    }
+
+     .BcrmbButton {
+       border-radius: 5px;
+       border:0px;
+     }
+
+    .BcrmbButton:hover {
+      background-color: #ddd;
+      cursor: pointer;
     }
 
     div #mainSection{
