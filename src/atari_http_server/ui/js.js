@@ -1,4 +1,4 @@
-               
+
         var CURRENT_GEMDOS_PATH;
         var FILE_LIST_REF;
         var FILE_VIEW_REF;
@@ -386,6 +386,8 @@
               DIR_BREADCRUMB_REF.innerHTML += '&#32;&#58;&#32;'
             else
               DIR_BREADCRUMB_REF.innerHTML += '&#32;&#47;&#32;'
+
+            accuStr += '/';
 
           }
 
