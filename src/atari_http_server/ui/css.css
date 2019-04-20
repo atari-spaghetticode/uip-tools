@@ -240,17 +240,24 @@ p {
   padding-left:5px;
 }
 
-
-.button {
-  display: inline-block;
-  padding: 10px;
-  background: #ccc;
-  cursor: pointer;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+div #DriveButtonGroup{
+  padding-left:173px;
 }
 
-.button:hover {
+.HdButton {
+  display: inline-block;
+  padding: 2px;
+  background: #ccc;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  margin-left:1px;
+}
+
+.HdButton span {
+  padding-left:4px;
+}
+
+.HdButton:hover {
   background: #ddd;
 }
 

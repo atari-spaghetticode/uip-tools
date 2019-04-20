@@ -459,6 +459,7 @@
 
              buttonStr = DriveArray[i].name.toUpperCase();
              var button = document.createElement("button");
+             var span = document.createElement("span");
              var textNode = document.createTextNode(buttonStr + ':');
 
              var img = document.createElement('img');
@@ -472,12 +473,14 @@
              }
  
              node.appendChild(img);
+             span.appendChild(textNode);
              button.appendChild(img);
-             
-             button.appendChild(textNode);
+             button.appendChild(span);
+
              button.type='button';
              button.name = buttonStr;
              button.onclick = handleDriveOnClick;
+             button.className ='HdButton';  
              node.appendChild(button);
           };
 
