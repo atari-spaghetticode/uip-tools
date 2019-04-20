@@ -215,8 +215,15 @@ div #fileDragAndDrop.highlight {
 }
 
 
+div #fileDragAndDrop .button {
+  background-color: #728276;
+  color: white;
+  border: 0;
+  height: 2em;
+}
+
 div #fileDragAndDrop .button{
-background-color: pink;  
+  background-color: #ddd;
 }
 
 p {
