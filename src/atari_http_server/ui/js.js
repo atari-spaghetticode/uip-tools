@@ -528,14 +528,16 @@
           
           if(CURRENT_GEMDOS_PATH.length > 2){
             var button = document.createElement("button");
+            var span = document.createElement("span");
             var textNode = document.createTextNode('..');
 
             var img = document.createElement('img');
             img.alt = "folder closed icon";
             img.src = 'data:image/png;base64,' + img_dir_close_src;
             
+            span.appendChild(textNode);
             button.appendChild(img);
-            button.appendChild(textNode);
+            button.appendChild(span);
 
             button.type='button';
             button.name = 'ROOT';
@@ -552,14 +554,16 @@
                 if(directoryReqStr=='ROOT') directoryReqStr='';
                 
                 var button = document.createElement("button");
+                var span = document.createElement("span");
                 var textNode = document.createTextNode(directoryStr);
                 var requestStr = directoryReqStr;
 
                 var img = document.createElement('img');
                 img.alt = "folder closed icon";
                 img.src = 'data:image/png;base64,' + img_dir_close_src;
+                span.appendChild(textNode);
                 button.appendChild(img);
-                button.appendChild(textNode);
+                button.appendChild(span);
 
                 button.type='button';
                 button.name = requestStr;
