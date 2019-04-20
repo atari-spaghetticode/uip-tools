@@ -847,6 +847,20 @@
 
      } 
 
+     function clearCompletedList(){
+        UPLOAD_COMPLETED_LIST=[];
+     }
+
+     function requeFailedTransfers(){
+
+      for(var i=0;i<UPLOAD_FAILED_REQUEST_LIST.lenght;++i){
+        UPLOAD_PROCESS_LIST.push(UPLOAD_FAILED_REQUEST_LIST[i]);
+      }
+
+      UPLOAD_FAILED_REQUEST_LIST=[];
+      
+     }
+
     // Update 
     function update(dt) {
         if((UPLOAD_PROCESS_LIST.length != 0) && (UPLOAD_INPROGRESS!=true)){
