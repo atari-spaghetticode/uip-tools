@@ -41,7 +41,9 @@ This cuts about 100KB of the executable size.
 If UPX is detected during the build then it will be used to compress the resulting in even smaller binary.
 
 # User Interface
- 
+
+![uIP web interface](docs/uipToolScrn.png) 
+
 TBD
 
 # Available REST API
