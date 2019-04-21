@@ -346,7 +346,8 @@
                 fileArray.push({ 
                   name: tempVal.name.toUpperCase(), 
                   size: tempVal.size,
-                  date: tempVal.date 
+                  date: tempVal.date,
+                  time: tempVal.time
                 });
              }
           }
@@ -657,7 +658,8 @@
           var fileStr = null;
           var fileSize=0;
           var fileDate="";
-          
+          var fileTime="";
+
           var tableDiv = document.createElement('div');
           tableDiv.classList.add('divTable');
           tableDiv.classList.add('blueTable');
@@ -671,22 +673,27 @@
           var tableHead1 = document.createElement('div');
           var tableHead2 = document.createElement('div');
           var tableHead3 = document.createElement('div');
+          var tableHead4 = document.createElement('div');
 
           tableHead1.classList.add('divTableHead');
           tableHead2.classList.add('divTableHead');
           tableHead3.classList.add('divTableHead');
+          tableHead4.classList.add('divTableHead');
 
           var headNameText1=document.createTextNode('filename');
           var headNameText2=document.createTextNode('size (bytes)');
           var headNameText3=document.createTextNode('date');
+          var headNameText4=document.createTextNode('time');
  
           tableHead1.appendChild(headNameText1);
           tableHead2.appendChild(headNameText2);
           tableHead3.appendChild(headNameText3);
+          tableHead4.appendChild(headNameText4);
 
           tableRow.appendChild(tableHead1);
           tableRow.appendChild(tableHead2);
           tableRow.appendChild(tableHead3);
+          tableRow.appendChild(tableHead4);
 
           tableHead.appendChild(tableRow);
           tableDiv.appendChild(tableHead);
@@ -705,20 +712,24 @@
              var cell1 = document.createElement('div');
              var cell2 = document.createElement('div');
              var cell3 = document.createElement('div');
-             
+             var cell4 = document.createElement('div');
+
              cell1.classList.add('divTableCell');
              cell2.classList.add('divTableCell');
              cell3.classList.add('divTableCell');
-             
+             cell4.classList.add('divTableCell');
+
              fileRow.appendChild(cell1);
              fileRow.appendChild(cell2);
              fileRow.appendChild(cell3);
+             fileRow.appendChild(cell4);
 
              tableBody.appendChild(fileRow);
              
              fileStr = FileArray[i].name.toUpperCase();
              fileSize = FileArray[i].size;
              fileDate = FileArray[i].date;
+             fileTime = FileArray[i].time;
 
              var div = document.createElement('div');
              div.id = "fileEntryInfo";
@@ -731,6 +742,7 @@
              cell1.appendChild(div);
              cell2.innerHTML = fileSize;
              cell3.innerHTML = fileDate;
+             cell4.innerHTML = fileTime;
              
              createFileDownloadLink(div,fileStr);
           }
