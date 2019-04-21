@@ -166,8 +166,8 @@
                   'request':request,
                   'data':event.target.result
                 };
-                
                 ++UPLOAD_TOTAL_FILES;
+                
 
                 //DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
@@ -930,6 +930,7 @@
      function requeFailedTransfers(){
       for(var i=0;i<UPLOAD_FAILED_REQUEST_LIST.lenght;++i){
         UPLOAD_PROCESS_LIST.push(UPLOAD_FAILED_REQUEST_LIST[i]);
+        ++UPLOAD_TOTAL_FILES;
       }
       UPLOAD_FAILED_REQUEST_LIST=[];
      }
@@ -945,10 +946,7 @@
             // pushed all requests, refresh UI view after request finishes
             UPLOAD_QUE_FINISHED=true;
           }
-
         } 
-          
-        
     }
 
     function mainLoop(timestamp) {
