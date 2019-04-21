@@ -274,7 +274,7 @@ void fstrcat(struct Repsonse* response, char* format, ...)
 
 static void file_stat_single(struct Repsonse* response)
 {
-  char json_name[256];
+  char json_name[256] = {"\0"};
 
   fstrcat(response," {\r\n"
     "    \"type\" : \"%s\",\r\n",
@@ -293,7 +293,11 @@ static void file_stat_single(struct Repsonse* response)
     }
   }
 
-  fstrcat(response, "    \"name\" : \"%s\"\r\n", json_name);
+  fstrcat(response, "    \"name\" : \"%s\",\r\n", json_name);
+  fstrcat(response, "    \"date\" : \"%d/%d/%d\",\r\n",
+          (dta.dta_date&0x1f), ((dta.dta_date>>5)&0xf), ((dta.dta_date>>9) + 1980));
+  fstrcat(response, "    \"time\" : \"%d:%d:%d\"\r\n",
+          (dta.dta_time>>15), (dta.dta_time>>5)&0x1f, (dta.dta_time&0x1f));
   fstrcat(response,"  }\r\n");
 }
 
