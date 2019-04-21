@@ -324,6 +324,26 @@ div #lowerBar{
 div #additionalOptions{
   margin:0;
   padding:0;
+  overflow: hidden;
+  height: 2em;
+}
+
+div #totalUploadStateInfo{
+  float: left;
+  width: 200px;
+  padding-left: 5px;
+}
+
+div #fileTransferProgressInfo {
+  float: right;
+  width: 33%;
+  overflow:hidden;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+div #fileTransferProgressInfo span {
+  padding-left: 8px;
 }
 
 .transferStateColumn {
