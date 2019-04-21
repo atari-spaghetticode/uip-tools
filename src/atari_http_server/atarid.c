@@ -155,11 +155,13 @@ int Fclose_safe(int16_t* fd)
 
 _DTA  dta;  /* global! */
 
-size_t file_size(const char* path)
+ssize_t file_size(const char* path)
 {
   Fsetdta (&dta);
-  Fsfirst (path, 0);
-  return dta.dta_size;
+  if (Fsfirst (path, 0) == 0) {
+    return dta.dta_size;
+  }
+  return -1;
 }
 
 static
@@ -642,6 +644,12 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 
   LOG_TRACE("handle_run: %s in %s\r\n", s->filename, temp_path);
 
+  if (file_size(s->filename) == -1) {
+    LOG_WARN("File not found: %s\r\n", s->filename);
+    s->http_result_code = 1404;
+    PSOCK_EXIT2(worker, &s->sin);
+  }
+
   Dgetpath (s->storeCurrentPath, 0);
   s->storeCurrentDrive = Dgetdrv ();
 
@@ -928,6 +936,7 @@ struct {
   { 201, "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n" },
   { 400, "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n" },
   { 404, "HTTP/1.1 404 Not Found\r\nnContent-Length: 0\r\n\r\n" },
+  { 1404, "HTTP/1.1 404 Not Found\r\nnContent-Length: 0\r\nConnection: close\r\n\r\n" },
   { 411, "HTTP/1.1 411 Length Required\r\nConnection: close\r\n\r\n" },
   { 500, "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n" },
   { 1200, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n" },
