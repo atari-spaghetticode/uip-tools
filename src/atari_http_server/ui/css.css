@@ -47,7 +47,7 @@ a:active {
         border: 0px;
         padding: 0px;
         margin: 0px;
-        overflow-y:auto;
+        overflow-y:hidden;
         background:black;
         color:white;    
         clear:both;
