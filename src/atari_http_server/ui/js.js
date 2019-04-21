@@ -1,4 +1,8 @@
 
+// uIPTool web interface scripts
+// (c) Mariusz Buras '2019
+// (c) Pawel Goralski '2019
+
         var CURRENT_GEMDOS_PATH;
         var FILE_LIST_REF;
         var FILE_VIEW_REF;
@@ -9,12 +13,16 @@
         var DRAGNDROP_AREA_REF;
         var UPLOAD_STATEINFO_REF;
         var FILE_UPLOAD_STATE_INFO_REF;
+        var TOTAL_FILE_UPLOAD_PROGRESS_REF;
         var DEBUG_OUTPUT_REF;
         var GEMDOS_DRIVES_NUM;
         var INIT;
         var REQUEST_PENDING; 
         var UPLOAD_INPROGRESS;
         var UPLOAD_QUE_FINISHED;
+        
+        var UPLOAD_TOTAL_FILES;
+        var UPLOAD_UPLOADED_FILES;
         
         var UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT;
         var TS_LAST_RENDER;
@@ -54,13 +62,16 @@
           DRAGNDROP_AREA_REF=null;
           UPLOAD_STATEINFO_REF=null;
           FILE_UPLOAD_STATE_INFO_REF=null;
+          TOTAL_FILE_UPLOAD_PROGRESS_REF=null;
           DEBUG_OUTPUT_REF=null;
           GEMDOS_DRIVES_NUM = 0;
           INIT = true;
           REQUEST_PENDING = false; 
           TS_LAST_RENDER = 0;
-          UPLOAD_INPROGRESS=false;
-          UPLOAD_QUE_FINISHED=false;
+          UPLOAD_INPROGRESS = false;
+          UPLOAD_QUE_FINISHED = false;
+          UPLOAD_TOTAL_FILES = 0;
+          UPLOAD_UPLOADED_FILES = 0;
           UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
           UPLOAD_PROCESS_LIST = [];
           UPLOAD_FAILED_REQUEST_LIST = [];
@@ -90,7 +101,7 @@
           if (item.isFile) {
               
              item.file( function(file) {
-                DBGLOGGER.log("File:", path + file.name);
+                //DBGLOGGER.log("File:", path + file.name);
                 addFileToUploadQue(file);
               });
             
@@ -106,7 +117,7 @@
         }
 
   function fileLoadOnError(event){
-    DBGLOGGER.log("UI: file load error. Abort.");
+    // DBGLOGGER.log("UI: file load error. Abort.");
     this.abort();
   }
 
@@ -116,6 +127,8 @@
     for (var i=0;i<files.length;++i){
       addFileToUploadQue(files[i]);
     }
+
+    addTotalProgressInfo(TOTAL_FILE_UPLOAD_PROGRESS_REF);
 
  }
 
@@ -153,8 +166,10 @@
                   'request':request,
                   'data':event.target.result
                 };
+                
+                ++UPLOAD_TOTAL_FILES;
 
-                DBGLOGGER.log("UI: Que upload http request: ", request);
+                //DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
               }
 
@@ -171,7 +186,10 @@
 
           for (var i=0; i<items.length; ++i) {
             var item = items[i].webkitGetAsEntry();
-            if (item != null) traverseFileTree(item, path);          }
+            if (item != null) traverseFileTree(item, path); }
+
+            addTotalProgressInfo(TOTAL_FILE_UPLOAD_PROGRESS_REF);
+
         }
 
         function convertFileNameToGemdos(filename){
@@ -195,29 +213,34 @@
           var httpStatus = this.status;
           var httpResponse = this.responseText;
 
-          DBGLOGGER.log("UPLOAD HTTP ready state/status ", httpReadyStateToStr(httpReadyState), httpStatus);
+          //DBGLOGGER.log("UPLOAD HTTP ready state/status ", httpReadyStateToStr(httpReadyState), httpStatus);
 
           if(httpReadyState == 4){
 
             if(httpStatus == 200 || httpStatus == 201){
                // Done. Inform the user
-               DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
+               //DBGLOGGER.log("Success: upload done for", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
                UPLOAD_COMPLETED_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath);
-              destroyProgressBar();
+               destroyProgressBar();
+               ++UPLOAD_UPLOADED_FILES;
             } else {
                 // Error. Push currenntly processed and failed request object to fail que
                 UPLOAD_FAILED_REQUEST_LIST.push(UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT);
-                DBGLOGGER.warn("Error: upload failed of ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath, 
-                  httpResponse, 'http status:', httpStatus);
                 destroyProgressBar();
+                ++UPLOAD_UPLOADED_FILES;
+                //DBGLOGGER.warn("Error: upload failed of ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath, httpResponse, 'http status:', httpStatus);
             }
             
             UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT = null;
             UPLOAD_INPROGRESS = false;
 
             if(UPLOAD_QUE_FINISHED==true){
-                DBGLOGGER.log("UI: Finished upload que. Sending refresh view request.");
-           
+                //DBGLOGGER.log("UI: Finished upload que. Sending refresh view request.");
+                destroyProgressBar();
+                removeTotalProgressInfo();
+
+                UPLOAD_TOTAL_FILES = 0;
+                UPLOAD_UPLOADED_FILES = 0;
                 UPLOAD_QUE_FINISHED=false;
                 refreshCurrentDirView();
             }
@@ -261,7 +284,7 @@
             DRIVE_BUTTON_LIST_TAB_REF = $id("driveButtonListTab");
             UPLOAD_STATEINFO_REF = $id("uploadStateInformation");
             FILE_UPLOAD_STATE_INFO_REF = $id("fileTransferProgressInfo");
-
+            TOTAL_FILE_UPLOAD_PROGRESS_REF = $id("totalUploadStateInfo");
             DEBUG_OUTPUT_REF = $id("debugOutput");
         }
 
@@ -336,8 +359,8 @@
              }
           }
 
-          //sort alphabetically files / directories
-          //TODO: add other options: unordered, sort by date / time, by extension
+          // sort alphabetically files / directories
+          // TODO: add other options: unordered, sort by date / time, by extension
           dirArray.sort(sortAlphabetically);
           fileArray.sort(sortAlphabetically);
 
@@ -798,7 +821,7 @@
         node.appendChild(span);
     
         progress.value = 0;
-        progress.max=100;
+        progress.max = 100;
      }
 
      function destroyProgressBar(){
@@ -807,13 +830,31 @@
         }
      }
 
+     function addTotalProgressInfo(node){
+       UPLOAD_UPLOADED_FILES = 0;
+
+       var text = 'Uploaded / total [ ' + UPLOAD_UPLOADED_FILES + ' / ' + UPLOAD_TOTAL_FILES + ' ]';
+       var textNode = document.createTextNode(text);
+       node.appendChild(textNode);
+     }
+
+     function updateTotalProgressInfo(node){
+      if(node.lastChild!=null){
+       var text = 'Uploaded / total [ ' + UPLOAD_UPLOADED_FILES + ' / ' + UPLOAD_TOTAL_FILES + ' ]';
+       node.lastChild.nodeValue = text;;
+      }
+     }
+
+     function removeTotalProgressInfo(){
+      while (TOTAL_FILE_UPLOAD_PROGRESS_REF.hasChildNodes()) {
+          TOTAL_FILE_UPLOAD_PROGRESS_REF.removeChild(TOTAL_FILE_UPLOAD_PROGRESS_REF.lastChild);
+        }
+     }
 
      function onUploadProgress(evt){
-
         var progressBar = $id("fileUploadProgresBar");
         progressBar.value = evt.loaded * 100 / evt.total;
-
-        DBGLOGGER.log("File: ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath,", upload progress: ",(evt.loaded * 100 / evt.total) || 100);
+        // DBGLOGGER.log("File: ", UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT.filePath,", upload progress: ",(evt.loaded * 100 / evt.total) || 100);
      }
 
      function sendUploadHttpRequest(uploadRequestObject){
@@ -829,7 +870,7 @@
          // create progress bar 
          createProgressBar(FILE_UPLOAD_STATE_INFO_REF, uploadRequestObject.filePath);
 
-         DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
+         //DBGLOGGER.log("Submitted upload request: ",uploadRequestObject.request);
      }
 
      // update status info     
@@ -878,6 +919,8 @@
         divCompleted.innerHTML +=  UPLOAD_COMPLETED_LIST[i]+"<br/>";             
        }  
 
+       updateTotalProgressInfo(TOTAL_FILE_UPLOAD_PROGRESS_REF);
+
      } 
 
      function clearCompletedList(){
@@ -903,7 +946,9 @@
             UPLOAD_QUE_FINISHED=true;
           }
 
-        }
+        } 
+          
+        
     }
 
     function mainLoop(timestamp) {
@@ -915,7 +960,7 @@
     }
 
     function startup(){
-        DBGLOGGER.log("[STARTUP] Page reload event");
+        //DBGLOGGER.log("[STARTUP] Page reload event");
         initInternals();
         initMainView();
         updateDriveListReq();
