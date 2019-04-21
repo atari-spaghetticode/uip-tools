@@ -20,17 +20,13 @@
         var REQUEST_PENDING; 
         var UPLOAD_INPROGRESS;
         var UPLOAD_QUE_FINISHED;
-        
         var UPLOAD_TOTAL_FILES;
         var UPLOAD_UPLOADED_FILES;
-        
         var UPLOAD_CURRENT_UPLOAD_REQUEST_OBJECT;
         var TS_LAST_RENDER;
-
         var UPLOAD_PROCESS_LIST;
         var UPLOAD_FAILED_REQUEST_LIST;        
         var UPLOAD_COMPLETED_LIST;        
-
         var NO_DIRECTORIES_MSG = "No directories found.";
         var NO_FILES_MSG = "No files found.";
 
@@ -129,7 +125,6 @@
     }
 
     addTotalProgressInfo(TOTAL_FILE_UPLOAD_PROGRESS_REF);
-
  }
 
   function addFileToUploadQue(file) {
@@ -153,9 +148,7 @@
             request += "?setfiledate=" + convertDateToAtariTOSFormat(current_date);
             
             var reader = new FileReader();
-            
             reader.onerror = fileLoadOnError;
-
             reader.onload = (function(gemdosPath, request) {
               
               return function(event) {
@@ -167,7 +160,6 @@
                   'data':event.target.result
                 };
                 ++UPLOAD_TOTAL_FILES;
-                
 
                 //DBGLOGGER.log("UI: Que upload http request: ", request);
                 UPLOAD_PROCESS_LIST.push(requestData);
@@ -445,8 +437,12 @@
               
               CURRENT_GEMDOS_PATH='';
               
-              for(var i=0;i<(pathArray.length-1);++i){
-                CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + pathArray[i] + '/' ;
+              if(pathArray.length==2){
+                  CURRENT_GEMDOS_PATH = pathArray[0];
+              }else{
+                for(var i=0;i<(pathArray.length-1);++i){
+                  CURRENT_GEMDOS_PATH = CURRENT_GEMDOS_PATH + pathArray[i] + '/' ;
+                }
               }
 
               pathPrefix = sanitizeGemdosPath(CURRENT_GEMDOS_PATH);
