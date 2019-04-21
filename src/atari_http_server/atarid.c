@@ -376,7 +376,6 @@ const char* file_stat_json(const char* path)
       } else {
         /* Error */
         LOG_TRACE("path not found 2\r\n");
-        goto error;
       }
     } else {
       // it's a file
@@ -384,7 +383,6 @@ const char* file_stat_json(const char* path)
     }
   } else {
       LOG_TRACE("path not found\r\n");
-      goto error;
   }
 
   fstrcat(&response, "]\r\n");
