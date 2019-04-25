@@ -98,7 +98,7 @@
               
              item.file( function(file) {
                 //DBGLOGGER.log("File:", path + file.name);
-                addFileToUploadQue(file);
+                addFileToUploadQue(path,file);
               });
             
           } else if (item.isDirectory) {
@@ -121,13 +121,13 @@
  function uploadFiles(files){
 
     for (var i=0;i<files.length;++i){
-      addFileToUploadQue(files[i]);
+      addFileToUploadQue('',files[i]);
     }
 
     addTotalProgressInfo(TOTAL_FILE_UPLOAD_PROGRESS_REF);
  }
 
-  function addFileToUploadQue(file) {
+  function addFileToUploadQue(path, file) {
 
           var gemdosName = null;
           var gemdosPath = null; 
@@ -135,7 +135,7 @@
 
             // request = localpath + "/" + path + name + "?setfiledate=" + convertDateToAtariTOSFormat(date)
             if(file.webkitRelativePath === ""){
-              gemdosName = convertFileNameToGemdos(file.name);
+              gemdosName = convertFileNameToGemdos(path + file.name);
             }else{
               gemdosName = convertFileNameToGemdos(file.webkitRelativePath);
             }
