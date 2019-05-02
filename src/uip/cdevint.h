@@ -123,4 +123,6 @@ EXTERN void retrievePacketData(unsigned char *localBuffer, const unsigned int le
 *****************************************************************************/
 EXTERN void endPacketRetrieve(void);
 
+#undef EXTERN
+
 #endif
