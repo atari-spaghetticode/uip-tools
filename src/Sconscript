@@ -4,15 +4,12 @@ Import('networkDevice')
 
 import os.path
 
-SOURCES_NETUSBEE = Glob('uip/netusbee/*.c')
-SOURCES_SVETHLANA = Glob('uip/svethlana/*.c')
-
 SOURCES_DEVICE_DRIVER=[];
 
 if((networkDevice == 'netusbee') or (networkDevice == 'ethernec')):
-    SOURCES_DEVICE_DRIVER = SOURCES_NETUSBEE
+    SOURCES_DEVICE_DRIVER = Glob('uip/netusbee/*.c')
 elif((networkDevice == 'svethlana') or (networkDevice == 'supervidel')):
-    SOURCES_DEVICE_DRIVER = SOURCES_SVETHLANA
+    SOURCES_DEVICE_DRIVER = Glob('uip/svethlana/*.c')
 else:
     print("Unknown network device set. Valid options are: 'netusbee' or 'svethlana'. Exiting...")
     SOURCES_DEVICE_DRIVER = ['']
