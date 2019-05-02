@@ -73,6 +73,7 @@ SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 
 hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']} )
 targetEnv = setupToolchain(hostEnv.Clone())
+networkDevice = 'netusbee'
 
 # Optionally use libcmini
 detectLibCMini(targetEnv)
@@ -86,7 +87,7 @@ print "Building in: " + builddir
 target = hostEnv.SConscript(
     "src/SConscript",
     duplicate = 0,
-    exports=['hostEnv', 'targetEnv'],
+    exports=['hostEnv', 'targetEnv','networkDevice'],
     variant_dir = builddir,
     src_dir = "../" )
 

@@ -1,5 +1,7 @@
 #include "uip.h"
 #include "devint.h"
+
+#define EXTERN extern
 #include "cdevint.h"
 
 /*****************************************************************************
@@ -41,13 +43,13 @@ void dev_send(void) {
 
   // send packet, using data in uip_appdata if over the IP+TCP header size
   if (uip_len <= TOTAL_HEADER_LENGTH) {
-        sendPacketData (uip_buf, uip_len);
+        sendPacketData(uip_buf, uip_len);
   } else {
         sendPacketData(uip_buf, TOTAL_HEADER_LENGTH);
         sendPacketData((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH);
   }
 
-    endPacketSend ();
+    endPacketSend();
 }
 
 unsigned int dev_poll(void) {
@@ -61,7 +63,7 @@ unsigned int dev_poll(void) {
     // drop anything too big for the buffer
     if (packetLength > UIP_BUFSIZE)
     {
-        endPacketRetrieve ();
+        endPacketRetrieve();
         return 0;
     }
 

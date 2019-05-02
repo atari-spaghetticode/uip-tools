@@ -1,6 +1,22 @@
 Import('targetEnv')
 Import('hostEnv')
+Import('networkDevice')
+
 import os.path
+
+SOURCES_NETUSBEE = Glob('uip/netusbee/*.c')
+SOURCES_SVETHLANA = Glob('uip/svethlana/*.c')
+
+SOURCES_DEVICE_DRIVER=[];
+
+if((networkDevice == 'netusbee') or (networkDevice == 'ethernec')):
+    SOURCES_DEVICE_DRIVER = SOURCES_NETUSBEE
+elif((networkDevice == 'svethlana') or (networkDevice == 'supervidel')):
+    SOURCES_DEVICE_DRIVER = SOURCES_SVETHLANA
+else:
+    print("Unknown network device set. Valid options are: 'netusbee' or 'svethlana'. Exiting...")
+    SOURCES_DEVICE_DRIVER = ['']
+    exit(0)
 
 SOURCES = [
         "main.c",
@@ -9,7 +25,7 @@ SOURCES = [
         "ioredirect.c",
         targetEnv.Vasm('ioredirect-trap.s'),
         Glob('uip/*.c'),
-        Glob('uip/netusbee/*.c'),
+        SOURCES_DEVICE_DRIVER,        
         targetEnv.SConscript("atari_http_server/SConscript", exports=['hostEnv', 'targetEnv'])
     ]
 

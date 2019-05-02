@@ -4,6 +4,11 @@
 #ifndef __CDEVINT_H__
 #define __CDEVINT_H__
 
+#ifndef EXTERN 
+#define EXTERN 
+#endif
+
+
 /*****************************************************************************
 *  beginPacketSend(unsigned int packetLength)
 *  Args:        unsigned int - length of the Ethernet frame (see note)
@@ -14,7 +19,7 @@
 *                 Ethernet frame length.  The transmit length is automatically
 *                 increased to 60 bytes if packetLength is < 60
 *****************************************************************************/
-void beginPacketSend(const unsigned int packetLength);
+EXTERN void beginPacketSend(const unsigned int packetLength);
 
 
 /*****************************************************************************
@@ -32,7 +37,7 @@ void beginPacketSend(const unsigned int packetLength);
 *               Several calls to retreivePacketData() may be made to 
 *                 copy packet data from different buffers
 *****************************************************************************/
-void sendPacketData(unsigned char * localBuffer, const unsigned int length);
+EXTERN void sendPacketData(unsigned char * localBuffer, const unsigned int length);
 
 
 /*****************************************************************************
@@ -42,22 +47,22 @@ void sendPacketData(unsigned char * localBuffer, const unsigned int length);
 *  Description: Ends a packet send operation and instructs the NIC to transmit
 *                 the frame over the network
 *****************************************************************************/
-void endPacketSend(void);
+EXTERN void endPacketSend(void);
 
 
 /*****************************************************************************
-*  initRTL8019(void);
+*  init(void);
 *
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
 *  Description: Sets up the RTL8019 NIC hardware interface, and initializes
 *                 the buffers and configuration of the NIC
 *****************************************************************************/
-bool init(const uint8_t* macaddr, const uint32_t cpu_type);
+EXTERN bool init(const uint8_t* macaddr, const uint32_t cpu_type);
 
 
 /*****************************************************************************
-*  processRTL8019Interrupt(void);
+*  processInterrupt(void);
 *
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -68,10 +73,10 @@ bool init(const uint8_t* macaddr, const uint32_t cpu_type);
 *                 line not used.  This function should be called before
 *                 attempting to retreive a packet from the NIC
 *****************************************************************************/
-void processInterrupt(void);
+EXTERN void processInterrupt(void);
 
 /*****************************************************************************
-*  unsigned int beginPacketRetreive()
+*  unsigned int beginPacketRetrieve()
 *  Returns:     unsigned int - length of the Ethernet frame (see note)
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -81,15 +86,15 @@ void processInterrupt(void);
 *                 trailer bytes appended if data is less than the minimum
 *                 Ethernet frame length (60 bytes).  A size of zero indicates
 *                 there are no packets available.
-*               A call to beginPacketRetreive() must be followed by a
-*                 call to endPacketRetreive() regardless if data is
+*               A call to beginPacketRetrieve() must be followed by a
+*                 call to endPacketRetrieve() regardless if data is
 *                 retreived, unless 0 is returned.
 *****************************************************************************/
-unsigned int beginPacketRetreive(void);
+EXTERN unsigned int beginPacketRetrieve(void);
 
 
 /*****************************************************************************
-*  		retreivePacketData(unsigned char * localBuffer, unsigned int length)
+*  		retrievePacketData(unsigned char * localBuffer, unsigned int length)
 *  Args:        1. unsigned char * localBuffer - Pointer to the beginning of
 *                    the buffer to store the ethernet frame.
 *               2. unsigned char length - number of bytes to copy to
@@ -98,25 +103,24 @@ unsigned int beginPacketRetreive(void);
 *  Date:        September 21, 2002
 *  Description: Loads length # of bytes from the receive packet buffer to
 *                 a local buffer
-*  Notes:       beginPacketRetreive() must be called before retreiving
+*  Notes:       beginPacketRetrieve() must be called before retreiving
 *                 any data.
-*               Several calls to retreivePacketData() may be made to 
+*               Several calls to retrievePacketData() may be made to 
 *                 copy packet data to different buffers
 *****************************************************************************/
-void retreivePacketData(unsigned char *localBuffer, const unsigned int length);
+EXTERN void retrievePacketData(unsigned char *localBuffer, const unsigned int length);
 
 /*****************************************************************************
-*  endPacketRetreive()
+*  endPacketRetrieve()
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
 *  Description: Ends a packet retreive operation begun by calling
-*                 beginPacketRetreive().  The NIC buffer space used by
+*                 beginPacketRetrieve().  The NIC buffer space used by
 *                 the retreived packet is freed
 *  Notes:       A packet may be removed from the buffer without being read
-*                 by calling endPacketRetreive() after
+*                 by calling endPacketRetrieve() after
 *                 beginPacketRetreive().
 *****************************************************************************/
-void endPacketRetreive(void);
-
+EXTERN void endPacketRetrieve(void);
 
 #endif
