@@ -3,7 +3,7 @@
 
 #include "uip_arp.h"
 #include "uip-split.h"
-#include "rtl8019dev.h"
+#include "devint.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -110,11 +110,11 @@ int32_t buffer_can_read()
 static inline void
 receive_udp_data()
 {
-    while(uip_len = RTL8019dev_poll()) {
+    while(uip_len = dev_poll()) {
         if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
             uip_arp_arpin();
             if(uip_len > 0) {
-                RTL8019dev_send();
+                dev_send();
                 continue;
             }
         } else if(BUF->type == htons(UIP_ETHTYPE_IP)) {

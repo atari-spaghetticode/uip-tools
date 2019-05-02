@@ -1,6 +1,6 @@
-#include "rtl8019.h"
+#include "netusbee/rtl8019.h"
 #include "debug.h"
-#include "rtlregs.h"
+#include "netusbee/rtlregs.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -187,8 +187,7 @@ void overrun(void);
 #define RXSTART_INIT    0x46
 #define RXSTOP_INIT     0x60
 
-void RTL8019beginPacketSend(unsigned int packetLength)
-{
+void beginPacketSend(const unsigned int packetLength) {
     unsigned int sendPacketLength;
     sendPacketLength = (packetLength>=ETHERNET_MIN_PACKET_LENGTH) ?
                      packetLength : ETHERNET_MIN_PACKET_LENGTH ;
@@ -222,8 +221,7 @@ void RTL8019beginPacketSend(unsigned int packetLength)
 
 uint32_t rtl_cpu_type = 0;
 
-inline void RTL8019sendPacketData(unsigned char * localBuffer, unsigned int length)
-{
+inline void sendPacketData(unsigned char * localBuffer, const unsigned int length){
     if (rtl_cpu_type < 20) {
         asm volatile
         (
@@ -346,7 +344,7 @@ inline void RTL8019sendPacketData(unsigned char * localBuffer, unsigned int leng
     }
 }
 
-inline void RTL8019endPacketSend(void)
+inline void endPacketSend(void)
 {
     //send the contents of the transmit buffer onto the network
     writeRTL(CR,0x24);
@@ -365,7 +363,7 @@ static unsigned int currentRetreiveAddress;
 #define  enetpacketLenL       0x02
 #define  enetpacketLenH       0x03
 
-unsigned int RTL8019beginPacketRetreive(void)
+unsigned int beginPacketRetrieve(void)
 {
     unsigned char i;
     unsigned char bnry;
@@ -374,7 +372,7 @@ unsigned int RTL8019beginPacketRetreive(void)
     unsigned int rxlen;
     
     // check for and handle an overflow
-    processRTL8019Interrupt();
+    processInterrupt();
     
     // read CURR from page 1
     writeRTL(CR,0x62);
@@ -438,7 +436,7 @@ unsigned int RTL8019beginPacketRetreive(void)
     return rxlen-4;
 }
 
-void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
+void retrievePacketData(unsigned char * localBuffer, const unsigned int length)
 {
     unsigned int i;
     // initiate DMA to transfer the data
@@ -495,7 +493,7 @@ void RTL8019retreivePacketData(unsigned char * localBuffer, unsigned int length)
     //     currentRetreiveAddress = currentRetreiveAddress - (0x6000-0x4600) ;
 }
 
-void RTL8019endPacketRetreive(void)
+void endPacketRetrieve(void)
 {
     unsigned char i;
 
@@ -683,8 +681,7 @@ static int read_eeprom(struct ee_ctrl_bits *ee, int location)
 }
 
 
-void RTL8019getMac(uint8_t* macaddr)
-{
+void getMac(uint8_t* macaddr) {
     uint8_t tempCR;
     // switch register pages
     tempCR = readRTL(NIC_CR);
@@ -702,8 +699,7 @@ void RTL8019getMac(uint8_t* macaddr)
     writeRTL(CR,tempCR);
 }
 
-bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
-{
+bool init(const uint8_t* macaddr, const uint32_t cpu_type) {
     unsigned char i, rb;
 
     rtl_cpu_type = cpu_type;
@@ -712,7 +708,7 @@ bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
         return false;
     }
 
-    RTL8019getMac( macaddr );
+    getMac( macaddr );
 
     printf("MAC: %x:%x:%x:%x:%x:%x\r\n", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 
@@ -803,7 +799,7 @@ bool initRTL8019(uint8_t* macaddr, uint32_t cpu_type)
 }
 
 
-void processRTL8019Interrupt(void)
+void processInterrupt(void)
 {
   unsigned char byte = readRTL(ISR);
     

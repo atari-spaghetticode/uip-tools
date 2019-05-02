@@ -1,8 +1,9 @@
 #include "uip.h"
-#include "rtl8019dev.h"
+#include "devint.h"
+#include "cdevint.h"
 
 /*****************************************************************************
-*  Module Name:       Realtek 8019AS Driver Interface for uIP-AVR Port
+*  Module Name:       Driver Interface for uIP m68k Atari TOS Port
 *  
 *  Created By:        Louis Beaudoin (www.embedded-creations.com)
 *
@@ -20,41 +21,38 @@
 *      an overflow.
 *    Added support for the Imagecraft Compiler
 *
+*   May 2, 2019 - Pawel Goralski
+*  changed interfaces, so more devices can be supported
+*
 *****************************************************************************/
 
 
-#define TOTAL_HEADER_LENGTH (UIP_TCPIP_HLEN+UIP_LLH_LEN)
+#define TOTAL_HEADER_LENGTH (UIP_TCPIP_HLEN + UIP_LLH_LEN)
 
 
-
-bool RTL8019dev_init(uint8_t* macaddr, uint32_t cpu_type)
-{
-        return initRTL8019(macaddr, cpu_type);
+bool dev_init(const uint8_t* macaddr, const uint32_t cpu_type){
+    return init(macaddr, cpu_type);
 }
 
 
-void RTL8019dev_send(void)
-{
-  RTL8019beginPacketSend (uip_len);
+void dev_send(void) {
+
+  beginPacketSend(uip_len);
 
   // send packet, using data in uip_appdata if over the IP+TCP header size
   if (uip_len <= TOTAL_HEADER_LENGTH) {
-        RTL8019sendPacketData (uip_buf, uip_len);
+        sendPacketData (uip_buf, uip_len);
   } else {
-        RTL8019sendPacketData (uip_buf, TOTAL_HEADER_LENGTH);
-        RTL8019sendPacketData ((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH);
+        sendPacketData(uip_buf, TOTAL_HEADER_LENGTH);
+        sendPacketData((unsigned char *)uip_appdata, uip_len-TOTAL_HEADER_LENGTH);
   }
 
-    RTL8019endPacketSend ();
+    endPacketSend ();
 }
 
+unsigned int dev_poll(void) {
 
-
-unsigned int RTL8019dev_poll(void)
-{
-    unsigned int packetLength;
-
-    packetLength = RTL8019beginPacketRetreive ();
+    const unsigned int packetLength = beginPacketRetrieve();
 
     // if there's no packet or an error - exit without ending the operation
     if (!packetLength)
@@ -63,13 +61,13 @@ unsigned int RTL8019dev_poll(void)
     // drop anything too big for the buffer
     if (packetLength > UIP_BUFSIZE)
     {
-        RTL8019endPacketRetreive ();
+        endPacketRetrieve ();
         return 0;
     }
 
     // copy the packet data into the uIP packet buffer
-    RTL8019retreivePacketData (uip_buf, packetLength);
-    RTL8019endPacketRetreive ();
+    retrievePacketData (uip_buf, packetLength);
+    endPacketRetrieve();
 
     return packetLength;
 }

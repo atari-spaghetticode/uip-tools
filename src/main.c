@@ -40,7 +40,7 @@
 #include "uip.h"
 #include "uip_arp.h"
 #include "uip-split.h"
-#include "rtl8019dev.h"
+#include "devint.h"
 
 #include "timer.h"
 #include "dhcpc.h"
@@ -117,7 +117,7 @@ void tcpip_output()
 {
   probeBegin(&netSend);
   uip_arp_out();
-  RTL8019dev_send();
+  dev_send();
   probeEnd(&netSend);
 }
 
@@ -386,8 +386,8 @@ main(int argc, char *argv[])
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  INFO("RTL8019 init ... ");
-  if (!RTL8019dev_init(uip_ethaddr.addr, cpu_type) ) {
+  INFO("Device init ... ");
+  if (!dev_init(uip_ethaddr.addr, cpu_type) ) {
     LOG_WARN("driver initialisation failed!\r\n");
     return 1;
   }
@@ -419,7 +419,7 @@ main(int argc, char *argv[])
     probeBegin(&netAll);
 
     probeBegin(&netRecv);
-    uip_len = RTL8019dev_poll();
+    uip_len = dev_poll();
     probeEnd(&netRecv);
     
     if(uip_len > 0) {
@@ -433,7 +433,7 @@ main(int argc, char *argv[])
       } else if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
         uip_arp_arpin();
         if(uip_len > 0) {
-          RTL8019dev_send();
+          dev_send();
         }
       }
       probeEnd(&netInput);

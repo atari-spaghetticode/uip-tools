@@ -9,6 +9,7 @@ SOURCES = [
         "ioredirect.c",
         targetEnv.Vasm('ioredirect-trap.s'),
         Glob('uip/*.c'),
+        Glob('uip/netusbee/*.c'),
         targetEnv.SConscript("atari_http_server/SConscript", exports=['hostEnv', 'targetEnv'])
     ]
 
