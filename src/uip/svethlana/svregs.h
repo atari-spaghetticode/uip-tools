@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define SV_VERSION (*(volatile uint32_t *) 0x8001007C)
+
 #define LONGREG(addr) (*(volatile uint32_t *) addr)
 #define LONGPNT(addr) ((volatile uint32_t *) addr)
 
@@ -20,8 +22,7 @@ Struct used for both TX and RX BD. Note that you can only access
 these registers as whole longwords, so there's no point in defining
 the bit fields within.
 */
-typedef volatile struct
-{
+typedef volatile struct {
 	volatile uint32_t	len_ctrl;
 	volatile uint32_t	data_pnt;
 } ETH_BD_TYPE;
@@ -146,6 +147,5 @@ typedef volatile struct
 #define ETH_MIISTATUS_NVALID		0x00000004UL
 
 #define ETH_TX_CTRL_TXPAUSERQ		0x00010000UL
-
 
 #endif

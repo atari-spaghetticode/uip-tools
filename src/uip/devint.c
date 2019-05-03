@@ -1,8 +1,9 @@
 #include "uip.h"
 #include "devint.h"
 
+// interface for used ethernet adapter
 #define EXTERN extern
-#include "cdevint.h"
+#include "adapterint.h"
 
 /*****************************************************************************
 *  Module Name:       Driver Interface for uIP m68k Atari TOS Port
@@ -28,14 +29,12 @@
 *
 *****************************************************************************/
 
-
 #define TOTAL_HEADER_LENGTH (UIP_TCPIP_HLEN + UIP_LLH_LEN)
 
 
 bool dev_init(const uint8_t* macaddr, const uint32_t cpu_type){
     return init(macaddr, cpu_type);
 }
-
 
 void dev_send(void) {
 
@@ -68,7 +67,7 @@ unsigned int dev_poll(void) {
     }
 
     // copy the packet data into the uIP packet buffer
-    retrievePacketData (uip_buf, packetLength);
+    retrievePacketData(uip_buf, packetLength);
     endPacketRetrieve();
 
     return packetLength;

@@ -27,7 +27,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../cdevint.h"
+/* UIP adapter interface */
+#include "../adapterint.h"
 
 /*****************************************************************************
 *

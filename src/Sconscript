@@ -8,10 +8,10 @@ SOURCES_DEVICE_DRIVER=[];
 
 if((networkDevice == 'netusbee') or (networkDevice == 'ethernec')):
     SOURCES_DEVICE_DRIVER = Glob('uip/netusbee/*.c')
-elif((networkDevice == 'svethlana') or (networkDevice == 'supervidel')):
+elif(networkDevice == 'svethlana'):
     SOURCES_DEVICE_DRIVER = Glob('uip/svethlana/*.c')
 else:
-    print("Unknown network device set. Valid options are: 'netusbee' or 'svethlana'. Exiting...")
+    print("Unknown network device set. Valid options are: 'netusbee'/'ethernec' or 'svethlana'. Exiting...")
     SOURCES_DEVICE_DRIVER = ['']
     exit(0)
 

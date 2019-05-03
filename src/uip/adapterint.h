@@ -1,8 +1,8 @@
 
-/* common device interface */
+/* adapter interface */
 
-#ifndef __CDEVINT_H__
-#define __CDEVINT_H__
+#ifndef __ADAPTERINT_H__
+#define __ADAPTERINT_H__
 
 #ifndef EXTERN 
 #define EXTERN 
