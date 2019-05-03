@@ -233,8 +233,6 @@ int16_t ch2i(int8_t c){
 
 // Convert an unsigned long to ASCII
 void hex2ascii(uint32_t l, uint8_t* c){
-	uint8_t t;
-	
 	for(uint16_t i=7; i!=0; --i){
 
 		const uint8_t t = (uint8_t)(l & 0xf);				// Keep only lower nibble
