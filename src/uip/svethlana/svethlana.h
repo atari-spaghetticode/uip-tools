@@ -20,7 +20,7 @@
 
 #define VMALLOC_MODE_ALLOC 0
 #define VMALLOC_MODE_FREE 1
-#define vmalloc(mode, value) (long)trap_14_wwl((short int)0xc60e, (short int)(mode), (long)(value))
+#define vmalloc(mode, value) (uint32_t)trap_14_wwl((uint16_t)0xc60e, (int16_t)(mode), (int32_t)(value))
 
 #define SV_MINIMAL_FW_VERSION 10
 
