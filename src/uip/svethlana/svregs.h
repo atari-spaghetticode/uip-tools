@@ -1,6 +1,14 @@
 #ifndef __SVREGS_H__
 #define __SVREGS_H__
 
+#include <stdint.h>
+
+#define LONGREG(addr) (*(volatile uint32_t *) addr)
+#define LONGPNT(addr) ((volatile uint32_t *) addr)
+
+#define DDR_BASE (0xA0000000UL + 0x01000000UL)
+#define DDR_SIZE (0x08000000UL - 0x01000000UL)
+
 /*************************************
   Ethernet MAC controller registers
 **************************************/
