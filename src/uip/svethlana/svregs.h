@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define C_SupV 0x53757056L
+
 #define SV_VERSION (*(volatile uint32_t *) 0x8001007C)
 
 #define LONGREG(addr) (*(volatile uint32_t *) addr)

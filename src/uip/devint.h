@@ -26,7 +26,7 @@
 
 /*****************************************************************************
 *  signed int dev_init()
-*  Returns:     S_OK if function suceeded, S_OK < on error
+*  Returns:     0 if function suceeded, 0 < on error
 *  Created By:  Louis Beaudoin
 *  Date:        May 3, 2019
 *  Description: Power-up initialization of device
@@ -56,7 +56,7 @@ uint32_t dev_poll(void);
 
 /*****************************************************************************
 *  signed int dev_destroy()
-*  Returns:     S_OK if function suceeded, S_OK < on error
+*  Returns:     0 if function suceeded, 0 < on error
 *  Created By:  Pawel Goralski
 *  Date:        May 3, 2019
 *  Description: Cleanup resources used by device driver, returns S_OK on success 

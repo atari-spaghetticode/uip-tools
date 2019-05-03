@@ -301,7 +301,7 @@ configure_ip()
   } else {
     dhcp_stop();
     INFO("STATIC IP: ");
-    uip_configure_ip (config_ip, config_netmask, config_router);
+    uip_configure_ip(config_ip, config_netmask, config_router);
   }
 }
 
@@ -315,7 +315,7 @@ typedef struct
     uint32_t value;          /* Value of the cookie */
 } CookieJar;
 
-bool get_cookie(const uint32_t cookie, uint32_t *value)
+int32_t get_cookie(const uint32_t cookie, uint32_t *value)
 {
   CookieJar *cookiejar;
   uint32_t    val = -1l;
@@ -334,12 +334,12 @@ bool get_cookie(const uint32_t cookie, uint32_t *value)
       if (cookiejar[i].id==cookie) {
         if (value)
           *value = cookiejar[i].value;
-        return true;
+        return 1;
       }
     }
   }
 
-  return false;
+  return -1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -376,23 +376,23 @@ main(int argc, char *argv[])
   Super(0);
 
   if(get_cookie(C_MiNT, NULL)) {
-    LOG_WARN("uiptool doesn't work under MiNT, sorry!\r\n");
+    LOG_WARN("UIPTool doesn't work under FreeMiNT, sorry!\r\n");
     return 1;
   }
 
   if(get_cookie(C_STiK, NULL)) {
-    LOG_WARN("uiptool doesn't work with STiK, sorry!\r\n");
+    LOG_WARN("UIPTool doesn't work with STiK / STiNG, sorry!\r\n");
     return 1;
   }
-
+  
   get_cookie(C__CPU, &cpu_type);
   config_cpu_options(cpu_type);
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
-  INFO("Device init ... ");
+  
   if (dev_init(uip_ethaddr.addr, cpu_type) < 0 ) {
-    LOG_WARN("driver initialisation failed!\r\n");
+    LOG_WARN("Network adapter initialisation failed!\r\n");
     return 1;
   }
 
@@ -477,9 +477,8 @@ main(int argc, char *argv[])
     probeEnd(&netAll);
   }
 
-  INFO("Device destroy ... ");
   if ( dev_destroy() < 0 ) {
-    LOG_WARN("driver deinitialisation failed!\r\n");
+    LOG_WARN("Network adapter deinitialisation failed!\r\n");
     return 1;
   }
   

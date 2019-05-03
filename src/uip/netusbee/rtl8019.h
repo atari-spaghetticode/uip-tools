@@ -25,7 +25,6 @@
 
 #include "compiler.h"
 #include <stdint.h>
-#include <stdbool.h>
 
 /* UIP adapter interface */
 #include "../adapterint.h"

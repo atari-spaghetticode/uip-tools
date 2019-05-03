@@ -1,12 +1,12 @@
+
+#include "../logging.h"
 #include "netusbee/rtl8019.h"
 #include "debug.h"
 #include "netusbee/rtlregs.h"
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 
-static int64_t getMicroseconds()
-{
+static int64_t getMicroseconds(){
   uint64_t timer200hz;
   uint32_t data;
 resync:
@@ -24,8 +24,7 @@ resync:
 }
 
 
-void Delay_microsec(long delay)
-{
+void Delay_microsec(long delay){
     uint64_t future = getMicroseconds() + delay;
     while(future > getMicroseconds());
 }
@@ -74,7 +73,7 @@ void Delay_microsec(long delay)
 *
 *****************************************************************************/
 
-inline void writeRTL(const uint16_t address, const unsigned char data)
+inline void writeRTL(const uint16_t address, const uint8_t data)
 {
     ((uint8_t volatile*) 0xfb0000 )[ ((address<<8) | data) << 1] ? 1:0;
 }
@@ -188,7 +187,7 @@ void overrun(void);
 #define RXSTART_INIT    0x46
 #define RXSTOP_INIT     0x60
 
-void beginPacketSend(const unsigned int packetLength) {
+void beginPacketSend(const uint32_t packetLength) {
     unsigned int sendPacketLength;
     sendPacketLength = (packetLength>=ETHERNET_MIN_PACKET_LENGTH) ?
                      packetLength : ETHERNET_MIN_PACKET_LENGTH ;
@@ -222,7 +221,7 @@ void beginPacketSend(const unsigned int packetLength) {
 
 uint32_t rtl_cpu_type = 0;
 
-inline void sendPacketData(unsigned char * localBuffer, const unsigned int length){
+inline void sendPacketData(uint8_t* localBuffer, const uint32_t length){
     if (rtl_cpu_type < 20) {
         asm volatile
         (
@@ -588,7 +587,7 @@ void overrun(void)
 static unsigned char mac[6] = {0x00,0x06,0x98,0x01,0x02,0x29};
 
 
-static bool NicReset(void)
+static int32_t NicReset(void)
 {
 //volatile unsigned char *base = (unsigned char *)0x8300;
     unsigned char i;
@@ -611,12 +610,12 @@ static bool NicReset(void)
                readRTL(NIC_PG0_RBCR0) == 0x50 && 
                readRTL(NIC_PG0_RBCR1) == 0x70) {
                 debug_print(("OK\r\n"));
-                return true;
+                return 0;
             }
         }
         debug_print(("failed\r\n\x07"));
     }
-    return false;
+    return -1;
 }
 
 /* The EEPROM commands include the alway-set leading bit. */
@@ -704,11 +703,14 @@ void getMac(uint8_t* macaddr) {
 }
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type) {
+    
+    INFO("Netusbee/EtherNEC adapter init...");
+
     unsigned char i, rb;
 
     rtl_cpu_type = cpu_type;
 
-    if ( !NicReset() ) {
+    if ( NicReset()<0) {
         return -1;
     }
 
@@ -813,6 +815,8 @@ void processInterrupt(void)
 
 
 int32_t destroy(void){
+    INFO("Netusbee/EtherNEC network adapter destroyed. ");
+  
     // no need to do anything
     return 0;
 }
