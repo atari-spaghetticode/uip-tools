@@ -46,7 +46,11 @@
 #include "dhcpc.h"
 
 #include <osbind.h>
+#include <mint/cookie.h>
+
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
@@ -247,7 +251,7 @@ read_config()
     return;
   }
 
-  config_data = malloc (size);
+  config_data = (char *)malloc (size);
 
   if (!config_data) {
     LOG_WARN ("Couldn't open/create the config file: %s\r\n", config_path);
@@ -282,7 +286,7 @@ read_config()
     configure_ip();
   }
 
-  free (config_data);
+  free ((void *)config_data);
 
 }
 
@@ -311,7 +315,7 @@ typedef struct
     uint32_t value;          /* Value of the cookie */
 } CookieJar;
 
-bool get_cookie(uint32_t cookie, uint32_t *value)
+bool get_cookie(const uint32_t cookie, uint32_t *value)
 {
   CookieJar *cookiejar;
   uint32_t    val = -1l;
@@ -341,7 +345,7 @@ bool get_cookie(uint32_t cookie, uint32_t *value)
 /*---------------------------------------------------------------------------*/
 
 static void
-config_cpu_options(cpu_type)
+config_cpu_options(const uint32_t cpu_type)
 {
   /* Tune the stack based on the cpu type.
    * These values were chosen experimentally.
@@ -371,23 +375,23 @@ main(int argc, char *argv[])
 
   Super(0);
 
-  if(get_cookie('MiNT', NULL)) {
+  if(get_cookie(C_MiNT, NULL)) {
     LOG_WARN("uiptool doesn't work under MiNT, sorry!\r\n");
     return 1;
   }
 
-  if(get_cookie('STiK', NULL)) {
+  if(get_cookie(C_STiK, NULL)) {
     LOG_WARN("uiptool doesn't work with STiK, sorry!\r\n");
     return 1;
   }
 
-  get_cookie('_CPU', &cpu_type);
+  get_cookie(C__CPU, &cpu_type);
   config_cpu_options(cpu_type);
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
   INFO("Device init ... ");
-  if (!dev_init(uip_ethaddr.addr, cpu_type) ) {
+  if (dev_init(uip_ethaddr.addr, cpu_type) < 0 ) {
     LOG_WARN("driver initialisation failed!\r\n");
     return 1;
   }
@@ -407,7 +411,7 @@ main(int argc, char *argv[])
   while(1) {
 
     if( -1 == Cconis() ) {
-      uint32_t code = Cconin ();
+      const uint32_t code = Cconin ();
       /* Check if F1 was pressed  */
       if(code == 0x3b0000) {
         toggle_ip_config();
@@ -473,6 +477,12 @@ main(int argc, char *argv[])
     probeEnd(&netAll);
   }
 
+  INFO("Device destroy ... ");
+  if ( dev_destroy() < 0 ) {
+    LOG_WARN("driver deinitialisation failed!\r\n");
+    return 1;
+  }
+  
   #if 0
   LOG("\r\n\r\n");
   LOG("All:     "); probePrint(&netAll);

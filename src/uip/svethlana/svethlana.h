@@ -16,7 +16,7 @@
 #include "../adapterint.h"
 
 // ct60 video ram malloc
-#include <mint/osbind.h>
+#include <osbind.h>
 #define vmalloc(mode, value) (long)trap_14_wwl((short int)0xc60e, (short int)(mode), (long)(value))
 
 #endif

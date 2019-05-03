@@ -142,7 +142,7 @@ upper_layer_chksum(int proto)
 /*-----------------------------------------------------------------------------------*/
 
 static u16_t
-chksum(u16_t sum16, const u8_t *data, u16_t len)
+chksum(u16_t sum16, u8_t *data, u16_t len)
 {
   uint8_t* dgram = data;
 	uint32_t sum = sum16;

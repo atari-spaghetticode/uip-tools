@@ -31,8 +31,7 @@
 
 #define TOTAL_HEADER_LENGTH (UIP_TCPIP_HLEN + UIP_LLH_LEN)
 
-
-bool dev_init(const uint8_t* macaddr, const uint32_t cpu_type){
+int32_t dev_init(uint8_t* macaddr, const uint32_t cpu_type){
     return init(macaddr, cpu_type);
 }
 
@@ -51,7 +50,7 @@ void dev_send(void) {
     endPacketSend();
 }
 
-unsigned int dev_poll(void) {
+uint32_t dev_poll(void) {
 
     const unsigned int packetLength = beginPacketRetrieve();
 
@@ -71,4 +70,8 @@ unsigned int dev_poll(void) {
     endPacketRetrieve();
 
     return packetLength;
+}
+
+int32_t dev_destroy(){
+  return destroy();
 }

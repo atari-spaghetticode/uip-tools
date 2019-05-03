@@ -3,6 +3,7 @@
 #include "netusbee/rtlregs.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 static int64_t getMicroseconds()
 {
@@ -363,7 +364,7 @@ static unsigned int currentRetreiveAddress;
 #define  enetpacketLenL       0x02
 #define  enetpacketLenH       0x03
 
-unsigned int beginPacketRetrieve(void)
+uint32_t beginPacketRetrieve(void)
 {
     unsigned char i;
     unsigned char bnry;
@@ -436,9 +437,12 @@ unsigned int beginPacketRetrieve(void)
     return rxlen-4;
 }
 
-void retrievePacketData(unsigned char * localBuffer, const unsigned int length)
+void retrievePacketData(uint8_t * localBuffer, const uint32_t length)
 {
     unsigned int i;
+    
+    //TODO: add assert on length>255 ???
+
     // initiate DMA to transfer the data
     writeRTL(RBCR0, (unsigned char)length);
     writeRTL(RBCR1, (unsigned char)(length>>8));
@@ -699,13 +703,13 @@ void getMac(uint8_t* macaddr) {
     writeRTL(CR,tempCR);
 }
 
-bool init(const uint8_t* macaddr, const uint32_t cpu_type) {
+int32_t init(uint8_t* macaddr, const uint32_t cpu_type) {
     unsigned char i, rb;
 
     rtl_cpu_type = cpu_type;
 
     if ( !NicReset() ) {
-        return false;
+        return -1;
     }
 
     getMac( macaddr );
@@ -795,7 +799,7 @@ bool init(const uint8_t* macaddr, const uint32_t cpu_type) {
         break;
     }
 
-    return true;
+    return 0;
 }
 
 
@@ -807,3 +811,8 @@ void processInterrupt(void)
     overrun();
 }
 
+
+int32_t destroy(void){
+    // no need to do anything
+    return 0;
+}

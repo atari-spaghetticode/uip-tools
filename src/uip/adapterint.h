@@ -8,7 +8,6 @@
 #define EXTERN 
 #endif
 
-
 /*****************************************************************************
 *  beginPacketSend(unsigned int packetLength)
 *  Args:        unsigned int - length of the Ethernet frame (see note)
@@ -19,7 +18,7 @@
 *                 Ethernet frame length.  The transmit length is automatically
 *                 increased to 60 bytes if packetLength is < 60
 *****************************************************************************/
-EXTERN void beginPacketSend(const unsigned int packetLength);
+EXTERN void beginPacketSend(const uint32_t packetLength);
 
 
 /*****************************************************************************
@@ -37,7 +36,7 @@ EXTERN void beginPacketSend(const unsigned int packetLength);
 *               Several calls to retreivePacketData() may be made to 
 *                 copy packet data from different buffers
 *****************************************************************************/
-EXTERN void sendPacketData(unsigned char * localBuffer, const unsigned int length);
+EXTERN void sendPacketData(uint8_t * localBuffer, const uint32_t length);
 
 
 /*****************************************************************************
@@ -51,15 +50,14 @@ EXTERN void endPacketSend(void);
 
 
 /*****************************************************************************
-*  init(void);
+*  signed int init(void);
 *
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
 *  Description: Sets up the RTL8019 NIC hardware interface, and initializes
 *                 the buffers and configuration of the NIC
 *****************************************************************************/
-EXTERN bool init(const uint8_t* macaddr, const uint32_t cpu_type);
-
+EXTERN int32_t init(uint8_t* macaddr, const uint32_t cpu_type);
 
 /*****************************************************************************
 *  processInterrupt(void);
@@ -90,7 +88,7 @@ EXTERN void processInterrupt(void);
 *                 call to endPacketRetrieve() regardless if data is
 *                 retreived, unless 0 is returned.
 *****************************************************************************/
-EXTERN unsigned int beginPacketRetrieve(void);
+EXTERN uint32_t beginPacketRetrieve(void);
 
 
 /*****************************************************************************
@@ -108,7 +106,7 @@ EXTERN unsigned int beginPacketRetrieve(void);
 *               Several calls to retrievePacketData() may be made to 
 *                 copy packet data to different buffers
 *****************************************************************************/
-EXTERN void retrievePacketData(unsigned char *localBuffer, const unsigned int length);
+EXTERN void retrievePacketData(uint8_t *localBuffer, const uint32_t length);
 
 /*****************************************************************************
 *  endPacketRetrieve()
@@ -122,6 +120,15 @@ EXTERN void retrievePacketData(unsigned char *localBuffer, const unsigned int le
 *                 beginPacketRetreive().
 *****************************************************************************/
 EXTERN void endPacketRetrieve(void);
+
+/*****************************************************************************
+*  destroy()
+*  Created By:  Pawel Goralski
+*  Date:        May 3rd, 2019
+*  Description: Perform internal resources cleanup on error or exit.
+*****************************************************************************/
+EXTERN int32_t destroy();
+
 
 #undef EXTERN
 

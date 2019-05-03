@@ -23,16 +23,15 @@
 *****************************************************************************/
 
 #include "uip.h"
-#include <stdbool.h>
 
 /*****************************************************************************
-*  dev_init()
+*  signed int dev_init()
+*  Returns:     S_OK if function suceeded, S_OK < on error
 *  Created By:  Louis Beaudoin
-*  Date:        September 21, 2002
+*  Date:        May 3, 2019
 *  Description: Power-up initialization of device
 *****************************************************************************/
-bool dev_init(const uint8_t* macaddr, const uint32_t cpu_type);
-
+int32_t dev_init(uint8_t* macaddr, const uint32_t cpu_type);
 
 /*****************************************************************************
 *  dev_send()
@@ -42,7 +41,6 @@ bool dev_init(const uint8_t* macaddr, const uint32_t cpu_type);
 *                 the network
 *****************************************************************************/
 void dev_send(void);
-
 
 /*****************************************************************************
 *  unsigned char/int dev_poll()
@@ -54,7 +52,15 @@ void dev_send(void);
 *                 will fit in uip_buf, it is retreived, and the length is
 *                 returned.  A packet bigger than the buffer is discarded
 *****************************************************************************/
-unsigned int dev_poll(void);
+uint32_t dev_poll(void);
 
+/*****************************************************************************
+*  signed int dev_destroy()
+*  Returns:     S_OK if function suceeded, S_OK < on error
+*  Created By:  Pawel Goralski
+*  Date:        May 3, 2019
+*  Description: Cleanup resources used by device driver, returns S_OK on success 
+*******************************************************************************/
+int32_t dev_destroy();
 
 #endif /* __DEVINT_H__ */

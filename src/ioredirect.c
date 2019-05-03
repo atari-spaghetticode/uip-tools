@@ -148,7 +148,7 @@ send_udp_done_packet()
     send_udp_data();
 }
 
-void ioredirect_cconws(const uint8_t* buf)
+void ioredirect_cconws(uint8_t* buf)
 {
     ioredirect_out_ptr = buf;
     send_udp_data_packet(strlen(buf));
