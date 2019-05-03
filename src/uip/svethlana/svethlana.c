@@ -49,6 +49,7 @@ void endPacketSend(){
 
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
+
 uint8_t	macbuf[13] = {0};
 uint8_t hwAddrBytes[10]={0};
 
@@ -56,15 +57,13 @@ INFO("SVEthLANa adapter init..\n\r");
 
 if(get_cookie(C_SupV, NULL)) {
  LOG_WARN("Driver needs Supervidel/Svethlana hardware.\n\r");
- Bconin(2);
  return -1; 
 }
 
 const uint32_t sv_fw_version = SV_VERSION & 0x3FFUL;
 
 if (sv_fw_version < SV_MINIMAL_FW_VERSION){
-	LOG_WARN("This driver needs at least SuperVidel firmware ver. %u!\n\r", SV_MINIMAL_FW_VERSION);
-	Bconin(2);
+	LOG_WARN("Svethlana adapter driver requires at last firmware ver. %u!\n\r", SV_MINIMAL_FW_VERSION);
 	return -1;		
  }
 
@@ -100,6 +99,15 @@ if (sv_fw_version < SV_MINIMAL_FW_VERSION){
 }
 
 macbuf[12] = '0';
+
+printf("MAC: %x:%x:%x:%x:%x:%x\r\n", 
+	macbuf[0], 
+	macbuf[1], 
+	macbuf[2], 
+	macbuf[3], 
+	macbuf[4], 
+	macbuf[5]
+);
 
 // Extract MAC address from macbuf
 hwAddrBytes[0] = (uint8_t)(ch2i(macbuf[0]) * 16 + ch2i(macbuf[1]));
@@ -142,9 +150,14 @@ mac_addr[1] = (((unsigned long)(hwAddrBytes[4])) << 24) +
 
 // allocate memory for internal buffers
 int8_t *even_packet_base;
-	
-packets_base = (char*)vmalloc(VMALLOC_MODE_ALLOC,ETH_PKT_BUFFS * 2UL * 2048UL + 2048UL);
+const size_t memSize = ETH_PKT_BUFFS * 2UL * 2048UL + 2048UL;
+packets_base = (int8_t*)vmalloc(VMALLOC_MODE_ALLOC, memSize);
 even_packet_base = (char*)((((unsigned long)packets_base) + 2047UL) & 0xFFFFF800UL);	//Make it all start at even 2048 bytes
+
+if(packets_base == 0){
+ LOG_WARN("Cannot allocate video memory %lu bytes for internal buffer!\n\r", packets_base);
+ return -1;		
+}
 
 //Set number of TX packet BDs and RX BDs
 ETH_TX_BD_NUM = ETH_PKT_BUFFS;
