@@ -1,6 +1,5 @@
 
 /* adapter interface */
-
 #ifndef __ADAPTERINT_H__
 #define __ADAPTERINT_H__
 
@@ -9,7 +8,7 @@
 #endif
 
 /*****************************************************************************
-*  beginPacketSend(unsigned int packetLength)
+*  beginPacketSend(uint32_t packetLength)
 *  Args:        unsigned int - length of the Ethernet frame (see note)
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -22,7 +21,7 @@ EXTERN void beginPacketSend(const uint32_t packetLength);
 
 
 /*****************************************************************************
-*  		sendPacketData(unsigned char * localBuffer, unsigned int length)
+*  		sendPacketData(uint8_t * localBuffer, const uint32_t length)
 *  Args:        1. unsigned char * localBuffer - Pointer to the beginning of
 *                    the buffer to load into the NIC
 *               2. unsigned char length - number of bytes to copy to
@@ -50,7 +49,7 @@ EXTERN void endPacketSend(void);
 
 
 /*****************************************************************************
-*  signed int init(void);
+*  int32_t init(void);
 *
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -74,7 +73,7 @@ EXTERN int32_t init(uint8_t* macaddr, const uint32_t cpu_type);
 EXTERN void processInterrupt(void);
 
 /*****************************************************************************
-*  unsigned int beginPacketRetrieve()
+*  uint32_t beginPacketRetrieve()
 *  Returns:     unsigned int - length of the Ethernet frame (see note)
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -92,7 +91,7 @@ EXTERN uint32_t beginPacketRetrieve(void);
 
 
 /*****************************************************************************
-*  		retrievePacketData(unsigned char * localBuffer, unsigned int length)
+*  		retrievePacketData(uint8_t * localBuffer, const uint32_t length)
 *  Args:        1. unsigned char * localBuffer - Pointer to the beginning of
 *                    the buffer to store the ethernet frame.
 *               2. unsigned char length - number of bytes to copy to
@@ -122,13 +121,13 @@ EXTERN void retrievePacketData(uint8_t *localBuffer, const uint32_t length);
 EXTERN void endPacketRetrieve(void);
 
 /*****************************************************************************
-*  destroy()
+*  int32_t destroy()
+*  Returns:     signed int - 0 - success, 0 > error
 *  Created By:  Pawel Goralski
 *  Date:        May 3rd, 2019
 *  Description: Perform internal resources cleanup on error or exit.
 *****************************************************************************/
 EXTERN int32_t destroy();
-
 
 #undef EXTERN
 

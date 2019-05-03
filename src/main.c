@@ -315,7 +315,7 @@ typedef struct
     uint32_t value;          /* Value of the cookie */
 } CookieJar;
 
-int32_t get_cookie(const uint32_t cookie, uint32_t *value)
+uint32_t get_cookie(const uint32_t cookie, uint32_t *value)
 {
   CookieJar *cookiejar;
   uint32_t    val = -1l;
@@ -339,12 +339,12 @@ int32_t get_cookie(const uint32_t cookie, uint32_t *value)
     }
   }
 
-  return -1;
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void
+static void 
 config_cpu_options(const uint32_t cpu_type)
 {
   /* Tune the stack based on the cpu type.
@@ -384,7 +384,7 @@ main(int argc, char *argv[])
     LOG_WARN("UIPTool doesn't work with STiK / STiNG, sorry!\r\n");
     return 1;
   }
-  
+
   get_cookie(C__CPU, &cpu_type);
   config_cpu_options(cpu_type);
 

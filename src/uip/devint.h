@@ -25,8 +25,8 @@
 #include "uip.h"
 
 /*****************************************************************************
-*  signed int dev_init()
-*  Returns:     0 if function suceeded, 0 < on error
+*  int32_t dev_init()
+*  Returns:     0 if function suceeded, 0 > on error
 *  Created By:  Louis Beaudoin
 *  Date:        May 3, 2019
 *  Description: Power-up initialization of device
@@ -43,7 +43,7 @@ int32_t dev_init(uint8_t* macaddr, const uint32_t cpu_type);
 void dev_send(void);
 
 /*****************************************************************************
-*  unsigned char/int dev_poll()
+*  uint32_t dev_poll()
 *  Returns:     Length of the packet retreived, or zero if no packet retreived
 *  Created By:  Louis Beaudoin
 *  Date:        September 21, 2002
@@ -55,8 +55,8 @@ void dev_send(void);
 uint32_t dev_poll(void);
 
 /*****************************************************************************
-*  signed int dev_destroy()
-*  Returns:     0 if function suceeded, 0 < on error
+*  int32_t dev_destroy()
+*  Returns:     0 if function suceeded, 0 > on error
 *  Created By:  Pawel Goralski
 *  Date:        May 3, 2019
 *  Description: Cleanup resources used by device driver, returns S_OK on success 

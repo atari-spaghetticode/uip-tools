@@ -1,4 +1,6 @@
 
+#include <string.h>
+
 #include "svethlana.h"
 #include "svregs.h"
 #include "logging.h"
@@ -31,7 +33,7 @@ void hex2ascii(uint32_t l, uint8_t* c);
 
 int32_t check_rx_buffers();
 
-extern int32_t get_cookie(const uint32_t cookie, uint32_t *value);
+extern uint32_t get_cookie(const uint32_t cookie, uint32_t *value);
 
 void beginPacketSend(const uint32_t packetLength){
 
@@ -53,9 +55,9 @@ int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
 uint8_t	macbuf[13] = {0};
 uint8_t hwAddrBytes[10]={0};
 
-INFO("SVEthLANa adapter init..\n\r");
+LOG_TRACE("SVEthLANa adapter init..\n\r");
 
-if(get_cookie(C_SupV, NULL)) {
+if(get_cookie(C_SupV, NULL) == 0) {
  LOG_WARN("Driver needs Supervidel/Svethlana hardware.\n\r");
  return -1; 
 }
@@ -159,6 +161,8 @@ if(packets_base == 0){
  return -1;		
 }
 
+memset((void *)packets_base,0,memSize);
+
 //Set number of TX packet BDs and RX BDs
 ETH_TX_BD_NUM = ETH_PKT_BUFFS;
 
@@ -214,9 +218,12 @@ ETH_MODER = 0;
 //disable RX and RX error int sources BEFORE removing I6 handler
 ETH_INT_MASK = 0;
 
-if(packets_base!=0) vmalloc(VMALLOC_MODE_FREE,packets_base);
+if(packets_base!=0) {
+  uint32_t ret = vmalloc(VMALLOC_MODE_FREE,packets_base);
+  packets_base = 0;
+}
 
- INFO("SVEthLANa network adapter destroyed. ");
+ LOG_TRACE("SVEthLANa network adapter destroyed. ");
  return 0;
 }
 

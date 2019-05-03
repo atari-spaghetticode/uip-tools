@@ -704,7 +704,7 @@ void getMac(uint8_t* macaddr) {
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type) {
     
-    INFO("Netusbee/EtherNEC adapter init...");
+    LOG_TRACE("Netusbee/EtherNEC adapter init...");
 
     unsigned char i, rb;
 
@@ -815,7 +815,7 @@ void processInterrupt(void)
 
 
 int32_t destroy(void){
-    INFO("Netusbee/EtherNEC network adapter destroyed. ");
+    LOG_TRACE("Netusbee/EtherNEC network adapter destroyed. ");
   
     // no need to do anything
     return 0;
