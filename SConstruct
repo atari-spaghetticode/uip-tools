@@ -13,6 +13,7 @@ def setupToolchain(targetEnv, debugEnabled):
 
     if(debugEnabled):
     	print "Debug build enabled with symbols generation and optimisations turned off."
+    	os.environ['NOUPX']='1'
     	CCFLAGS='-m68000 -O1 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
     	LDFLAGS='-m68000 -Wl,--traditional-format -O1 -s '
     	VASMFLAGS='-Faout -quiet -showopt -DDEBUG'
@@ -87,10 +88,9 @@ def getVersion(env):
 builddir = os.path.abspath(GetLaunchDir())
 SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 
+debugBuildFlag=1
+
 hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']} )
-
-debugBuildFlag=0
-
 targetEnv = setupToolchain(hostEnv.Clone(), debugBuildFlag)
 networkDevice = 'svethlana'
 
