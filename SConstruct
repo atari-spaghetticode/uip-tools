@@ -12,8 +12,9 @@ def setupToolchain(targetEnv, debugEnabled):
     targetEnv["CC"] = CROSS_PREFIX + 'gcc'
 
     if(debugEnabled):
-    	CCFLAGS='-m68000 -O0 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
-    	LDFLAGS='-m68000 -Wl,--traditional-format -O0 -s '
+    	print "Debug build enabled with symbols generation and optimisations turned off."
+    	CCFLAGS='-m68000 -O1 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
+    	LDFLAGS='-m68000 -Wl,--traditional-format -O1 -s '
     	VASMFLAGS='-Faout -quiet -showopt -DDEBUG'
     else:
     	CCFLAGS='-m68000 -O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
