@@ -36,19 +36,16 @@ int32_t check_rx_buffers();
 extern uint32_t get_cookie(const uint32_t cookie, uint32_t *value);
 
 void beginPacketSend(const uint32_t packetLength){
-
+	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
 }
-
 
 void sendPacketData(uint8_t* localBuffer, const uint32_t length){
-
+	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
 }
-
 
 void endPacketSend(){
-
+	LOG_TRACE("endPacketSend()..\n\r");
 }
-
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
 
