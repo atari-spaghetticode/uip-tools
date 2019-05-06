@@ -2,11 +2,26 @@ import os
 import SCons.Builder
 
 
-def setupToolchain(targetEnv):   
+def setupToolchain(targetEnv, debugEnabled):   
     CROSS_PREFIX = 'm68k-atari-mint-'
+    
+    CCFLAGS=''
+    LDFLAGS=''
+    VASMFLAGS=''
+
     targetEnv["CC"] = CROSS_PREFIX + 'gcc'
-    targetEnv['CCFLAGS'] = '-m68000 -O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
-    targetEnv['LINKFLAGS'] = '-m68000 -O3 -s '
+
+    if(debugEnabled):
+    	CCFLAGS='-m68000 -O0 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
+    	LDFLAGS='-m68000 -Wl,--traditional-format -O0 -s '
+    	VASMFLAGS='-Faout -quiet -showopt -DDEBUG'
+    else:
+    	CCFLAGS='-m68000 -O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
+    	LDFLAGS='-m68000 -O3 -s '
+    	VASMFLAGS='-Faout -showopt -quiet '
+    
+    targetEnv['CCFLAGS'] = CCFLAGS
+    targetEnv['LINKFLAGS'] = LDFLAGS
 
     # Add sensible toolchain detection?
     targetEnv['ENV']['PATH'] = "/opt/cross-mint/bin:" + targetEnv['ENV']['PATH']
@@ -18,7 +33,7 @@ def setupToolchain(targetEnv):
 
     targetEnv.SetDefault(
 
-        VASM_FLAGS = SCons.Util.CLVar('-Faout  -quiet '),
+        VASM_FLAGS = SCons.Util.CLVar(VASMFLAGS),
 
         VASM_OUTSUFFIX = '.o',
         VASM_SUFFIX = '.s',
@@ -72,14 +87,17 @@ builddir = os.path.abspath(GetLaunchDir())
 SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 
 hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']} )
-targetEnv = setupToolchain(hostEnv.Clone())
-networkDevice = 'netusbee'
+
+debugBuildFlag=0
+
+targetEnv = setupToolchain(hostEnv.Clone(), debugBuildFlag)
+networkDevice = 'svethlana'
 
 # Optionally use libcmini
 detectLibCMini(targetEnv)
 
 targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
-targetEnv.Append(CPPDEFINES={'DEBUG' : 0})
+targetEnv.Append(CPPDEFINES={'DEBUG' : debugBuildFlag})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
 print "Building in: " + builddir
