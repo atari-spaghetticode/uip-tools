@@ -22,6 +22,11 @@ static uint32_t cur_rx_slot = 0;
 //must be done in SuperVidel video RAM (DDR RAM).
 static int8_t* packets_base;
 
+static volatile uint32_t ethIntSrcFlag;
+static volatile int32_t RxBufferSlotId;
+static uint32_t inErrors;
+static uint32_t outErrors;
+
 /* helper functions */
 void delayMicrosec(long delay);
 
@@ -31,8 +36,8 @@ int16_t ch2i(int8_t c);
 /* Convert long to hex ascii */
 void hex2ascii(uint32_t l, uint8_t* c);
 
-const int32_t Check_Rx_Buffers();
-
+const int32_t check_rx_buffers();
+static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const uint32_t slot, const uint32_t last_packet);
 extern uint32_t get_cookie(const uint32_t cookie, uint32_t *value);
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
@@ -175,32 +180,51 @@ for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i){
  //Enable Transmit, full duplex, and CRC appending
  ETH_MODER = ETH_MODER_TXEN | ETH_MODER_RXEN | ETH_MODER_FULLD | ETH_MODER_CRCEN | ETH_MODER_RECSMALL | ETH_MODER_PAD;
 
+ ethIntSrcFlag = 0;
+ RxBufferSlotId = 0;
+ inErrors = 0;
+ outErrors = 0;
+
  return 0;
 }
 
 
 
 void processInterrupt(){
-	LOG_TRACE("processInterrupt()..\n\r");
+	LOG_TRACE("processInterrupt()..\n\r"); // not used?
 }
 
 void beginPacketSend(const uint32_t packetLength){
 	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
-
 }
 
 void sendPacketData(uint8_t* localBuffer, const uint32_t length){
 	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
 
+	if ((ethIntSrcFlag & (ETH_INT_TXB || ETH_INT_TXE)) != 0){
+		if(ethIntSrcFlag & ETH_INT_TXE){
+			// TX eror set => failed!
+			++outErrors;
+		}
+
+		//A Transmit Error means that the slot is free to be used.
+		//TODO: Check first that the slot that is in turn to be used is free.
+		//Then we dequeue a packet and send it, if one exists. Then we toggle the slot index variable.
+		//Finally we check again if the new slot is free. If so we dequeue a packet again.
+		if (((uint32_t)(eth_tx_bd[RxBufferSlotId].len_ctrl & ETH_TX_BD_READY)) != 0UL) return;
+
+			//Possible errors returned are -1 and -2, meaning "no free slot" and "too large packet" respectively.
+			//-1 isn't possible because of the check above, and -2 isn't possible either, because
+			//we don't enqueue packets in svethlana_output() that are too large.
+			send_packet(localBuffer, length, RxBufferSlotId, RxBufferSlotId == (ETH_PKT_BUFFS-1));
+			RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
+	}
 }
 
 void endPacketSend(){
 	LOG_TRACE("endPacketSend()..\n\r");
 }
 
-volatile uint32_t ethIntSrcFlag;
-volatile int32_t RxBufferSlotId;
-static uint32_t numErrors;
 
 uint32_t beginPacketRetrieve(){
 	
@@ -240,7 +264,7 @@ uint32_t beginPacketRetrieve(){
 																		 ETH_RX_BD_TOOLONG | ETH_RX_BD_SHORT | ETH_RX_BD_CRCERR | ETH_RX_BD_LATECOL);
 					//mark the buffer as empty and free to use
 					eth_rx_bd[i].len_ctrl |= ETH_RX_BD_EMPTY;
-					++numErrors;	
+					++inErrors;	
 				}
 			}
 		}
@@ -249,7 +273,7 @@ uint32_t beginPacketRetrieve(){
 
 	if (ethIntSrcFlag & ETH_INT_RXB) {
 		LOG_TRACE("RX frame!\r\n");
-		RxBufferSlotId = Check_Rx_Buffers();
+		RxBufferSlotId = check_rx_buffers();
 
 		while (RxBufferSlotId != -1) {
 		  packetLenght=((eth_rx_bd[RxBufferSlotId].len_ctrl) >> 16);		
@@ -272,7 +296,8 @@ void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 			uint32_t *src = (uint32_t*)eth_rx_bd[RxBufferSlotId].data_pnt; //source of packets
 			uint32_t *dest = (uint32_t *)localBuffer; //todo align localbuffer to word on allocation
 			
-			// Dummy loop to wait for the MAC write FIFO to empty, is it needed?
+			// Dummy loop to wait for the MAC write FIFO to empty
+			// is it really needed? ???????
 			for (uint32_t j = 0; j < 1000; ++j) {
 				asm("nop;");
 			}
@@ -284,7 +309,7 @@ void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 				
 			// now mark the buffer as empty and free to use
 			eth_rx_bd[RxBufferSlotId].len_ctrl |= ETH_RX_BD_EMPTY;
-			RxBufferSlotId = Check_Rx_Buffers();		
+			RxBufferSlotId = check_rx_buffers();		
 		}
 }
 
@@ -301,6 +326,11 @@ ETH_MODER = 0;
 //disable RX and RX error int sources BEFORE removing I6 handler
 ETH_INT_MASK = 0;
 
+ethIntSrcFlag=0;
+RxBufferSlotId=0;
+inErrors=0;
+outErrors=0;
+
 if(packets_base!=0) {
   uint32_t ret = vmalloc(VMALLOC_MODE_FREE,packets_base);
   packets_base = 0;
@@ -311,7 +341,7 @@ if(packets_base!=0) {
 }
 
 //Returns 0 if there is a new packet received in slot 0, 1 if in slot 1 and -1 otherwise
-const int32_t Check_Rx_Buffers(){
+const int32_t check_rx_buffers(){
 	int32_t  retval = -1L;
 	
 	//We check only one slot, which is the one not checked the last time
@@ -335,6 +365,79 @@ const int32_t Check_Rx_Buffers(){
 
 	return retval;
 }
+
+/*This function sends a packet, but it should only be called by svethlana_output() or
+  the svethlana_service() routine.
+*/
+//There is a risk that the TX ISR gets here too, when the svethlana_output() (working in usermode)
+//is alredy writing a packet to the MAC controller. Therefore TX interrupt must be shut off before 
+//calling send_packet(). This assumes that a TX interrupt is not missed while the TXIE is disabled (check
+//this in the MAC controller docs).
+static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const uint32_t slot, const uint32_t last_packet){
+	volatile uint32_t *datapnt;
+	volatile uint32_t *eth_dst_pnt;
+	
+	const uint32_t origlen = bufferLength;
+	uint32_t rounded_len = (bufferLength + 3) & 0xFFFC;;
+
+	//If the packet is greater than 1536 we return error
+	if (rounded_len > 1536UL) {
+		//we have no intention to send this packet, so just free it
+		return -2;
+	}
+
+	//Check the wanted TX BD slot if it's free
+	if (((uint32_t)(eth_tx_bd[slot].len_ctrl & ETH_TX_BD_READY)) != 0UL)
+		return -1;
+
+	//Divide rounded len by 4
+	rounded_len = rounded_len >> 2;
+
+	//Write packet data
+//	eth_dst_pnt = &ETH_DATA_BASE_PNT[slot * (1536/4)];
+	eth_dst_pnt = (uint32_t*)(eth_tx_bd[slot].data_pnt);
+	datapnt = buffer;
+	
+	for(uint32_t i=0; i < rounded_len; i++) {
+		/*
+		if (eth_dst_pnt == 0UL)
+		{
+			c_conws("Send_packet: eth_dst_pnt is 0\r\n");
+			//Bconin(2);
+		}
+		if (datapnt == 0UL)
+		{
+			c_conws("Send_packet: datapnt is 0\r\n");
+			//Bconin(2);
+		}
+		*/
+
+		*eth_dst_pnt++ = *datapnt++;
+	}	
+
+/*
+	if ((((uint32)eth_dst_pnt) > (ETH_DATA_BASE_ADDR + (1536*2))) ||
+		(((uint32)eth_dst_pnt) < ETH_DATA_BASE_ADDR))
+	{
+		c_conws("Send_packet: eth_dst_pnt outside tx slots!\r\n");
+	}
+	*/
+
+	//Dummy loop to wait for the CT60 write FIFO to empty
+	for (uint32_t j = 0; j < 1000; ++j) {
+		asm("nop;");
+	}
+
+	//Write length of data, BD ready, BD CRC enable
+	//We set the wrap bit if this packet is the last one in a sequence (may be just this packet too).
+	if(last_packet)
+		eth_tx_bd[slot].len_ctrl = (uint32_t)(origlen << 16) | ETH_TX_BD_READY | ETH_TX_BD_IRQ | ETH_TX_BD_CRC | ETH_TX_BD_WRAP;
+	else
+		eth_tx_bd[slot].len_ctrl = (uint32_t)(origlen << 16) | ETH_TX_BD_READY | ETH_TX_BD_IRQ | ETH_TX_BD_CRC;
+	
+	return 0L;
+}
+
 
 
 
