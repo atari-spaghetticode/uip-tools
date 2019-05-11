@@ -13,7 +13,7 @@
 *  Original Release:  September 21, 2002 
 *
 *  Module Description:  
-*  Provides three functions to interface with the Realtek 8019AS driver
+*  Provides four functions to interface with the network adapter driver
 *  These functions can be called directly from the main uIP control loop
 *  to send packets from uip_buf and uip_appbuf, and store incoming packets to
 *  uip_buf
@@ -25,7 +25,9 @@
 *    Added support for the Imagecraft Compiler
 *
 *   May 2, 2019 - Pawel Goralski
-*  changed interfaces, so more devices can be supported
+*  changed interfaces - added dev_destroy() to add ability to perform network adapter cleanup.
+*  More devices can be supported, which will share same interface. Sending packets is from
+*  uip_buf and uip_appbuf, and storing of incoming packets is in uip_buf.
 *
 *****************************************************************************/
 

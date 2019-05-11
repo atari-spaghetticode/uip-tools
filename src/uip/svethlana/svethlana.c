@@ -31,21 +31,9 @@ int16_t ch2i(int8_t c);
 /* Convert long to hex ascii */
 void hex2ascii(uint32_t l, uint8_t* c);
 
-int32_t check_rx_buffers();
+const int32_t Check_Rx_Buffers();
 
 extern uint32_t get_cookie(const uint32_t cookie, uint32_t *value);
-
-void beginPacketSend(const uint32_t packetLength){
-	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
-}
-
-void sendPacketData(uint8_t* localBuffer, const uint32_t length){
-	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
-}
-
-void endPacketSend(){
-	LOG_TRACE("endPacketSend()..\n\r");
-}
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
 
@@ -158,6 +146,7 @@ if(packets_base == 0){
  return -1;		
 }
 
+// clear with longs?
 memset((void *)packets_base,0,memSize);
 
 //Set number of TX packet BDs and RX BDs
@@ -166,16 +155,17 @@ ETH_TX_BD_NUM = ETH_PKT_BUFFS;
 //Init each BD ctrl longword
 //Init all RX slots to empty, so they can receive a packet
 //Init all data pointers, so they get 2048 bytes each.
-for (uint32_t i = 0; i < ETH_PKT_BUFFS; i++){
+for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i){
+
 	if (i != (ETH_PKT_BUFFS-1)) {
-		eth_tx_bd[i].len_ctrl = ETH_TX_BD_CRC;																	// no wrap
-		eth_rx_bd[i].len_ctrl = ETH_RX_BD_EMPTY | ETH_RX_BD_IRQ;								// no wrap
+		eth_tx_bd[i].len_ctrl = ETH_TX_BD_CRC;												// no wrap
+		eth_rx_bd[i].len_ctrl = ETH_RX_BD_EMPTY | ETH_RX_BD_IRQ;							// no wrap
 	}else {
-		eth_tx_bd[i].len_ctrl = ETH_TX_BD_CRC   | ETH_TX_BD_WRAP;									// wrap on last TX BD
-		eth_rx_bd[i].len_ctrl = ETH_RX_BD_EMPTY | ETH_RX_BD_IRQ | ETH_RX_BD_WRAP;	// wrap on last RX BD
+		eth_tx_bd[i].len_ctrl = ETH_TX_BD_CRC   | ETH_TX_BD_WRAP;							// wrap on last TX BD
+		eth_rx_bd[i].len_ctrl = ETH_RX_BD_EMPTY | ETH_RX_BD_IRQ | ETH_RX_BD_WRAP;			// wrap on last RX BD
 	}
 
-	eth_tx_bd[i].data_pnt = ((uint32_t)even_packet_base) + (i*2048UL);		//TX buffers come first
+	eth_tx_bd[i].data_pnt = ((uint32_t)even_packet_base) + (i*2048UL);						//TX buffers come first
 	eth_rx_bd[i].data_pnt = ((uint32_t)even_packet_base) + ((ETH_PKT_BUFFS+i)*2048UL);		//then all RX buffers
 }	
 
@@ -189,24 +179,120 @@ for (uint32_t i = 0; i < ETH_PKT_BUFFS; i++){
 }
 
 
-void processInterrupt(void){
+
+void processInterrupt(){
+	LOG_TRACE("processInterrupt()..\n\r");
+}
+
+void beginPacketSend(const uint32_t packetLength){
+	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
 
 }
 
-unsigned int beginPacketRetrieve(void){
-	return 0;
+void sendPacketData(uint8_t* localBuffer, const uint32_t length){
+	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
+
 }
 
+void endPacketSend(){
+	LOG_TRACE("endPacketSend()..\n\r");
+}
+
+volatile uint32_t ethIntSrcFlag;
+volatile int32_t RxBufferSlotId;
+static uint32_t numErrors;
+
+uint32_t beginPacketRetrieve(){
+	
+	LOG_TRACE("beginPacketRetrieve()..\n\r");
+	uint32_t packetLenght = 0UL;
+
+	//Dummy read from motherboard to satisfy ABE-chip (should be done before interrupt
+	//source is quenched? Interrupt is effectively shut off above)
+
+	volatile uint16_t temp = *((volatile uint16_t*)0xffff8240);
+	ethIntSrcFlag = ETH_INT_SOURCE;
+
+	//Clear all flags by writing 1 to them
+	ETH_INT_SOURCE = 0x7FUL;
+	
+	if (ethIntSrcFlag & ETH_INT_BUSY){
+		LOG_TRACE ("Busy\r\n");	
+	}
+	
+	if (ethIntSrcFlag & ETH_INT_RXE)
+	{
+		//c_conws("RX error!\r\n");
+		//printf("E");
+
+		// Check which BD has the error and clear it
+		for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i) {
+
+			if((eth_rx_bd[i].len_ctrl & ETH_RX_BD_EMPTY) == 0UL){
+				if (eth_rx_bd[i].len_ctrl & (ETH_RX_BD_OVERRUN | ETH_RX_BD_INVSIMB | ETH_RX_BD_DRIBBLE |
+											 ETH_RX_BD_TOOLONG | ETH_RX_BD_SHORT | ETH_RX_BD_CRCERR | ETH_RX_BD_LATECOL))
+				{
+					//At least one of the above error flags was set
+					LOG_TRACE ("Slot %hu RX errorflags: 0x%08lx \n\r", i, eth_rx_bd[i].len_ctrl);
+					
+					//Clear error flags
+					eth_rx_bd[i].len_ctrl &= ~(ETH_RX_BD_OVERRUN | ETH_RX_BD_INVSIMB | ETH_RX_BD_DRIBBLE |
+																		 ETH_RX_BD_TOOLONG | ETH_RX_BD_SHORT | ETH_RX_BD_CRCERR | ETH_RX_BD_LATECOL);
+					//mark the buffer as empty and free to use
+					eth_rx_bd[i].len_ctrl |= ETH_RX_BD_EMPTY;
+					++numErrors;	
+				}
+			}
+		}
+	}
+
+
+	if (ethIntSrcFlag & ETH_INT_RXB) {
+		LOG_TRACE("RX frame!\r\n");
+		RxBufferSlotId = Check_Rx_Buffers();
+
+		while (RxBufferSlotId != -1) {
+		  packetLenght=((eth_rx_bd[RxBufferSlotId].len_ctrl) >> 16);		
+		  return packetLenght; 
+		}
+	}
+	return packetLenght;
+}
 
 void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 
+		// Check for received packets
+		LOG_TRACE("RX frame!\r\n");
+		
+		while (RxBufferSlotId != -1) {
+			
+			LOG_TRACE("R%02li 0x%08lx\n\r", RxBufferSlotId, eth_rx_bd[RxBufferSlotId].len_ctrl);
+			
+			const uint32_t len_longs = (length + 3UL) >> 2;
+			uint32_t *src = (uint32_t*)eth_rx_bd[RxBufferSlotId].data_pnt; //source of packets
+			uint32_t *dest = (uint32_t *)localBuffer; //todo align localbuffer to word on allocation
+			
+			// Dummy loop to wait for the MAC write FIFO to empty, is it needed?
+			for (uint32_t j = 0; j < 1000; ++j) {
+				asm("nop;");
+			}
+
+			// copy src->dst
+			for(uint32_t i=0; i < len_longs; ++i){
+				*dest++ = *src++;
+			}
+				
+			// now mark the buffer as empty and free to use
+			eth_rx_bd[RxBufferSlotId].len_ctrl |= ETH_RX_BD_EMPTY;
+			RxBufferSlotId = Check_Rx_Buffers();		
+		}
 }
 
-void endPacketRetrieve(void){
-
+void endPacketRetrieve(){
+	LOG_TRACE("endPacketRetrieve()..\n\r");
 }
 
-int32_t destroy(void){
+int32_t destroy(){
 
 // close
 // disable RX and TX
@@ -223,6 +309,34 @@ if(packets_base!=0) {
  LOG_TRACE("SVEthLANa network adapter destroyed. ");
  return 0;
 }
+
+//Returns 0 if there is a new packet received in slot 0, 1 if in slot 1 and -1 otherwise
+const int32_t Check_Rx_Buffers(){
+	int32_t  retval = -1L;
+	
+	//We check only one slot, which is the one not checked the last time
+	//we were here. We only move to the other slot if we found a packet in the current slot.
+	const uint32_t tmp1 = eth_rx_bd[cur_rx_slot].len_ctrl;
+	
+	if ((tmp1 & ETH_RX_BD_EMPTY) == 0UL) {
+		retval = (int32_t)cur_rx_slot;
+		cur_rx_slot = (cur_rx_slot + 1) & (ETH_PKT_BUFFS-1);
+	} else {
+		//No packet in the expected slot
+		//Try again
+		const uint32_t tmp2 = eth_rx_bd[cur_rx_slot].len_ctrl;
+
+		if ((tmp2 & ETH_RX_BD_EMPTY) == 0UL){
+			LOG_TRACE("Slot %lu RX retried read: 0x%08lx then 0x%08lx\n\r", cur_rx_slot, tmp1, tmp2);
+			retval = (int32_t)cur_rx_slot;
+			cur_rx_slot = (cur_rx_slot + 1) & (ETH_PKT_BUFFS-1);
+		}
+	}
+
+	return retval;
+}
+
+
 
 /* Convert one ASCII char to a hex nibble */
 int16_t ch2i(int8_t c){

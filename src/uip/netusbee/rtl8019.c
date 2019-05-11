@@ -439,8 +439,6 @@ uint32_t beginPacketRetrieve(void)
 void retrievePacketData(uint8_t * localBuffer, const uint32_t length)
 {
     unsigned int i;
-    
-    //TODO: add assert on length>255 ???
 
     // initiate DMA to transfer the data
     writeRTL(RBCR0, (unsigned char)length);
