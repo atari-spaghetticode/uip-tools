@@ -22,8 +22,8 @@ static uint32_t cur_rx_slot = 0;
 //must be done in SuperVidel video RAM (DDR RAM).
 static int8_t* packets_base;
 
-static volatile uint32_t ethIntSrcFlag;
-static volatile int32_t RxBufferSlotId;
+volatile uint32_t ethIntSrcFlag;
+volatile int32_t RxBufferSlotId;
 static uint32_t inErrors;
 static uint32_t outErrors;
 
@@ -59,47 +59,21 @@ if (sv_fw_version < SV_MINIMAL_FW_VERSION){
 	return -1;		
  }
 
- if(macaddr == NULL){
- 	INFO("Using default ethernet address 01:02:03:04:05:07\n\r");
-	macbuf[0] = '0';
-	macbuf[1] = '1';
-	macbuf[2] = '0';
-	macbuf[3] = '2';
-	macbuf[4] = '0';
-	macbuf[5] = '3';
-	macbuf[6] = '0';
-	macbuf[7] = '4';
-	macbuf[8] = '0';
-	macbuf[9] = '5';
-	macbuf[10] = '0';
-	macbuf[11] = '7';
-}else{
-	INFO("Using preset ethernet address\n\r");
-	
-	macbuf[0] = macaddr[0];
-	macbuf[1] = macaddr[1];
-	macbuf[2] = macaddr[2];
-	macbuf[3] = macaddr[3];
-	macbuf[4] = macaddr[4];
-	macbuf[5] = macaddr[5];
-	macbuf[6] = macaddr[6];
-	macbuf[7] = macaddr[7];
-	macbuf[8] = macaddr[8];
-	macbuf[9] = macaddr[9];
-	macbuf[10] = macaddr[10];
-	macbuf[11] = macaddr[11];
-}
+INFO("Using default MAC address: [01:02:03:04:05:07]\n\r");
 
+macbuf[0] = '0';
+macbuf[1] = '1';
+macbuf[2] = '0';
+macbuf[3] = '2';
+macbuf[4] = '0';
+macbuf[5] = '3';
+macbuf[6] = '0';
+macbuf[7] = '4';
+macbuf[8] = '0';
+macbuf[9] = '5';
+macbuf[10] = '0';
+macbuf[11] = '7';
 macbuf[12] = '0';
-
-printf("MAC: %x:%x:%x:%x:%x:%x\r\n", 
-	macbuf[0], 
-	macbuf[1], 
-	macbuf[2], 
-	macbuf[3], 
-	macbuf[4], 
-	macbuf[5]
-);
 
 // Extract MAC address from macbuf
 hwAddrBytes[0] = (uint8_t)(ch2i(macbuf[0]) * 16 + ch2i(macbuf[1]));
@@ -108,6 +82,15 @@ hwAddrBytes[2] = (uint8_t)(ch2i(macbuf[4]) * 16 + ch2i(macbuf[5]));
 hwAddrBytes[3] = (uint8_t)(ch2i(macbuf[6]) * 16 + ch2i(macbuf[7]));
 hwAddrBytes[4] = (uint8_t)(ch2i(macbuf[8]) * 16 + ch2i(macbuf[9]));
 hwAddrBytes[5] = (uint8_t)(ch2i(macbuf[10]) * 16 + ch2i(macbuf[11]));
+
+INFO("MAC: %x:%x:%x:%x:%x:%x\r\n", 
+	hwAddrBytes[0], 
+	hwAddrBytes[1], 
+	hwAddrBytes[2], 
+	hwAddrBytes[3], 
+	hwAddrBytes[4], 
+	hwAddrBytes[5]
+);
 
  /*
  * The actual init of the hardware
@@ -141,18 +124,17 @@ mac_addr[1] = (((unsigned long)(hwAddrBytes[4])) << 24) +
 
 
 // allocate memory for internal buffers
-int8_t *even_packet_base;
 const size_t memSize = ETH_PKT_BUFFS * 2UL * 2048UL + 2048UL;
 packets_base = (int8_t*)vmalloc(VMALLOC_MODE_ALLOC, memSize);
-even_packet_base = (char*)((((unsigned long)packets_base) + 2047UL) & 0xFFFFF800UL);	//Make it all start at even 2048 bytes
 
 if(packets_base == 0){
  LOG_WARN("Cannot allocate video memory %lu bytes for internal buffer!\n\r", packets_base);
  return -1;		
 }
 
-// clear with longs?
-memset((void *)packets_base,0,memSize);
+memset((void *)packets_base,0UL,memSize);
+
+int8_t *even_packet_base = (char*)((((unsigned long)packets_base) + 2047UL) & 0xFFFFF800UL);	//Make it all start at even 2048 bytes
 
 //Set number of TX packet BDs and RX BDs
 ETH_TX_BD_NUM = ETH_PKT_BUFFS;
@@ -191,15 +173,15 @@ for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i){
 
 
 void processInterrupt(){
-	LOG_TRACE("processInterrupt()..\n\r"); // not used?
+	//LOG_TRACE("processInterrupt()..\n\r"); // not used?
 }
 
 void beginPacketSend(const uint32_t packetLength){
-	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
+	//LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
 }
 
 void sendPacketData(uint8_t* localBuffer, const uint32_t length){
-	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
+	//LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
 
 	if ((ethIntSrcFlag & (ETH_INT_TXB || ETH_INT_TXE)) != 0){
 		if(ethIntSrcFlag & ETH_INT_TXE){
@@ -209,39 +191,37 @@ void sendPacketData(uint8_t* localBuffer, const uint32_t length){
 
 		//A Transmit Error means that the slot is free to be used.
 		//TODO: Check first that the slot that is in turn to be used is free.
-		//Then we dequeue a packet and send it, if one exists. Then we toggle the slot index variable.
-		//Finally we check again if the new slot is free. If so we dequeue a packet again.
 		if (((uint32_t)(eth_tx_bd[RxBufferSlotId].len_ctrl & ETH_TX_BD_READY)) != 0UL) return;
 
 			//Possible errors returned are -1 and -2, meaning "no free slot" and "too large packet" respectively.
 			//-1 isn't possible because of the check above, and -2 isn't possible either, because
 			//we don't enqueue packets in svethlana_output() that are too large.
-			send_packet(localBuffer, length, RxBufferSlotId, RxBufferSlotId == (ETH_PKT_BUFFS-1));
+			const int32_t ret = send_packet((uint32_t *)localBuffer, length, RxBufferSlotId, RxBufferSlotId == (ETH_PKT_BUFFS-1));
 			RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
+
+			if(ret!=0){
+				LOG_TRACE("sendPacketData(), failed:[%d].\n\r",(uint32_t)ret);				
+			}
 	}
 }
 
 void endPacketSend(){
-	LOG_TRACE("endPacketSend()..\n\r");
+	//LOG_TRACE("endPacketSend()..\n\r");
 }
 
 
 uint32_t beginPacketRetrieve(){
 	
-	LOG_TRACE("beginPacketRetrieve()..\n\r");
+	//LOG_TRACE("beginPacketRetrieve()..\n\r");
 	uint32_t packetLenght = 0UL;
 
-	//Dummy read from motherboard to satisfy ABE-chip (should be done before interrupt
-	//source is quenched? Interrupt is effectively shut off above)
-
-	volatile uint16_t temp = *((volatile uint16_t*)0xffff8240);
 	ethIntSrcFlag = ETH_INT_SOURCE;
 
 	//Clear all flags by writing 1 to them
 	ETH_INT_SOURCE = 0x7FUL;
 	
 	if (ethIntSrcFlag & ETH_INT_BUSY){
-		LOG_TRACE ("Busy\r\n");	
+		LOG_TRACE ("Busy...\r\n");	
 	}
 	
 	if (ethIntSrcFlag & ETH_INT_RXE)
@@ -251,7 +231,8 @@ uint32_t beginPacketRetrieve(){
 
 		// Check which BD has the error and clear it
 		for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i) {
-
+			LOG_TRACE ("Error clear.....\r\n");	
+	
 			if((eth_rx_bd[i].len_ctrl & ETH_RX_BD_EMPTY) == 0UL){
 				if (eth_rx_bd[i].len_ctrl & (ETH_RX_BD_OVERRUN | ETH_RX_BD_INVSIMB | ETH_RX_BD_DRIBBLE |
 											 ETH_RX_BD_TOOLONG | ETH_RX_BD_SHORT | ETH_RX_BD_CRCERR | ETH_RX_BD_LATECOL))
@@ -286,7 +267,7 @@ uint32_t beginPacketRetrieve(){
 void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 
 		// Check for received packets
-		LOG_TRACE("RX frame!\r\n");
+		//LOG_TRACE("RX frame!\r\n");
 		
 		while (RxBufferSlotId != -1) {
 			
@@ -294,13 +275,18 @@ void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 			
 			const uint32_t len_longs = (length + 3UL) >> 2;
 			uint32_t *src = (uint32_t*)eth_rx_bd[RxBufferSlotId].data_pnt; //source of packets
-			uint32_t *dest = (uint32_t *)localBuffer; //todo align localbuffer to word on allocation
+			uint32_t *dest = (uint32_t *)localBuffer; 
 			
-			// Dummy loop to wait for the MAC write FIFO to empty
-			// is it really needed? ???????
-			for (uint32_t j = 0; j < 1000; ++j) {
-				asm("nop;");
+			if( ((uint32_t)localBuffer) % sizeof(uint16_t) !=0 ){
+				LOG_TRACE("[] align localbuffer to word on allocation!\r\n");
 			}
+
+			delayMicrosec(1000);
+// Dummy loop to wait for the MAC write FIFO to empty
+// is it really needed? ???????
+//			for (uint32_t j = 0; j < 1000; ++j) {
+//				asm("nop;");
+//			}
 
 			// copy src->dst
 			for(uint32_t i=0; i < len_longs; ++i){
@@ -314,7 +300,7 @@ void retrievePacketData(uint8_t *localBuffer, const uint32_t length){
 }
 
 void endPacketRetrieve(){
-	LOG_TRACE("endPacketRetrieve()..\n\r");
+	//LOG_TRACE("endPacketRetrieve()..\n\r");
 }
 
 int32_t destroy(){
@@ -366,16 +352,10 @@ const int32_t check_rx_buffers(){
 	return retval;
 }
 
-/*This function sends a packet, but it should only be called by svethlana_output() or
-  the svethlana_service() routine.
-*/
-//There is a risk that the TX ISR gets here too, when the svethlana_output() (working in usermode)
-//is alredy writing a packet to the MAC controller. Therefore TX interrupt must be shut off before 
-//calling send_packet(). This assumes that a TX interrupt is not missed while the TXIE is disabled (check
-//this in the MAC controller docs).
-static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const uint32_t slot, const uint32_t last_packet){
-	volatile uint32_t *datapnt;
-	volatile uint32_t *eth_dst_pnt;
+// This function sends a packet.
+// Assumes that a TX interrupt is not missed while the TXIE is disabled (check this in the MAC controller docs).
+
+static int32_t send_packet (uint32_t *datapnt, const uint32_t bufferLength, const uint32_t slot, const uint32_t last_packet){
 	
 	const uint32_t origlen = bufferLength;
 	uint32_t rounded_len = (bufferLength + 3) & 0xFFFC;;
@@ -395,39 +375,38 @@ static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const
 
 	//Write packet data
 //	eth_dst_pnt = &ETH_DATA_BASE_PNT[slot * (1536/4)];
-	eth_dst_pnt = (uint32_t*)(eth_tx_bd[slot].data_pnt);
-	datapnt = buffer;
+
+	volatile uint32_t *eth_dst_pnt = (uint32_t*)(eth_tx_bd[slot].data_pnt);;
 	
-	for(uint32_t i=0; i < rounded_len; i++) {
-		/*
-		if (eth_dst_pnt == 0UL)
-		{
-			c_conws("Send_packet: eth_dst_pnt is 0\r\n");
+	for(uint32_t i=0; i < rounded_len; ++i) {
+		
+		if (eth_dst_pnt == 0UL){
+			LOG_TRACE("Send_packet: eth_dst_pnt is 0\r\n");
 			//Bconin(2);
 		}
-		if (datapnt == 0UL)
-		{
-			c_conws("Send_packet: datapnt is 0\r\n");
+		if (datapnt == 0UL){
+			LOG_TRACE("Send_packet: datapnt is 0\r\n");
 			//Bconin(2);
 		}
-		*/
 
 		*eth_dst_pnt++ = *datapnt++;
 	}	
 
-/*
-	if ((((uint32)eth_dst_pnt) > (ETH_DATA_BASE_ADDR + (1536*2))) ||
-		(((uint32)eth_dst_pnt) < ETH_DATA_BASE_ADDR))
+
+	if ((((uint32_t)eth_dst_pnt) > (ETH_DATA_BASE_ADDR + (1536*2))) ||
+		(((uint32_t)eth_dst_pnt) < ETH_DATA_BASE_ADDR))
 	{
-		c_conws("Send_packet: eth_dst_pnt outside tx slots!\r\n");
+		LOG_TRACE("Send_packet: eth_dst_pnt outside tx slots!\r\n");
 	}
-	*/
+	
+
+	delayMicrosec(1000);
 
 	//Dummy loop to wait for the CT60 write FIFO to empty
-	for (uint32_t j = 0; j < 1000; ++j) {
-		asm("nop;");
-	}
-
+	//for (uint32_t j = 0; j < 1000; ++j) {
+//		asm("nop;");
+//	}
+	
 	//Write length of data, BD ready, BD CRC enable
 	//We set the wrap bit if this packet is the last one in a sequence (may be just this packet too).
 	if(last_packet)
@@ -437,9 +416,6 @@ static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const
 	
 	return 0L;
 }
-
-
-
 
 /* Convert one ASCII char to a hex nibble */
 int16_t ch2i(int8_t c){

@@ -37,7 +37,7 @@ int32_t dev_init(uint8_t* macaddr, const uint32_t cpu_type){
     return init(macaddr, cpu_type);
 }
 
-void dev_send(void) {
+void dev_send() {
 
   beginPacketSend(uip_len);
 
@@ -52,9 +52,9 @@ void dev_send(void) {
     endPacketSend();
 }
 
-uint32_t dev_poll(void) {
+uint32_t dev_poll() {
 
-    const unsigned int packetLength = beginPacketRetrieve();
+    const uint32_t packetLength = beginPacketRetrieve();
 
     // if there's no packet or an error - exit without ending the operation
     if (!packetLength)
