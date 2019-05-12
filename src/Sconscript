@@ -9,7 +9,7 @@ SOURCES_DEVICE_DRIVER=[];
 if((networkDevice == 'netusbee') or (networkDevice == 'ethernec')):
     SOURCES_DEVICE_DRIVER = Glob('uip/netusbee/*.c')
 elif(networkDevice == 'svethlana'):
-    SOURCES_DEVICE_DRIVER = Glob('uip/svethlana/*.c')
+    SOURCES_DEVICE_DRIVER = Glob('uip/svethlana/*.c') + targetEnv.Vasm('uip/svethlana/svethasm.s')
 else:
     print("Unknown network device set. Valid options are: 'netusbee'/'ethernec' or 'svethlana'. Exiting...")
     SOURCES_DEVICE_DRIVER = ['']

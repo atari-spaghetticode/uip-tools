@@ -26,6 +26,7 @@ volatile uint32_t ethIntSrcFlag;
 volatile int32_t RxBufferSlotId;
 static uint32_t inErrors;
 static uint32_t outErrors;
+uint16_t saveSR;
 
 /* helper functions */
 void delayMicrosec(long delay);
@@ -38,6 +39,10 @@ void hex2ascii(uint32_t l, uint8_t* c);
 
 const int32_t check_rx_buffers();
 static int32_t send_packet (uint32_t *buffer, const uint32_t bufferLength, const uint32_t slot, const uint32_t last_packet);
+
+extern void interruptsOn();
+extern void interruptsOff();
+
 extern uint32_t get_cookie(const uint32_t cookie, uint32_t *value);
 
 int32_t init(uint8_t* macaddr, const uint32_t cpu_type){
@@ -173,15 +178,15 @@ for (uint32_t i = 0; i < ETH_PKT_BUFFS; ++i){
 
 
 void processInterrupt(){
-	//LOG_TRACE("processInterrupt()..\n\r"); // not used?
+	LOG_TRACE("processInterrupt()..\n\r"); // not used?
 }
 
 void beginPacketSend(const uint32_t packetLength){
-	//LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
+	LOG_TRACE("beginPacketSend(), lenght:[%d].\n\r",packetLength);
 }
 
 void sendPacketData(uint8_t* localBuffer, const uint32_t length){
-	//LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
+	LOG_TRACE("sendPacketData(), buffer[0x%lx] lenght:[%d].\n\r",(uint32_t)localBuffer,length);
 
 	if ((ethIntSrcFlag & (ETH_INT_TXB || ETH_INT_TXE)) != 0){
 		if(ethIntSrcFlag & ETH_INT_TXE){
@@ -196,17 +201,32 @@ void sendPacketData(uint8_t* localBuffer, const uint32_t length){
 			//Possible errors returned are -1 and -2, meaning "no free slot" and "too large packet" respectively.
 			//-1 isn't possible because of the check above, and -2 isn't possible either, because
 			//we don't enqueue packets in svethlana_output() that are too large.
+			//Turn off interrupts completely
+			
+	
+			interruptsOff();
+            
 			const int32_t ret = send_packet((uint32_t *)localBuffer, length, RxBufferSlotId, RxBufferSlotId == (ETH_PKT_BUFFS-1));
-			RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
 
-			if(ret!=0){
+            interruptsOn();
+            
+			if(ret == 0L){
+				//Use the next TX slot for next packet to send
+				RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
+			} else if(ret == -2L){
+				LOG_TRACE("send_packet: too large\r\n");
+			}else{
 				LOG_TRACE("sendPacketData(), failed:[%d].\n\r",(uint32_t)ret);				
 			}
+	
+
+			RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
+
 	}
 }
 
 void endPacketSend(){
-	//LOG_TRACE("endPacketSend()..\n\r");
+	LOG_TRACE("endPacketSend()..\n\r");
 }
 
 
