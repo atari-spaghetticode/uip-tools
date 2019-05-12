@@ -218,10 +218,6 @@ void sendPacketData(uint8_t* localBuffer, const uint32_t length){
 			}else{
 				LOG_TRACE("sendPacketData(), failed:[%d].\n\r",(uint32_t)ret);				
 			}
-	
-
-			RxBufferSlotId = (RxBufferSlotId + 1) & (ETH_PKT_BUFFS-1);
-
 	}
 }
 
