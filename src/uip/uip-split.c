@@ -84,7 +84,7 @@ uip_split_output(void)
     BUF->ipchksum = ~(uip_ipchksum());
 #endif /* UIP_CONF_IPV6 */
     
-    tcpip_output();
+    ip_packet_output();
 
     /* Now, create the second packet. To do this, it is not enough to
        just alter the length field, but we must also update the TCP
@@ -122,11 +122,11 @@ uip_split_output(void)
 
     /* Transmit the second packet. */
 
-    tcpip_output();
+    ip_packet_output();
   } else {
     BUF->tcpchksum = 0;
     BUF->tcpchksum = ~(uip_tcpchksum());
-    tcpip_output();
+    ip_packet_output();
   }
      
 }

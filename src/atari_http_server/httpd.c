@@ -35,9 +35,10 @@
  */
 
 #include "uip.h"
-#include "atarid.h"
+#include "httpd.h"
 #include "../logging.h"
 #include "../ioredirect.h"
+#include "../common.h"
 
 #include "psock.h"
 
@@ -72,7 +73,7 @@
 
 struct DataSource;
 
-typedef struct atarid_state {
+typedef struct httpd_state {
   const char* http_request_type;
   int http_result_code;
   const char* http_result_string;
@@ -94,66 +95,23 @@ typedef struct atarid_state {
   struct pt worker[4];
   size_t temp_file_length;
 
-  void (*idle_run_handler)(struct atarid_state *s);
+  void (*idle_run_handler)(struct httpd_state *s);
   char storeCurrentPath[256];
   char run_path[256];
   int16_t storeCurrentDrive;
   uip_ipaddr_t remote_ipaddr;
 
-  char(*handler_func)(struct pt* worker,struct atarid_state *s);
+  char(*handler_func)(struct pt* worker,struct httpd_state *s);
 
   struct DataSource* handler_datasrc;
 
   int16_t  fd;
 
   uint8_t heap[HEAP_SIZE];
-} sAtariState;
-
-/*---------------------------------------------------------------------------*/
-int ensureFolderExists(const char* path, int stripFileName)
-{
-  char temp_path[256];
-  const size_t len = strlen(path);
-  strncpy(temp_path, path, sizeof(temp_path));
-  int ret = 0;
-
-  // remove file name from the path file path base
-  for (size_t i = len; i != 0; --i) {
-    if (stripFileName && temp_path[i] == '\\') {
-      temp_path[i] = '\0';
-      break;
-    }
-  }
-
-  // skip the drive letter in the path
-  for (size_t i = 4; i < len; ++i) {
-    if (temp_path[i] == '\\') {
-      temp_path[i] = '\0';
-      (void)Dcreate(temp_path);
-      temp_path[i] = '\\';
-    }
-  }
-  ret = Dcreate(temp_path);
-  // printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
-  // if we strip file name then we don't want error to be reported
-  // because in that case we might be overwriting a file
-  return stripFileName ? 0 : ret;
-}
+};
 
 /*---------------------------------------------------------------------------*/
 
-int Fclose_safe(int16_t* fd)
-{
-  int16_t _fd = *fd;
-
-  if (_fd > 0) {
-    Fclose(_fd);
-    *fd = -1;
-  }
-  return _fd;
-}
-
-_DTA  dta;  /* global! */
 
 ssize_t file_size(const char* path)
 {
@@ -165,7 +123,7 @@ ssize_t file_size(const char* path)
 }
 
 static
-PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* filename, const size_t filelen))
+PT_THREAD(receive_file(struct pt* worker, struct httpd_state *s, const char* filename, const size_t filelen))
 {
   PT_BEGIN(worker);
 
@@ -223,7 +181,7 @@ PT_THREAD(receive_file(struct pt* worker, struct atarid_state *s, const char* fi
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(handle_post(struct pt* worker, struct atarid_state *s))
+PT_THREAD(handle_post(struct pt* worker, struct httpd_state *s))
 {
   PT_BEGIN(worker);
 
@@ -242,35 +200,6 @@ PT_THREAD(handle_post(struct pt* worker, struct atarid_state *s))
 }
 
 /*---------------------------------------------------------------------------*/
-
-struct Repsonse {
-  char* malloc_block;
-  char* current;
-  size_t size;
-};
-
-void fstrcat(struct Repsonse* response, char* format, ...)
-{
-  char formated[256];
-  va_list args;
-  size_t formated_len = 0;
-
-  va_start (args, format);
-  formated_len = vsnprintf (formated, sizeof(formated), format, args);
-
-  if (response->size  <= (response->current-response->malloc_block) + formated_len) {
-    size_t current_offset = response->current-response->malloc_block;
-    LOG_TRACE("realloc: %zu->%zu\r\n", response->size, response->size*2);
-    response->size = response->size * 2;
-    response->malloc_block = realloc(response->malloc_block,response->size);
-    response->current = &response->malloc_block[current_offset];
-    LOG_TRACE("realloc: %p\r\n", response->malloc_block);
-  }
-
-  strcat(response->current, formated);
-  response->current = &response->current[ formated_len ];
-  va_end (args);
-}
 
 static void file_stat_single(struct Repsonse* response)
 {
@@ -525,7 +454,7 @@ struct GetState {
 };
 
 static
-PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
+PT_THREAD(handle_get(struct pt* worker, struct httpd_state *s))
 {
   struct GetState* this = (struct GetState*)s->heap;
   struct DataSource* src = s->handler_datasrc;
@@ -591,7 +520,7 @@ PT_THREAD(handle_get(struct pt* worker, struct atarid_state *s))
 /*---------------------------------------------------------------------------*/
 
 static
-void handle_idle_run(struct atarid_state *s)
+void handle_idle_run(struct httpd_state *s)
 {
   /* Process arguments */
   s->idle_run_handler = NULL;
@@ -627,7 +556,7 @@ void handle_idle_run(struct atarid_state *s)
 }
 
 static
-PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
+PT_THREAD(handle_run(struct pt* worker, struct httpd_state *s))
 {
   char temp_path[256] = {"\0"};
   bool path_ok = false;
@@ -706,7 +635,7 @@ PT_THREAD(handle_run(struct pt* worker, struct atarid_state *s))
 /*---------------------------------------------------------------------------*/
 
 static
-PT_THREAD(handle_delete(struct pt* worker, struct atarid_state *s))
+PT_THREAD(handle_delete(struct pt* worker, struct httpd_state *s))
 {
   PT_BEGIN(worker);
 
@@ -722,7 +651,7 @@ PT_THREAD(handle_delete(struct pt* worker, struct atarid_state *s))
 
 /*---------------------------------------------------------------------------*/
 
-void parse_url(struct atarid_state *s)
+void parse_url(struct httpd_state *s)
 {
   char* fn_end = s->inputbuf;
   char* fn, *query;
@@ -773,7 +702,7 @@ void parse_url(struct atarid_state *s)
   strncpy(&s->filename[2], ++fn, sizeof(s->filename)-2);
 }
 
-static int query_dir(struct atarid_state *s)
+static int query_dir(struct httpd_state *s)
 {
   const char* dir_json = file_stat_json(s->filename);
   if (dir_json) {
@@ -783,13 +712,13 @@ static int query_dir(struct atarid_state *s)
   return 0;
 }
 
-static int query_run(struct atarid_state *s)
+static int query_run(struct httpd_state *s)
 {
   s->handler_func = handle_run;
   return 1;
 }
 
-static int query_newfolder(struct atarid_state *s)
+static int query_newfolder(struct httpd_state *s)
 {
   s->http_result_code = 1200;
   s->handler_func = NULL;
@@ -799,7 +728,7 @@ static int query_newfolder(struct atarid_state *s)
   return 1;
 }
 
-static int query_setfiledate(struct atarid_state *s)
+static int query_setfiledate(struct httpd_state *s)
 {
   char* dateIntStart = strchr(s->query, '=');;
   if (dateIntStart) {
@@ -809,11 +738,11 @@ static int query_setfiledate(struct atarid_state *s)
   }
 }
 
-static int parse_query(struct atarid_state *s)
+static int parse_query(struct httpd_state *s)
 {
   static struct {
     const char* query_string;
-    int (*query_func)(struct atarid_state *s);
+    int (*query_func)(struct httpd_state *s);
   } query_mapping [] = {
     {"dir", query_dir},
     {"run", query_run},
@@ -834,7 +763,7 @@ static int parse_query(struct atarid_state *s)
   return 0;
 }
 
-static void parse_post(struct atarid_state *s)
+static void parse_post(struct httpd_state *s)
 {
   parse_url(s);
   parse_query(s);
@@ -853,7 +782,7 @@ struct
     {"index.html", index_html_gz, sizeof(index_html_gz), "text/html; charset=UTF-8", "gzip"},
     {NULL, NULL, 0}};
 
-static void parse_get(struct atarid_state *s)
+static void parse_get(struct httpd_state *s)
 {
   LOG_TRACE("request: %s\r\n", s->inputbuf);
 
@@ -873,12 +802,12 @@ static void parse_get(struct atarid_state *s)
                               static_url_mapping[i].content_type,
                               static_url_mapping[i].encoding_type,
                               0);
-        LOG_TRACE(static_url_mapping[i].url);
+        LOG_TRACE("%s", static_url_mapping[i].url);
         break;
       }
     }
     if (!s->handler_datasrc) {
-      LOG_TRACE(s->filename);
+      LOG_TRACE("%s", s->filename);
       s->handler_datasrc = fileSourceCreate(s->filename, "application/octet-stream","identity");
       if (!s->handler_datasrc) {
         // Couldn't create file source
@@ -892,23 +821,23 @@ static void parse_get(struct atarid_state *s)
   }
 }
 
-static void parse_content_len(struct atarid_state *s)
+static void parse_content_len(struct httpd_state *s)
 {
   s->expected_file_length = atoi(&s->inputbuf[15]);
 }
 
-static void parse_delete(struct atarid_state *s)
+static void parse_delete(struct httpd_state *s)
 {
   parse_url(s);
   s->handler_func = handle_delete;
 }
 
-static void parse_expect(struct atarid_state *s)
+static void parse_expect(struct httpd_state *s)
 {
   s->expected_100_continue = 1;
 }
 
-static void parse_urlencoded(struct atarid_state *s)
+static void parse_urlencoded(struct httpd_state *s)
 {
   s->multipart_encoded = 1;
 }
@@ -918,7 +847,7 @@ static void parse_urlencoded(struct atarid_state *s)
 struct {
   const char* entry;
   const size_t entry_len;
-  void (*parse_func)(struct atarid_state *s);
+  void (*parse_func)(struct httpd_state *s);
   const char request_type;
 } static commands[] = {
   HeaderEntry ("POST", parse_post, 1),
@@ -945,7 +874,7 @@ struct {
 };
 
 static
-PT_THREAD(handle_input(struct atarid_state *s))
+PT_THREAD(handle_connection(struct httpd_state *s))
 {
   PSOCK_BEGIN(&s->sin);
 
@@ -1021,7 +950,7 @@ PT_THREAD(handle_input(struct atarid_state *s))
 }
 /*---------------------------------------------------------------------------*/
 static void
-handle_error(struct atarid_state *s)
+handle_error(struct httpd_state *s)
 {
   if (!s) {
     return;
@@ -1033,50 +962,44 @@ handle_error(struct atarid_state *s)
 }
 
 /*---------------------------------------------------------------------------*/
-char
-handle_connection(struct atarid_state *s)
+struct httpd_state* httpd_get_state()
 {
-  return handle_input(s);
-}
-/*---------------------------------------------------------------------------*/
-struct atarid_state* atarid_get_state()
-{
-  return (struct atarid_state *)(uip_conn->appstate);
+  return (struct httpd_state *)(uip_conn->appstate);
 }
 
-struct atarid_state* atarid_alloc_state()
+struct httpd_state* httpd_alloc_state()
 {
-  struct atarid_state *s = atarid_get_state();
+  struct httpd_state *s = httpd_get_state();
 
-  LOG_TRACE("atarid_alloc_state\r\n");
+  LOG_TRACE("httpd_alloc_state\r\n");
 
   if (s) {
-    LOG_WARN("atarid_alloc_state: connection already allocated!");
+    LOG_WARN("httpd_alloc_state: connection already allocated!");
     return s;
   }
 
-  s = (struct atarid_state *)malloc(sizeof(struct atarid_state));
+  s = (struct httpd_state *)malloc(sizeof(struct httpd_state));
   uip_conn->appstate = s;
 
-  memset(s, 0, sizeof(struct atarid_state));
+  memset(s, 0, sizeof(struct httpd_state));
   s->inputbuf_size = INPUTBUF_SIZE;
   s->inputbuf = malloc(INPUTBUF_SIZE);
 
-  LOG_TRACE("atarid_alloc_state: %p, buf: %p\r\n", s, s->inputbuf);
+  LOG_TRACE("httpd_alloc_state: %p, buf: %p\r\n", s, s->inputbuf);
 
   PSOCK_INIT(&s->sin, s->inputbuf, s->inputbuf_size);
 
   return s;
 }
 
-static void atarid_free_state()
+static void httpd_free_state()
 {
-  struct atarid_state *s = atarid_get_state();
+  struct httpd_state *s = httpd_get_state();
 
-  LOG_TRACE("atarid_free_state\r\n");
+  LOG_TRACE("httpd_free_state\r\n");
 
   if (!s) {
-    LOG_WARN("atarid_free_state: connection already freed!");
+    LOG_WARN("httpd_free_state: connection already freed!");
     return;
   }
 
@@ -1094,17 +1017,12 @@ static void atarid_free_state()
 /*---------------------------------------------------------------------------*/
 
 void
-atarid_appcall(void)
+httpd_appcall(void)
 {
-  struct atarid_state *s = atarid_get_state();
-
-  if (uip_conn->lport != 80) {
-    return;
-  }
-
+  struct httpd_state *s = httpd_get_state();
 
   if (s) {
-      void (*idle_run_handler)(struct atarid_state *s);
+      void (*idle_run_handler)(struct httpd_state *s);
       idle_run_handler = s->idle_run_handler;
       /* connection is already established */
       if (uip_timedout()) {
@@ -1125,7 +1043,7 @@ atarid_appcall(void)
       }
       /* now check if there's and outstanding error */
       handle_error(s);
-      atarid_free_state();
+      httpd_free_state();
 
       if(idle_run_handler){
         idle_run_handler(s);
@@ -1136,9 +1054,10 @@ atarid_appcall(void)
  if(uip_connected()) {
     LOG_TRACE("Connection established\r\n");
     /* new connection */
-    atarid_alloc_state();
+    httpd_alloc_state();
   } else {
-    // Unknown condition, do nothing
+    /* pass */
+    /* Unknown condition, do nothing */
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -1149,7 +1068,7 @@ atarid_appcall(void)
  *             called at system boot-up.
  */
 void
-atarid_init(void)
+httpd_init(void)
 {
   uip_listen(HTONS(80));
 }

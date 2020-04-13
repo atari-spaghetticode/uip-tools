@@ -67,12 +67,12 @@ uint64_t getMicroseconds()
 resync:
   timer200hz = *((volatile uint32_t*)0x4BA) ;
   data = *((volatile uint8_t*)0xFFFFFA23);
-  
+
   if ( *((volatile uint32_t*)0x4BA) != timer200hz )
   {
     goto resync;
   }
-  
+
   timer200hz*=5000;       // convert to microseconds
   timer200hz+=(uint64_t)(((192-data)*6666)>>8); //26;     // convert data to microseconds
   return timer200hz;
@@ -110,10 +110,9 @@ struct ProfileProbe netOther;
 void net_send()
 {
   uip_split_output();
-  //tcpip_output();
 }
 
-void tcpip_output()
+void ip_packet_output()
 {
   probeBegin(&netSend);
   uip_arp_out();
@@ -341,7 +340,7 @@ bool get_cookie(uint32_t cookie, uint32_t *value)
 /*---------------------------------------------------------------------------*/
 
 static void
-config_cpu_options(cpu_type)
+config_cpu_options(int cpu_type)
 {
   /* Tune the stack based on the cpu type.
    * These values were chosen experimentally.
@@ -364,7 +363,7 @@ main(int argc, char *argv[])
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   uint32_t cpu_type = 0;  // assume MC68000
-  
+
   INFO("\33puIP tool, version %d\33q\r\n", VERSION);
 
   create_config_path(argv[0]);
@@ -394,7 +393,7 @@ main(int argc, char *argv[])
 
   uip_init();
   read_config();
-  atarid_init();
+  httpd_init();
 
   initProbe(&netSend);
   initProbe(&netRecv);
@@ -421,7 +420,7 @@ main(int argc, char *argv[])
     probeBegin(&netRecv);
     uip_len = RTL8019dev_poll();
     probeEnd(&netRecv);
-    
+
     if(uip_len > 0) {
       probeBegin(&netInput);
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
@@ -458,11 +457,11 @@ main(int argc, char *argv[])
     for(i = 0; i < UIP_UDP_CONNS; i++) {
       uip_udp_periodic(i);
       if(uip_len > 0) {
-        tcpip_output();
+        ip_packet_output();
       }
     }
     #endif /* UIP_UDP */
-      
+
     /* Call the ARP timer function every 10 seconds. */
     if(timer_expired(&arp_timer)) {
       timer_reset(&arp_timer);
@@ -489,7 +488,6 @@ main(int argc, char *argv[])
 void udp_appcall (void)
 {
   switch(uip_udp_conn->lport) {
-   // case HTONS(67):
     case HTONS(68):
       dhcpc_appcall();
       break;

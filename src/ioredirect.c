@@ -128,7 +128,7 @@ send_udp_data()
 {
     uip_udp_periodic_conn(conn);
     if(uip_len > 0) {
-        tcpip_output();
+        ip_packet_output();
     }
 }
 

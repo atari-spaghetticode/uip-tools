@@ -154,7 +154,7 @@ typedef unsigned short uip_stats_t;
 #define UIP_UDP_APPCALL udp_appcall
 
 void udp_appcall (void);
-void tcpip_output();
+void ip_packet_output();
 
 #define UIP_UDP_APPCALL udp_appcall
 
@@ -166,7 +166,7 @@ void tcpip_output();
 /*#include "smtp.h"*/
 /*#include "hello-world.h"*/
 /*#include "telnetd.h"*/
-#include "atariserv.h"
+#include "httpserv.h"
 #include "dhcpc.h"
 #include "ioredirect.h"
 /*#include "resolv.h"*/

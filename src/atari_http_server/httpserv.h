@@ -32,18 +32,18 @@
  * $Id: webserver.h,v 1.2 2006/06/11 21:46:38 adam Exp $
  *
  */
-#ifndef __ATARISERV_H__
-#define __ATARISERV_H__
+#ifndef __HTTPDSERV_H__
+#define __HTTPDSERV_H__
 
-#include "atarid.h"
+#include "httpd.h"
 
 //typedef struct atarid_state uip_tcp_appstate_t;
 /* UIP_APPCALL: the name of the application function. This function
    must return void and take no arguments (i.e., C type "void
    appfunc(void)"). */
 #ifndef UIP_APPCALL
-#define UIP_APPCALL     atarid_appcall
+#define UIP_APPCALL     httpd_appcall
 #endif
 
 
-#endif /* __ATARISERV_H__ */
+#endif /* __HTTPDSERV_H__ */

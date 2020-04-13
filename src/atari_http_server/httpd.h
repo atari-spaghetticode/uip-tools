@@ -32,10 +32,10 @@
  *
  */
 
-#ifndef __ATARID_H__
-#define __ATARID_H__
+#ifndef __HTTPD_H__
+#define __HTTPD_H__
 
-void atarid_init(void);
-void atarid_appcall(void);
+void httpd_init(void);
+void httpd_appcall(void);
 
-#endif /* __ATARID_H__ */
+#endif /* __HTTPD_H__ */
