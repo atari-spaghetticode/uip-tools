@@ -125,7 +125,7 @@ void ip_packet_output()
 void
 uip_log(char *m)
 {
-  LOG_TRACE("uIP: %s\n", m);
+  INFO("uIP: %s\n", m);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -394,6 +394,7 @@ main(int argc, char *argv[])
   uip_init();
   read_config();
   httpd_init();
+  ftpd_init();
 
   initProbe(&netSend);
   initProbe(&netRecv);
@@ -499,5 +500,21 @@ void udp_appcall (void)
       break;
     default:
       /* pass */;
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+void uip_appcall ()
+{
+  if (uip_conn->lport >= HTONS(FTPD_BASE_DATA_PORT) &&
+      uip_conn->lport < HTONS(FTPD_BASE_DATA_PORT+UIP_CONF_MAX_CONNECTIONS)) {
+    ftpd_data_appcall();
+    return;
+  }
+
+  switch(uip_conn->lport) {
+    case HTONS(21): ftpd_appcall();       break;
+    case HTONS(80): httpd_appcall();      break;
   }
 }

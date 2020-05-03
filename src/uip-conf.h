@@ -92,14 +92,14 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_MAX_CONNECTIONS 8
+#define UIP_CONF_MAX_CONNECTIONS (8+2)
 
 /**
  * Maximum number of listening TCP ports.
  *
  * \hideinitializer
  */
-#define UIP_CONF_MAX_LISTENPORTS 1
+#define UIP_CONF_MAX_LISTENPORTS (8+2)
 
 /**
  * uIP buffer size.
@@ -157,9 +157,8 @@ void udp_appcall (void);
 void ip_packet_output();
 
 #define UIP_UDP_APPCALL udp_appcall
+#define UIP_APPCALL uip_appcall
 
-void udp_appcall (void);
-void tcpip_output();
 
 /* Here we include the header file for the application(s) we use in
    our project. */
@@ -167,6 +166,7 @@ void tcpip_output();
 /*#include "hello-world.h"*/
 /*#include "telnetd.h"*/
 #include "httpserv.h"
+#include "ftpserv.h"
 #include "dhcpc.h"
 #include "ioredirect.h"
 /*#include "resolv.h"*/
