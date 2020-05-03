@@ -710,6 +710,8 @@ uip_process(u8_t flag)
   if(flag == UIP_POLL_REQUEST) {
     if((uip_connr->tcpstateflags & UIP_TS_MASK) == UIP_ESTABLISHED &&
        !uip_outstanding(uip_connr)) {
+        uip_slen = 0;  // We don't want stale slen from previous connection?
+        uip_len = 0;
         uip_flags = UIP_POLL;
         UIP_APPCALL();
         goto appsend;
