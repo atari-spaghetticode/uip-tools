@@ -299,24 +299,25 @@ PT_THREAD(psock_readbuf_len(register struct psock *psock, uint32_t len))
 
   /* XXX: Should add buf_checkmarker() before do{} loop, if
      incoming data has been handled while waiting for a write. */
-  
+
   /* read len bytes or to end of data */
   do {
     if(psock->readlen == 0) {
-      PT_WAIT_UNTIL(&psock->psockpt, psock_newdata(psock));
+      PT_WAIT_UNTIL(&psock->psockpt, psock_newdata(psock) || uip_closed());
       psock->state = STATE_READ;
       psock->readptr = (uint8_t *)uip_appdata;
       psock->readlen = uip_datalen();
     }
   } while(buf_bufdata(&psock->buf, psock->bufsize,
-          &psock->readptr, &psock->readlen) == BUF_NOT_FULL && psock_datalen(psock) < len);
-  
-  if(psock_datalen(psock) == 0) {
+          &psock->readptr, &psock->readlen) == BUF_NOT_FULL && psock_datalen(psock) < len
+          && !uip_closed());
+
+  if(psock_datalen(psock) == 0 && !uip_closed()) {
     psock->state = STATE_NONE;
     PT_RESTART(&psock->psockpt);
   }
   PT_END(&psock->psockpt);
-} 
+}
 
 /*---------------------------------------------------------------------------*/
 PT_THREAD(psock_readpacket(register struct psock *psock))
