@@ -448,8 +448,10 @@ main(int argc, char *argv[])
       }
     } else {
       for(i = 0; i < UIP_CONNS; i++) {
-        /* Call apps idle handlers */
-        uip_idle(i);
+        uip_poll_conn(&uip_conns[i]);
+        if(uip_len > 0) {
+          net_send();
+        }
       }
     }
 
