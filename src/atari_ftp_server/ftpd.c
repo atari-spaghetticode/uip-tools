@@ -650,7 +650,7 @@ struct {
 } ftp_responses[] = {
   { 200, "200 Command successful.\r\n" },
   { 202, "202 Command unimplemented.\r\n" },
-  { 215, "211 No features.\r\n" },
+  { 211, "211 No features.\r\n" },
   { 215, "215 UIPTool.\r\n" },
   { 230, "230 Logged in.\r\n" },
   { 231, "231 Password required.\r\n" },
