@@ -20,12 +20,15 @@ You can support development of this tool via PayPal:
  [Files can be downloaded here](https://bitbucket.org/sqward/uip-tools/downloads/)
 
 
-
 # Requirements
 
 **Uiptool** requires an Atari machine TOS operating system. It should work with all know versions but it's advised to use it on the most recent version as possible. Normally the tool is developed on Atari Falcon. **MiNT** and **STING/STiK** will be detected and **uiptool** will **ABORT** if present.
 
 A **NetUSBee** Ethernet addon or **Ethernac** compatible hardware is also required.
+
+# Security
+
+Obviously, you should never expose your uiptool IP/port to the internet! Absolutly no effort was expanded at hardening the uiptool. It should *ONLY* be used in a trusted environment!
 
 # Usage
 
@@ -48,6 +51,11 @@ By clicking on directory in left panel or on breadcrumb elements above file view
 Bottom part is divided into two parts.
 Files and whole folders can be drag and dropped onto bottom / right part to initiate upload to currently set GEMDOS path. Alternatively clicking "Select files to upload" button will bring up system file selector, so desired files can be selected and uploaded.
 Right portion of bottom panel displays the processing of upload que, shows failed and completed transfers.
+
+## FTP server
+A simple FTP server on a default port is now available with a limited command support. Although simple it is sufficient to allow most PC clients (Filezilla, WinSCP, Total Commander tested and working fine). No login credentials are required. Anonumous login should work. Also, any made up credentials will allow to login.
+
+Make sure to use PASSIVE mode in your client! Just use the IP address displayed by uiptool as your FTP server address.
 
 ## DHCP and STATIC IP Operating Mode
 
