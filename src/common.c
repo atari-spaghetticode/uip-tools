@@ -125,7 +125,9 @@ bool ensureFolderExists(const char* path, bool stripFileName)
   // printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
   // if we strip file name then we don't want error to be reported
   // because in that case we might be overwriting a file
-  return stripFileName ? 0 : ret;
+  return stripFileName ?
+    true : ret == 0 /* E_OK*/ ?
+      true : false;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -131,7 +131,7 @@ PT_THREAD(receive_file(struct pt* worker, struct httpd_state *s, const char* fil
   //(void)LOG("\033K");
 
   // make sure folder exists
-  if (ensureFolderExists(filename, 1)) {
+  if (!ensureFolderExists(filename, true)) {
     s->http_result_code = 400;
     LOG_TRACE(" -> failed to create folder!\r\n");
     PT_EXIT(worker);
@@ -722,7 +722,7 @@ static int query_newfolder(struct httpd_state *s)
 {
   s->http_result_code = 1200;
   s->handler_func = NULL;
-  if (0 != ensureFolderExists(s->filename, 0)) {
+  if (!ensureFolderExists(s->filename, false)) {
     s->http_result_code = 400;
   }
   return 1;
