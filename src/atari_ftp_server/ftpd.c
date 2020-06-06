@@ -121,12 +121,47 @@ struct ftpd_control_state {
 
 /*---------------------------------------------------------------------------*/
 
+static void file_cat_date_time(struct Repsonse* response)
+{
+  static const char *month_strings[] = {
+    "Jan" /* unknown */, "Jan", "Feb", "Mar", "Apr", "May",
+    "June","July", "Aug", "Sept", "Oct",  "Nov", "Dec" };
+
+  uint32_t current_date = Tgetdate ();
+
+  /*
+    0-4   Seconds in units of two (0-29)
+    5-10  Minutes (0-59)
+    11-15   Hours (0-23)
+  */
+  uint32_t hours = (dta.dta_time >> 11);
+  uint32_t minutes = (dta.dta_time >> 5) & 0x3f;
+
+  /*
+  0-4   Day (1-31)
+  5-8   Month (1-12)
+  9-15  Year (0-119, 0= 1980)
+  */
+  uint32_t year = (dta.dta_date >> 9) + 1980;
+  const char* month = month_strings[((dta.dta_date >> 5) & 0xf)];
+  uint32_t day = (dta.dta_date & 0x1f);
+
+  if (current_date == (uint32_t)dta.dta_date) {
+    fstrcat(response, "%s %d %d:%d",month, day, hours, minutes);
+  } else {
+    fstrcat(response, "%s %d %d", month, day, year);
+  }
+}
+
 static void file_stat_single(struct Repsonse* response)
 {
-  fstrcat(response, "%s 1 None None %d Jan 10 2019 %s\r\n",
+  fstrcat(response, "%s 1 None None %d ",
     dta.dta_attribute&FA_DIR ? "drwxrwxrwx" : "-rwxrwxrwx",
-    !dta.dta_attribute&FA_DIR ? 0 : dta.dta_size,
-    dta.dta_name);
+    !dta.dta_attribute&FA_DIR ? 0 : dta.dta_size);
+
+  file_cat_date_time(response);
+
+  fstrcat(response, " %s\r\n", dta.dta_name);
 }
 
 char* ftp_file_stat(const char* path)
@@ -143,8 +178,6 @@ char* ftp_file_stat(const char* path)
 
   strncpy (dos_path, path, sizeof(dos_path));
 
-  fstrcat(&response, "drwxr--r--   1 None     None          0 Jan 10 2019 .\r\n");
-  fstrcat(&response, "drwxr--r--   1 None     None          0 Jan 10 2019 ..\r\n");
 
   if (dos_path[0] == '/' && dos_path[1] == '\0') {
     // list drivers
@@ -198,12 +231,10 @@ char* ftp_file_stat(const char* path)
         if (0 == Fsfirst(dos_path, FA_DIR|FA_HIDDEN|FA_SYSTEM)) {
           int first = 1;
           do {
-            // skip .. and . pseudo folders
-            if (strcmp(dta.dta_name, "..") != 0
-                && strcmp(dta.dta_name, ".") != 0
-            // && !dta.dta_attribute&FA_SYSTEM
-                && !(dta.dta_attribute&FA_LABEL)
-             ) {
+            // skip unusual entries
+            if (strcmp(dta.dta_name, "..")
+                && strcmp(dta.dta_name, ".")
+                && !(dta.dta_attribute&FA_LABEL)) {
               file_stat_single(&response);
             }
           } while (0 == Fsnext());
