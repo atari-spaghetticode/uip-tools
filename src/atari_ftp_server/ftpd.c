@@ -1173,7 +1173,8 @@ static void ftpd_garbage_collest_data_states()
 {
   for(size_t i = 0; i < FTPD_MAX_DATA_CONNECTIONS; i++) {
     if(ftpd_data_connection_states[i] != NULL &&
-        ftpd_data_connection_states[i]->closed) {
+        (ftpd_data_connection_states[i]->closed
+          || uip_is_active_connection(ftpd_data_connection_states[i]->port))) {
       ftpd_free_data_state(ftpd_data_connection_states[i]);
     }
   }
