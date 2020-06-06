@@ -507,14 +507,9 @@ void udp_appcall (void)
 
 void uip_appcall ()
 {
-  if (uip_conn->lport >= HTONS(FTPD_BASE_DATA_PORT) &&
-      uip_conn->lport < HTONS(FTPD_BASE_DATA_PORT+UIP_CONF_MAX_CONNECTIONS)) {
-    ftpd_data_appcall();
-    return;
-  }
-
   switch(uip_conn->lport) {
     case HTONS(21): ftpd_appcall();       break;
     case HTONS(80): httpd_appcall();      break;
+    default: ftpd_data_appcall();         break;
   }
 }

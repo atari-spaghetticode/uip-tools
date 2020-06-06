@@ -79,7 +79,7 @@ struct ftpd_data_state;
 
 static int ftd_data_get_port(struct ftpd_data_state* s);
 static struct ftpd_data_state* ftpd_get_data_state(int port);
-static int ftpd_alloc_data_state();
+static int ftpd_alloc_data_state(int port);
 static void ftpd_free_data_state(struct ftpd_data_state* s);
 static bool ftpd_data_is_busy(struct ftpd_data_state* s);
 static bool ftpd_data_is_connected(struct ftpd_data_state* s);
@@ -332,15 +332,41 @@ PT_THREAD(handle_type(struct pt* worker, struct ftpd_control_state *s))
 }
 
 /*---------------------------------------------------------------------------*/
-#if 0
+
 static
 PT_THREAD(handle_port(struct pt* worker, struct ftpd_control_state *s))
 {
   PT_BEGIN(worker);
-  LOG_TRACE("handle_port\r\n");
+  LOG_TRACE("handle_port %s\r\n", s->args);
+
+  int ip[4], port, port_hi, port_lo;
+  uip_ipaddr_t ipaddr;
+
+  size_t num_values = sscanf(s->args,
+      "%u,%u,%u,%u,"   /* IP address*/
+      "%u,%u", /* port */
+      &ip[0], &ip[1], &ip[2], &ip[3],
+      &port_hi, &port_lo);
+
+  port = (port_hi << 8) | port_lo;
+
+  LOG_TRACE("PORT: %d\r\n", port);
+
+  uip_ipaddr(&ipaddr, ip[0], ip[1], ip[2], ip[3]);
+  struct uip_conn* conn = uip_connect(&ipaddr, HTONS(port));
+  s->data_port = ftpd_alloc_data_state(conn->lport);
+
+  if(conn) {
+    LOG_TRACE("PORT Connection request started..\r\n");
+    s->ftp_result_code = 200;
+  } else {
+    /* Connection could not be created so fail this operation */
+    s->ftp_result_code = 452;
+  }
+
+
   PT_END(worker);
 }
-#endif
 /*---------------------------------------------------------------------------*/
 
 static
@@ -356,7 +382,7 @@ PT_THREAD(handle_pasv(struct pt* worker, struct ftpd_control_state *s))
 
   uip_gethostaddr(&host_ip);
 
-  s->data_port = ftpd_alloc_data_state();
+  s->data_port = ftpd_alloc_data_state(0);
 
   snprintf(s->response_string, sizeof(s->response_string),
     "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",
@@ -655,7 +681,7 @@ struct {
     FTPCommand ("FEAT", handle_feat),
     FTPCommand ("PWD", handle_pwd),
     FTPCommand ("PASV", handle_pasv),
-//    FTPCommand ("PORT", handle_port),   // unimplemented yet!
+    FTPCommand ("PORT", handle_port),   // unimplemented yet!
     FTPCommand ("TYPE", handle_type),
     FTPCommand ("CDUP", handle_cdup),
 
@@ -971,31 +997,48 @@ static void ftpd_data_list_states()
   }
 }
 
-static int ftpd_alloc_data_state()
+static int ftpd_alloc_data_state(int port)
 {
   struct ftpd_data_state *s;
   int slot = -1;
 
-  LOG_TRACE("start\r\n");
+  LOG_TRACE("start (port %d)\r\n", port);
 
   ftpd_garbage_collest_data_states();
 
   for(size_t i = 0; i < FTPD_MAX_DATA_CONNECTIONS; i++) {
+
     if(ftpd_data_connection_states[i] == NULL) {
       slot = i;
       break;
+    } else {
+      LOG_TRACE("%d: port: %d, closed: %d\r\n",
+        i,
+        ftpd_data_connection_states[i]->port,
+        ftpd_data_connection_states[i]->closed ? 1 : 0);
     }
   }
 
   if (slot == -1) {
-    LOG_TRACE("ftpd_alloc_data_state:: Too many active data connections!?\r\n");
+    int count = 0;
+
+    for(size_t i = 0; i < FTPD_MAX_DATA_CONNECTIONS; i++) {
+      if(ftpd_data_connection_states[i] != NULL) {
+        count++;
+      }
+    }
+
+    INFO("Too many active data connections: %d !?\r\n", count);
     ftpd_data_list_states();
     exit(1);
     return -1;
   }
 
-  int port = FTPD_BASE_DATA_PORT + slot;
-  LOG_TRACE("data connection port: %x (%d)\r\n", port, slot);
+  if (0 == port) {
+    port = FTPD_BASE_DATA_PORT + slot;
+  }
+
+  LOG_TRACE("data connection port: %d (%d)\r\n", port, slot);
 
   s = (struct ftpd_data_state *)malloc(sizeof(struct ftpd_data_state));
 
