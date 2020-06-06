@@ -362,6 +362,7 @@ PT_THREAD(handle_port(struct pt* worker, struct ftpd_control_state *s))
 
   PT_END(worker);
 }
+
 /*---------------------------------------------------------------------------*/
 
 static
@@ -733,12 +734,13 @@ PT_THREAD(handle_rest(struct pt* worker, struct ftpd_control_state *s))
 }
 
 /*---------------------------------------------------------------------------*/
+
 #define FTPCommand(str,func) {str, sizeof(str), func}
 
 struct {
   const char* entry;
   const size_t entry_len;
-  char(*handle_command_func)(struct pt* worker,struct ftpd_control_state *s)
+  char(*handle_command_func)(struct pt* worker,struct ftpd_control_state *s);
 } commands[] = {
     FTPCommand ("CWD", handle_cwd),
     FTPCommand ("USER", handle_user),
@@ -746,7 +748,7 @@ struct {
     FTPCommand ("PASS", handle_pass),
     FTPCommand ("SYST", handle_syst),
     FTPCommand ("FEAT", handle_feat),
-    FTPCommand ("PWD", handle_pwd),
+    FTPCommand ("PWD",  handle_pwd),
     FTPCommand ("PASV", handle_pasv),
     FTPCommand ("PORT", handle_port),   // unimplemented yet!
     FTPCommand ("TYPE", handle_type),
@@ -783,7 +785,7 @@ struct {
   { 226, "226 Transfer complete.\r\n" },
   { 257, "257 Created.\r\n" },
   { 250, "250 Operation completed.\r\n" },
-  { 350, "350 Awaiting new name.\r\n" },
+  { 350, "350 Awaiting operation.\r\n" },
 
   { 331, "331 User login OK, waiting for password\r\n" },
 
@@ -805,7 +807,6 @@ PT_THREAD(ftpd_control_connection(struct ftpd_control_state *s))
 
   do {
 
-    // eat away the header
     PSOCK_READTO(&s->sin, ISO_nl);
     {
       size_t readlen = psock_datalen(&s->sin);
@@ -845,7 +846,6 @@ PT_THREAD(ftpd_control_connection(struct ftpd_control_state *s))
       LOG_TRACE("unimplemented request: %s\r\n", s->inputbuf);
       PT_INIT(&s->worker[0]);
       PSOCK_WAIT_THREAD(&s->sin, handle_command_reject(&s->worker[0], s));
-      //handle_command_reject(s);
     }
 
     if (s->ftp_result_code != 0) {
@@ -941,26 +941,18 @@ ftpd_appcall(void)
   }
 
   if (s) {
-      /* connection is already established */
-      if (uip_timedout()) {
-        LOG_TRACE("Connection timeout\r\n");
-      } else if(uip_aborted()) {
-        LOG_TRACE("Connection aborted\r\n");
-      } else if(uip_closed()) {
-        LOG_TRACE("Connection closed\r\n");
-        /* allow connection handler to do it's cleanup if connection was closed while
-          calling into UIP which would result in this code being executed and thead
-          never resumed again so that it would have no chance of cleaning up after itself.
-          */
-        ftpd_control_connection(s);
-      } else {
-        /* connection is active, service the connection*/
-        ftpd_control_connection(s);
-        return;
-      }
+
+    ftpd_control_connection(s);
+
+    if (uip_timedout() || uip_aborted() || uip_closed()) {
 
       ftpd_free_state();
-      return;
+      LOG_TRACE("Control connection %s\r\n",
+        uip_timedout() ? "timeout" :
+        uip_aborted() ? "aborted" : "closed");
+    }
+  } else {
+    LOG_TRACE("Callback with no state!\r\n");
   }
 }
 
@@ -1125,8 +1117,9 @@ static int ftpd_alloc_data_state(int port)
   s->busy = false;
   s->closed = false;
   s->connected = false;
+  s->ftp_result_code = 226;   // Default to positive completion code
 
-  LOG_TRACE("ftpd_alloc_data_state: %p, buf: %p, port: %x\r\n", s, s->inputbuf, s->port);
+  LOG_TRACE("state: %p, buf: %p, port: %d\r\n", s, s->inputbuf, s->port);
 
   ftpd_data_connection_states[slot] = s;
 
@@ -1178,6 +1171,17 @@ static void ftpd_garbage_collest_data_states()
       ftpd_free_data_state(ftpd_data_connection_states[i]);
     }
   }
+  int count = 0;
+  for(size_t i = 0; i < FTPD_MAX_DATA_CONNECTIONS; i++) {
+    if(ftpd_data_connection_states[i] != NULL) {
+      count++;
+      LOG_TRACE("%d: state: %d, closed: %d, busy: %d\r\n", i,
+        ftpd_data_connection_states[i]->state,
+        ftpd_data_connection_states[i]->closed,
+        ftpd_data_connection_states[i]->busy);
+    }
+  }
+  LOG_TRACE("----------\r\nNum data conns: %d\r\n", count);
 }
 
 static
@@ -1238,6 +1242,7 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
       } else {
         s->ftp_result_code = 452;
       }
+
   } else if(s->state == Stor) {
 
       /* STOR */
@@ -1356,23 +1361,39 @@ void ftpd_data_appcall()
       s->connected = true;
     }
 
-    ftpd_data_connection(s);
-
-    if (uip_timedout() || uip_aborted() || uip_closed()) {
-      s->busy = false;
+    if (uip_closed()) {
+      ftpd_data_connection(s);
       s->state = Quit;
+      s->busy = false;
       Fclose_safe(&s->fd);
       ftpd_mark_closed_data_state(s);
       handle_data_error(s);
+    } else {
+      ftpd_data_connection(s);
+    }
 
+    if (s->closed) {
+      uip_close();
+    }
+
+    if (uip_timedout() || uip_aborted() || uip_closed()) {
       LOG_TRACE("Connection %s\r\n",
         uip_timedout() ? "timeout" :
         uip_aborted() ? "aborted" : "closed");
     }
   } else {
-    LOG_TRACE("Emergency close!\r\n");
+
+    LOG_TRACE("Emergency close, port: %d, state: %s\r\n",
+      uip_conn->lport,
+      uip_timedout() ? "timeout" :
+      uip_aborted() ? "aborted" :
+      uip_poll() ? "poll" :
+      uip_closed() ? "closed" : "unknown");
+
     uip_unlisten(uip_conn->lport);  // shouldn't be required!?
     uip_close();
+
+    ftpd_garbage_collest_data_states();
   }
 
 }
