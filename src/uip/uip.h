@@ -473,6 +473,8 @@ void uip_listen(u16_t port);
  */
 void uip_unlisten(u16_t port);
 
+int uip_is_active_connection(int port);
+
 /**
  * Connect to a remote host using TCP.
  *

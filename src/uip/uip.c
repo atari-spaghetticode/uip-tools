@@ -405,6 +405,22 @@ uip_init(void)
 
 }
 /*---------------------------------------------------------------------------*/
+
+int uip_is_active_connection(int port)
+{
+  register struct uip_conn *conn;
+
+  for(c = 0; c < UIP_CONNS; ++c) {
+    conn = &uip_conns[c];
+    if(conn->tcpstateflags == UIP_CLOSED &&
+       conn->lport == htons(port)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
 uip_connect(uip_ipaddr_t *ripaddr, u16_t rport)
