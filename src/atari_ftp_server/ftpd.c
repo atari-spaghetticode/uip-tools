@@ -69,7 +69,7 @@
 #define FTPD_PATH_LENGTH (1024)
 #define FTPD_RESPONSE_LENGTH (256)
 // This hardcoded value is a bit dodgy...
-#define FTPD_MAX_DATA_CONNECTIONS (1)
+#define FTPD_MAX_DATA_CONNECTIONS (24)
 
 
 /*---------------------------------------------------------------------------*/
