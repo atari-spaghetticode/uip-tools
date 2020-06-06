@@ -84,8 +84,10 @@ static void ftpd_free_data_state(struct ftpd_data_state* s);
 static bool ftpd_data_is_busy(struct ftpd_data_state* s);
 static bool ftpd_data_is_connected(struct ftpd_data_state* s);
 static void ftpd_data_list(struct ftpd_data_state* s, const char* path);
-static void ftpd_data_stor(struct ftpd_data_state* s, const char* path);
-static void ftpd_data_retr(struct ftpd_data_state* s, const char* path);
+static void ftpd_data_stor(struct ftpd_data_state* s, const char* path, uint32_t rest_offset);
+static void ftpd_data_retr(struct ftpd_data_state* s, const char* path, uint32_t rest_offset);
+
+static int ftpd_data_get_code(struct ftpd_data_state* s);
 
 static void ftpd_mark_closed_data_state(struct ftpd_data_state* s);
 static void ftpd_garbage_collest_data_states();
@@ -103,6 +105,8 @@ struct ftpd_control_state {
   struct psock sin;
   uint8_t* inputbuf;
   uint32_t inputbuf_size;
+
+  uint32_t rest_offset;
 
   char rnfr_name[FTPD_PATH_LENGTH]; // temp variable with a name of the file we want to rename
 
@@ -290,15 +294,6 @@ PT_THREAD(handle_syst(struct pt* worker, struct ftpd_control_state *s))
   PT_END(worker);
 }
 
-static
-PT_THREAD(handle_feat(struct pt* worker, struct ftpd_control_state *s))
-{
-  PT_BEGIN(worker);
-  LOG("handle_feat\r\n");
-  s->ftp_result_code = 211;
-  PT_END(worker);
-}
-
 /*---------------------------------------------------------------------------*/
 
 static
@@ -477,10 +472,39 @@ PT_THREAD(handle_stor(struct pt* worker, struct ftpd_control_state *s))
   ensureFolderExists(path, true);
   LOG_TRACE("STOR: %s\r\n", path);
 
-  ftpd_data_stor(ftpd_get_data_state(s->data_port), path);
+  ftpd_data_stor(ftpd_get_data_state(s->data_port), path, s->rest_offset);
+  s->rest_offset = 0;
   PSOCK_SEND_STR2(worker, &s->sin, "150 Data connection open; transfer starting\r\n");
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
   LOG_TRACE("stor 3\r\n");
+/*---------------------------------------------------------------------------*/
+
+static
+PT_THREAD(handle_appe(struct pt* worker, struct ftpd_control_state *s))
+{
+  PT_BEGIN(worker);
+  char path[FTPD_PATH_LENGTH];
+  strncpy(path, s->cwd, FTPD_PATH_LENGTH);
+  joinpath(path, s->args);
+  convertToGemDosPath(path);
+  sanitiseGemDosPath(path);
+  ensureFolderExists(path, true);
+  LOG_TRACE("APPE: %s\r\n", path);
+
+  int fd = Fopen(path, S_READ);
+
+  if (fd > 0) {
+    s->rest_offset = Fseek (0, fd, SEEK_END);
+    // Seek failed so we close the file to abort immediatly.
+    Fclose(fd);
+  }
+
+  ftpd_data_stor(ftpd_get_data_state(s->data_port), path, s->rest_offset);
+  s->rest_offset = 0;
+  PSOCK_SEND_STR2(worker, &s->sin, "150 Data connection open; transfer starting\r\n");
+  PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
+  LOG_TRACE("appe 3\r\n");
+  s->ftp_result_code = ftpd_data_get_code(ftpd_get_data_state(s->data_port));
   ftpd_free_data_state(ftpd_get_data_state(s->data_port));
   s->ftp_result_code = 226;
 
@@ -500,7 +524,8 @@ PT_THREAD(handle_retr(struct pt* worker, struct ftpd_control_state *s))
   ensureFolderExists(path, true);
   LOG_TRACE("RETR: %s\r\n", path);
 
-  ftpd_data_retr(ftpd_get_data_state(s->data_port), path);
+  ftpd_data_retr(ftpd_get_data_state(s->data_port), path, s->rest_offset);
+  s->rest_offset = 0;
   PSOCK_WAIT_UNTIL2(worker, &s->sin, ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
   PSOCK_SEND_STR2(worker, &s->sin, "125 Data connection open; transfer starting\r\n");
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_busy(ftpd_get_data_state(s->data_port)));
@@ -666,6 +691,43 @@ PT_THREAD(handle_noop(struct pt* worker, struct ftpd_control_state *s))
 
 /*---------------------------------------------------------------------------*/
 
+static
+PT_THREAD(handle_feat(struct pt* worker, struct ftpd_control_state *s))
+{
+  PT_BEGIN(worker);
+
+  PSOCK_SEND_STR2(worker, &s->sin,
+      "211- supported features:\r\n"
+      "SIZE\r\n"
+      "REST\r\n"
+      "REST STREAM\r\n"
+      "211 end\r\n"
+      );
+
+  PT_END(worker);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static
+PT_THREAD(handle_rest(struct pt* worker, struct ftpd_control_state *s))
+{
+  PT_BEGIN(worker);
+
+  if(1 != sscanf(s->args, "%u", &s->rest_offset)) {
+    // malformed offset value? ignore..
+    s->rest_offset = 0;
+    s->ftp_result_code = 452;
+  } else {
+    // offset saved
+    LOG_TRACE("offset: %d\r\n", s->rest_offset);
+    s->ftp_result_code = 350;
+  }
+
+  PT_END(worker);
+}
+
+/*---------------------------------------------------------------------------*/
 #define FTPCommand(str,func) {str, sizeof(str), func}
 
 struct {
@@ -686,12 +748,14 @@ struct {
     FTPCommand ("CDUP", handle_cdup),
 
     FTPCommand ("STOR", handle_stor),
+    FTPCommand ("APPE", handle_appe),
     FTPCommand ("MKD", handle_mkd),
     FTPCommand ("SIZE", handle_size),
     FTPCommand ("DELE", handle_dele),
     FTPCommand ("RMD", handle_rmd),
     FTPCommand ("RETR", handle_retr),
     FTPCommand ("SITE", handle_site),
+    FTPCommand ("REST", handle_rest),
 
     FTPCommand ("NOOP", handle_noop),
 
@@ -829,6 +893,7 @@ struct ftpd_control_state* ftpd_alloc_state()
   s->data_port = 0;
   s->cwd[0] = '/'; s->cwd[1] = '\0';
   s->args = NULL;
+  s->rest_offset = 0;
 
   LOG_TRACE("%p, buf: %p\r\n", s, s->inputbuf);
 
@@ -909,6 +974,8 @@ struct ftpd_data_state {
   int bytes_read;
   int ftp_result_code;
 
+  uint32_t rest_offset;
+
   const char* http_request_type;
   const char* ftp_result_string;
   struct psock sin;
@@ -952,21 +1019,23 @@ static void ftpd_data_list(struct ftpd_data_state* s, const char* path)
   LOG_TRACE("Listing requested for: %s\r\n", path);
 }
 
-static void ftpd_data_stor(struct ftpd_data_state* s, const char* path)
+static void ftpd_data_stor(struct ftpd_data_state* s, const char* path, uint32_t rest_offset)
 {
   s->state = Stor;
   s->busy = true;
   s->path = path;
   s->list_data = NULL;
+  s->rest_offset = rest_offset;
   LOG_TRACE("Stor requested for: %s\r\n", path);
 }
 
-static void ftpd_data_retr(struct ftpd_data_state* s, const char* path)
+static void ftpd_data_retr(struct ftpd_data_state* s, const char* path, uint32_t rest_offset)
 {
   s->state = Retr;
   s->busy = true;
   s->path = path;
   s->list_data = NULL;
+  s->rest_offset = rest_offset;
   LOG_TRACE("Retr requested for: %s\r\n", path);
 }
 
@@ -1145,7 +1214,17 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
 
     LOG_TRACE("stor: %s\r\n", s->path);
 
-    s->fd = Fcreate(s->path, 0);
+    if (s->rest_offset > 0) {
+      LOG_TRACE("seek to: %d\r\n", s->rest_offset );
+      s->fd = Fopen(s->path, S_WRITE);
+      if (s->fd && s->rest_offset != Fseek (s->rest_offset, s->fd, SEEK_SET)) {
+        // Seek failed so we close the file to abort immediatly.
+        Fclose(s->fd);
+        s->fd = -1;
+      }
+    } else {
+      s->fd = Fcreate(s->path, 0);
+    }
 
     if (s->fd < 0) {
       s->ftp_result_code = 400;
@@ -1176,12 +1255,14 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
 
     LOG_TRACE("retr: %s\r\n", s->path);
 
-    s->fd = Fopen(s->path, 0);
+    s->fd = Fopen(s->path, S_READ);
 
-    if (s->fd < 0) {
-      s->ftp_result_code = 400;
-      LOG_TRACE(" -> failed to open!\r\n");
-      break;
+    if (s->fd > 0 &&
+        s->rest_offset > 0 &&
+        s->rest_offset != Fseek (s->rest_offset, s->fd, SEEK_SET)) {
+        // Seek failed so we close the file to abort immediatly.
+        Fclose(s->fd);
+        s->fd = -1;
     }
 
     s->send_buffer_size = UIP_TCP_MSS * 1;
