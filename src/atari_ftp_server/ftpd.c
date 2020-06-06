@@ -400,15 +400,14 @@ static
 PT_THREAD(handle_list(struct pt* worker, struct ftpd_control_state *s))
 {
   PT_BEGIN(worker);
-  LOG("handle_list\r\n");
 
   PSOCK_WAIT_UNTIL2(worker, &s->sin, ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
   PSOCK_SEND_STR2(worker, &s->sin, "150 Data connection open; transfer starting\r\n");
   ftpd_data_list(ftpd_get_data_state(s->data_port), s->cwd);
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_busy(ftpd_get_data_state(s->data_port)));
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
+  s->ftp_result_code = ftpd_data_get_code(ftpd_get_data_state(s->data_port));
   ftpd_free_data_state(ftpd_get_data_state(s->data_port));
-  s->ftp_result_code = 226;
 
   PT_END(worker);
 }
@@ -469,6 +468,7 @@ PT_THREAD(handle_stor(struct pt* worker, struct ftpd_control_state *s))
   strncpy(path, s->cwd, FTPD_PATH_LENGTH);
   joinpath(path, s->args);
   convertToGemDosPath(path);
+  sanitiseGemDosPath(path);
   ensureFolderExists(path, true);
   LOG_TRACE("STOR: %s\r\n", path);
 
@@ -477,6 +477,12 @@ PT_THREAD(handle_stor(struct pt* worker, struct ftpd_control_state *s))
   PSOCK_SEND_STR2(worker, &s->sin, "150 Data connection open; transfer starting\r\n");
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
   LOG_TRACE("stor 3\r\n");
+  s->ftp_result_code = ftpd_data_get_code(ftpd_get_data_state(s->data_port));
+  ftpd_free_data_state(ftpd_get_data_state(s->data_port));
+
+  PT_END(worker);
+}
+
 /*---------------------------------------------------------------------------*/
 
 static
@@ -506,7 +512,6 @@ PT_THREAD(handle_appe(struct pt* worker, struct ftpd_control_state *s))
   LOG_TRACE("appe 3\r\n");
   s->ftp_result_code = ftpd_data_get_code(ftpd_get_data_state(s->data_port));
   ftpd_free_data_state(ftpd_get_data_state(s->data_port));
-  s->ftp_result_code = 226;
 
   PT_END(worker);
 }
@@ -530,8 +535,8 @@ PT_THREAD(handle_retr(struct pt* worker, struct ftpd_control_state *s))
   PSOCK_SEND_STR2(worker, &s->sin, "125 Data connection open; transfer starting\r\n");
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_busy(ftpd_get_data_state(s->data_port)));
   PSOCK_WAIT_UNTIL2(worker, &s->sin, !ftpd_data_is_connected(ftpd_get_data_state(s->data_port)));
+  s->ftp_result_code = ftpd_data_get_code(ftpd_get_data_state(s->data_port));
   ftpd_free_data_state(ftpd_get_data_state(s->data_port));
-  s->ftp_result_code = 226;
 
   PT_END(worker);
 }
@@ -783,6 +788,7 @@ struct {
   { 331, "331 User login OK, waiting for password\r\n" },
 
   { 400, "400 Operation rejected.\r\n" },
+  { 452, "452 Error.\r\n" },
 };
 
 static
@@ -1186,6 +1192,25 @@ bool ftpd_wait_free_data_connection()
   return false;
 }
 
+static
+int ftpd_data_get_code(struct ftpd_data_state* s)
+{
+  return s->ftp_result_code;
+}
+
+static void
+handle_data_error(struct ftpd_data_state *s)
+{
+  if (!s) {
+    return;
+  }
+
+  if (Fclose_safe(&s->fd) != -1) {
+    LOG_TRACE("FClose -> failed\r\n");
+  }
+}
+
+
 /*---------------------------------------------------------------------------*/
 
 static
@@ -1203,11 +1228,15 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
       /* LIST */
 
       s->list_data = ftp_file_stat(s->path);
-      LOG_TRACE("list.. %d, flags: %d\r\n", strlen(s->list_data), uip_flags);
-      PSOCK_SEND(&s->sin, s->list_data, strlen(s->list_data));
-      free(s->list_data);
-      s->list_data = NULL;
-      LOG_TRACE("list..done\r\n");
+      if (s->list_data) {
+        LOG_TRACE("list.. %d, flags: %d\r\n", strlen(s->list_data), uip_flags);
+        PSOCK_SEND(&s->sin, s->list_data, strlen(s->list_data));
+        free(s->list_data);
+        s->list_data = NULL;
+        LOG_TRACE("list..done\r\n");
+      } else {
+        s->ftp_result_code = 452;
+      }
   } else if(s->state == Stor) {
 
       /* STOR */
@@ -1226,27 +1255,27 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
       s->fd = Fcreate(s->path, 0);
     }
 
+
     if (s->fd < 0) {
-      s->ftp_result_code = 400;
+      s->ftp_result_code = 452;
       LOG_TRACE(" -> failed to open!\r\n");
-      break;
-    }
+    } else {
+      while (true) {
+        int32_t write_ret = 0;
+        PSOCK_READBUF(&s->sin);
 
-    while (true) {
-      int32_t write_ret = 0;
-      PSOCK_READBUF(&s->sin);
+        write_ret = Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
 
-      write_ret = Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
+        if (write_ret < 0 || write_ret != PSOCK_DATALEN(&s->sin)) {
+          LOG_TRACE("Fwrite failed!\r\n");
+          s->ftp_result_code = 452;
+          break;
+        }
 
-      if (write_ret < 0 || write_ret != PSOCK_DATALEN(&s->sin)) {
-        // TODO: pass any errors back on the control connection
-        LOG_TRACE("Fwrite failed!\r\n");
-        break;
-      }
-
-      if (uip_closed()) {
-        LOG_TRACE("CLOSED!");
-        break;
+        if (uip_closed()) {
+          LOG_TRACE("CLOSED!");
+          break;
+        }
       }
     }
   } else if(s->state == Retr) {
@@ -1265,52 +1294,53 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
         s->fd = -1;
     }
 
-    s->send_buffer_size = UIP_TCP_MSS * 1;
-    s->buffer_start_offset = 0;
+    if (s->fd < 0) {
+      s->ftp_result_code = 452;
+      LOG_TRACE(" -> failed to open: %s\r\n", s->path);
+    } else {
 
-    while (1) {
-      s->bytes_read = Fread(
-        s->fd,
-        s->send_buffer_size-s->buffer_start_offset,
-        &s->inputbuf[s->buffer_start_offset]);
-
-      if (s->bytes_read == 0) {
-        LOG_TRACE("Retr, finished, breaking\r\n");
-        break;
-      }
-
-      if (s->bytes_read < 0) {
-        s->ftp_result_code = 400;
-        break;
-      }
-
-      PSOCK_SEND(&s->sin, s->inputbuf, s->bytes_read+s->buffer_start_offset);
+      s->send_buffer_size = UIP_TCP_MSS * 1;
       s->buffer_start_offset = 0;
 
-      if(s->send_buffer_size != UIP_TCP_MSS * 16) {
-        s->send_buffer_size <<= 1;
+      while (1) {
+        s->bytes_read = Fread(
+          s->fd,
+          s->send_buffer_size-s->buffer_start_offset,
+          &s->inputbuf[s->buffer_start_offset]);
+
+        if (s->bytes_read == 0) {
+          LOG_TRACE("Retr, finished, breaking\r\n");
+          break;
+        }
+
+        if (s->bytes_read < 0) {
+          s->ftp_result_code = 452;
+          break;
+        }
+
+        PSOCK_SEND(&s->sin, s->inputbuf, s->bytes_read+s->buffer_start_offset);
+        s->buffer_start_offset = 0;
+
+        if(s->send_buffer_size != UIP_TCP_MSS * 16) {
+          s->send_buffer_size <<= 1;
+        }
       }
     }
+
   } else {
     /* Quit */
   }
+
+  s->busy = false;
+  s->state = Quit;
+  Fclose_safe(&s->fd);
+  ftpd_mark_closed_data_state(s);
+  handle_data_error(s);
 
   LOG_TRACE("exit..\r\n");
 
   PSOCK_CLOSE_EXIT(&s->sin);
   PSOCK_END(&s->sin);
-}
-
-static void
-inline handle_data_error(struct ftpd_data_state *s)
-{
-  if (!s) {
-    return;
-  }
-
-  if (Fclose_safe(&s->fd) != -1) {
-    LOG_TRACE("FClose -> failed\r\n");
-  }
 }
 
 void ftpd_data_appcall()
