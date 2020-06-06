@@ -10,22 +10,24 @@ WEBINTERFACE:
 	done:
 	* multiple file upload
 
+FTP:
+    * prevent STOR in the fake root folder
+    * implement PORT command (active mode)
+    * Improve compatibility with some esoteric clients (Aftp etc.)
+
+PERFORMANCE:
+	* Simple preemptive kernel to allow async IO
+
 APP:
-	* add version numbering in webui
-	* disable disk drives so it wont collapse
 	* Allow it to run as accessory?
 	* display date
 	* allow for more then one connection?
 	* remove logging (scrolling slows down massively)
-	* test on ST
 	* chdir for RUN command
 
 SCRIPTS:
-	* add an option to blow remote deploy
-	* sanitise path passed to the tool
-	* productionise
+	* sanities path passed to the tool
 	* add help option
-	* uideploy - add incremental uploads
 
 BUGS:
 	* UI: expanding an empty folder would cause that folder to disappear from the list
