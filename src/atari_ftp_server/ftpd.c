@@ -1337,6 +1337,8 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
     /* Quit */
   }
 
+  PT_YIELD(&(&s->sin)->pt);
+
   s->busy = false;
   s->state = Quit;
   Fclose_safe(&s->fd);
