@@ -28,5 +28,6 @@ void sanitiseGemDosName(char* path);
 bool deletePath(const char* path);
 bool getFileSize(const char* path, int* size);
 int Fclose_safe(int16_t* fd);
+uint64_t getMicroseconds();
 
 #endif // __COMMON_H__
