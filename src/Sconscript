@@ -10,6 +10,7 @@ SOURCES = [
         "common.c",
         targetEnv.Vasm('ioredirect-trap.s'),
         Glob('uip/*.c'),
+        Glob('uip/drivers/*.c'),
         targetEnv.SConscript("atari_ftp_server/SConscript", exports=['hostEnv', 'targetEnv']),
         targetEnv.SConscript("atari_http_server/SConscript", exports=['hostEnv', 'targetEnv'])
     ]

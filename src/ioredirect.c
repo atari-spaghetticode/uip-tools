@@ -3,7 +3,7 @@
 
 #include "uip_arp.h"
 #include "uip-split.h"
-#include "rtl8019dev.h"
+#include "drivers/rtl8019.h"
 
 #include <stdint.h>
 #include <string.h>

@@ -40,7 +40,7 @@
 #include "uip.h"
 #include "uip_arp.h"
 #include "uip-split.h"
-#include "rtl8019dev.h"
+#include "drivers/rtl8019.h"
 
 #include "timer.h"
 #include "dhcpc.h"
