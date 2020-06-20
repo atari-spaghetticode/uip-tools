@@ -56,39 +56,6 @@
 #define NULL (void *)0
 #endif /* NULL */
 
-struct ProfileProbe {
-  uint64_t last;
-  uint64_t all;
-};
-
-
-void initProbe (struct ProfileProbe* p)
-{
-  p->last = 0;
-  p->all = 0;
-}
-
-void probeBegin (struct ProfileProbe* p)
-{
-  p->last = getMicroseconds( );
-}
-
-void probeEnd (struct ProfileProbe* p)
-{
-  p->all +=  getMicroseconds( ) - p->last;
-}
-
-void probePrint (struct ProfileProbe* p)
-{
-  //printf("%llu\r\n",p->all );
-}
-
-struct ProfileProbe netSend;
-struct ProfileProbe netRecv;
-struct ProfileProbe netAll;
-struct ProfileProbe netInput;
-struct ProfileProbe netOther;
-
 /*---------------------------------------------------------------------------*/
 
 void net_send()
@@ -98,10 +65,8 @@ void net_send()
 
 void ip_packet_output()
 {
-  probeBegin(&netSend);
   uip_arp_out();
   RTL8019dev_send();
-  probeEnd(&netSend);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -343,7 +308,6 @@ config_cpu_options(int cpu_type)
 int
 main(int argc, char *argv[])
 {
-  int i;
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   uint32_t cpu_type = 0;  // assume MC68000
@@ -380,12 +344,6 @@ main(int argc, char *argv[])
   httpd_init();
   ftpd_init();
 
-  initProbe(&netSend);
-  initProbe(&netRecv);
-  initProbe(&netAll);
-  initProbe(&netInput);
-  initProbe(&netOther);
-
   while( -1 == Cconis() ) Cconin ();
 
   while(1) {
@@ -400,14 +358,9 @@ main(int argc, char *argv[])
       }
     }
 
-    probeBegin(&netAll);
-
-    probeBegin(&netRecv);
     uip_len = RTL8019dev_poll();
-    probeEnd(&netRecv);
 
     if(uip_len > 0) {
-      probeBegin(&netInput);
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
         uip_arp_ipin();
         uip_input();
@@ -420,19 +373,17 @@ main(int argc, char *argv[])
           RTL8019dev_send();
         }
       }
-      probeEnd(&netInput);
 
     } else if(timer_expired(&periodic_timer)) {
-      probeBegin(&netOther);
       timer_reset(&periodic_timer);
-      for(i = 0; i < UIP_CONNS; i++) {
+      for(int i = 0; i < UIP_CONNS; i++) {
         uip_periodic(i);
         if(uip_len > 0) {
           net_send();
         }
       }
     } else {
-      for(i = 0; i < UIP_CONNS; i++) {
+      for(int i = 0; i < UIP_CONNS; i++) {
         uip_poll_conn(&uip_conns[i]);
         if(uip_len > 0) {
           net_send();
@@ -441,7 +392,7 @@ main(int argc, char *argv[])
     }
 
     #if UIP_UDP
-    for(i = 0; i < UIP_UDP_CONNS; i++) {
+    for(int i = 0; i < UIP_UDP_CONNS; i++) {
       uip_udp_periodic(i);
       if(uip_len > 0) {
         ip_packet_output();
@@ -454,19 +405,7 @@ main(int argc, char *argv[])
       timer_reset(&arp_timer);
       uip_arp_timer();
     }
-
-    probeEnd(&netOther);
-    probeEnd(&netAll);
   }
-
-  #if 0
-  LOG("\r\n\r\n");
-  LOG("All:     "); probePrint(&netAll);
-  LOG("Input:   "); probePrint(&netInput);
-  LOG("Other:   "); probePrint(&netOther);
-  LOG("DevSend: "); probePrint(&netSend);
-  LOG("DevRecv: "); probePrint(&netRecv);
-  #endif
 
   return 0;
 }
