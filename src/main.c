@@ -333,6 +333,7 @@ main(int argc, char *argv[])
 
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
+
   INFO("RTL8019 init ... ");
   if (!RTL8019dev_init(uip_ethaddr.addr, cpu_type) ) {
     LOG_WARN("driver initialisation failed!\r\n");
