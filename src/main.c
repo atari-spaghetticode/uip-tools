@@ -53,8 +53,10 @@
 #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
 
 #ifndef NULL
-#define NULL (void *)0
+#define NULL ((void *)0)
 #endif /* NULL */
+
+#define KEY_CHECK_VALUE (20)
 
 /*---------------------------------------------------------------------------*/
 
@@ -311,6 +313,7 @@ main(int argc, char *argv[])
   uip_ipaddr_t ipaddr;
   struct timer periodic_timer, arp_timer;
   uint32_t cpu_type = 0;  // assume MC68000
+  int key_check_counter = KEY_CHECK_VALUE;
 
   INFO("\33puIP tool, version %d\33q\r\n", VERSION);
 
@@ -349,14 +352,17 @@ main(int argc, char *argv[])
 
   while(1) {
 
-    if( -1 == Cconis() ) {
-      uint32_t code = Cconin ();
-      /* Check if F1 was pressed  */
-      if(code == 0x3b0000) {
-        toggle_ip_config();
-      } else {
-        break;
+    if (0 == --key_check_counter) {
+      if( -1 == Cconis() ) {
+        uint32_t code = Cconin ();
+        /* Check if F1 was pressed  */
+        if(code == 0x3b0000) {
+          toggle_ip_config();
+        } else {
+          break;
+        }
       }
+      key_check_counter = KEY_CHECK_VALUE;
     }
 
     uip_len = RTL8019dev_poll();
