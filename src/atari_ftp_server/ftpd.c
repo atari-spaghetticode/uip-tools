@@ -1268,7 +1268,7 @@ PT_THREAD(ftpd_data_connection(struct ftpd_data_state *s))
     } else {
       while (true) {
         int32_t write_ret = 0;
-        PSOCK_READBUF(&s->sin);
+        PSOCK_READBUF_LEN(&s->sin, s->inputbuf_size);
 
         write_ret = Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
 
