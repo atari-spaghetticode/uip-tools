@@ -155,7 +155,7 @@ PT_THREAD(receive_file(struct pt* worker, struct httpd_state *s, const char* fil
 
     write_ret = Fwrite(s->fd, PSOCK_DATALEN(&s->sin), s->inputbuf);
 
-    if (write_ret < 0 || write_ret != PSOCK_DATALEN(&s->sin)) {
+    if (write_ret < 0 || write_ret != PSOCK_DATALEN(&s->sin) || uip_closed()) {
       s->http_result_code = 500;
       LOG_TRACE("Fwrite failed!\r\n");
       Fclose_safe(&s->fd);
