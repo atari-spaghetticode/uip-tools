@@ -5,6 +5,10 @@
 # You can specify a custom docker image from Docker Hub as your build environment.
 image: atlassian/default-image:2
 
+# Clone full depth Git repo since version number is calculated from number of commits
+clone:
+  depth: full
+
 pipelines:
   default:
     - step:
