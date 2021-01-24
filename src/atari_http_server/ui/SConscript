@@ -21,10 +21,10 @@ images = [
 def binaryExists(name):
     path = hostEnv.WhereIs(name)
     if path:
-        print name + " detected at: " + path
+        print(name + " detected at: " + path)
         return True
     else:
-        print name + " not found"
+        print(name + " not found")
 
 lessc_cmd = [ "lessc ./src/atari_http_server/ui/css.css ./src/atari_http_server/ui/cssc.css" ]
 uglifyjs_cmd = [ "uglifyjs ./src/atari_http_server/ui/js.js --verbose --compress --mangle -o ./src/atari_http_server/ui/jsc.js" ]
@@ -36,7 +36,7 @@ cmd_string = \
         [
             "cpp -E -P -CC -undef -nostdinc -DVERSION="
                 + str(targetEnv["CPPDEFINES"]["VERSION"])
-                + " -I" + Dir(".").path + " -o ${TARGET}.cpp $SOURCE"
+                + " -I\"" + Dir(".").path + "\" -o ${TARGET}.cpp $SOURCE"
                 + " -DUSE_LESSC=" + ("1" if lessc_present == True  else "0")
                 + " -DUSE_UGLIFYJS=" + ("1" if uglifyjs_present == True  else "0"),
             "gzip -9 -f ${TARGET}.cpp -c > ${TARGET}.gz",

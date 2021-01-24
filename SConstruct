@@ -25,18 +25,18 @@ def detectLibCMini(targetEnv):
         targetEnv.Append(LINKFLAGS='-nostdlib' + ' ' + libcminiPath + '/startup.o')
         targetEnv.Append(CPPPATH=libcminiPath + '/../include')
     else:
-        print "Libcmini not found, using default libs."
+        print("Libcmini not found, using default libs.")
 
 def compressProgramMaybe(env, target):
     if not os.environ.get('NOUPX'):
         upx = env.WhereIs('upx')
         if upx:
-            print "UPX detected, compressing target."
+            print("UPX detected, compressing target.")
             env.AddPostAction(target, Action('upx -qqq --best $TARGET'))
         else:
-            print "UPX not found, skipping compression."
+            print("UPX not found, skipping compression.")
     else:
-        print "UPX compression is disabled"
+        print("UPX compression is disabled")
 
 def setFastRamFlags(env, target):
     env.AddPostAction(target, Action('m68k-atari-mint-flags --mfastram --mfastload --mfastalloc $TARGET'))
@@ -48,14 +48,14 @@ def getVersion(env):
         p = subprocess.Popen('git rev-list --count master', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         return p.stdout.readline().rstrip()
     else:
-        print "git not found"
+        print("git not found")
 
 
 # Move scons database to builddir to avoid pollution
 builddir = os.path.abspath(GetLaunchDir())
 SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 
-hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']} )
+hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']})
 targetEnv = setupToolchain(hostEnv.Clone())
 
 # Optionally use libcmini
@@ -66,7 +66,7 @@ targetEnv.Append(CPPDEFINES={'DEBUG' : 0})
 targetEnv.Append(CPPDEFINES={'USB_DRIVER':1})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
-print "Building in: " + builddir
+print("Building in: " + builddir)
 
 target = hostEnv.SConscript(
     "src/SConscript",
@@ -82,6 +82,6 @@ setFastRamFlags(targetEnv, target)
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))
 SetOption('num_jobs', num_cpu)
-print "running with ", GetOption('num_jobs'), "jobs." 
+print("running with %d jobs." % GetOption('num_jobs')) 
 
 Default(target)
