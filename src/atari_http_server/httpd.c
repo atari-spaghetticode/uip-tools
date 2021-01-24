@@ -226,7 +226,7 @@ static void file_stat_single(struct Repsonse* response)
   fstrcat(response, "    \"date\" : \"%d/%d/%d\",\r\n",
           (dta.dta_date&0x1f), ((dta.dta_date>>5)&0xf), ((dta.dta_date>>9) + 1980));
   fstrcat(response, "    \"time\" : \"%d:%d:%d\"\r\n",
-          (dta.dta_time>>15), (dta.dta_time>>5)&0x1f, (dta.dta_time&0x1f));
+          (dta.dta_time>>11), (dta.dta_time>>5)&0x3f, (dta.dta_time&0x1f)*2);
   fstrcat(response,"  }\r\n");
 }
 
