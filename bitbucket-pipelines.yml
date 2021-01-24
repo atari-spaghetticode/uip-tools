@@ -1,0 +1,25 @@
+# This is a sample build configuration for C++ – Make.
+# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: atlassian/default-image:2
+
+pipelines:
+  default:
+    - step:
+        script: # Modify the commands below to build your repository.
+          - apt-get install -y software-properties-common
+          - add-apt-repository -y ppa:vriviere/ppa
+          - apt-get update -qq
+          - apt-get install -y cross-mint-essential scons upx vim-common
+          - mkdir ../builddir
+          - cd ../builddir
+          - scons -C $BITBUCKET_CLONE_DIR
+          - TARGETDIR=`basename $BITBUCKET_CLONE_DIR`
+          - cp ./$TARGETDIR/src/*.tos $BITBUCKET_CLONE_DIR # to treat as artifact
+          - cp ./$TARGETDIR/src/uip.tos ./uip-latest-beta.tos
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-latest-beta.tos"
+        artifacts: # Save resulting files
+          - uip.tos
+          
