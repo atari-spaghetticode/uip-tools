@@ -10,11 +10,11 @@ import curses
 import time
 
 curses.setupterm()
-STORE_POS = curses.tigetstr('sc').decode("utf-8") # restore cursor pos
-RESTORE_POS = curses.tigetstr('rc').decode("utf-8") # save cursor pos
-CLEAR_TO_END = curses.tigetstr('el').decode("utf-8") # clear to end of line
-CURRS_ON = curses.tigetstr('cnorm').decode("utf-8") # cursor on
-CURRS_OFF = curses.tigetstr('civis').decode("utf-8") # cursor off
+STORE_POS = (curses.tigetstr('sc') or '').decode("utf-8") # restore cursor pos
+RESTORE_POS = (curses.tigetstr('rc') or '').decode("utf-8") # save cursor pos
+CLEAR_TO_END = (curses.tigetstr('el') or '').decode("utf-8") # clear to end of line
+CURRS_ON = (curses.tigetstr('cnorm') or '').decode("utf-8") # cursor on
+CURRS_OFF = (curses.tigetstr('civis') or '').decode("utf-8") # cursor off
 
 def print_usage():
     print("Usage:")

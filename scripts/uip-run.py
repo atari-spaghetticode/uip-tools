@@ -22,32 +22,32 @@ class non_blocking_console(object):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
 
 curses.setupterm()
-inverse_seq = curses.tigetstr('rev').decode("utf-8")
-normal_seq = curses.tigetstr('sgr0').decode("utf-8")
+inverse_seq = (curses.tigetstr('rev') or '').decode("utf-8")
+normal_seq = (curses.tigetstr('sgr0') or '').decode("utf-8")
 
 local_to_atari_terminal = {
     ('\x7f', '\x00\x0e\x00\x08'),                                       #backspace
     # F-keys
-    (curses.tigetstr('kf1').decode("utf-8"),  '\x00\x3b\x00\x00'),      #f1
-    (curses.tigetstr('kf2').decode("utf-8"),  '\x00\x3c\x00\x00'),
-    (curses.tigetstr('kf3').decode("utf-8"),  '\x00\x3d\x00\x00'),
-    (curses.tigetstr('kf4').decode("utf-8"),  '\x00\x3e\x00\x00'),
-    (curses.tigetstr('kf5').decode("utf-8"),  '\x00\x3f\x00\x00'),
-    (curses.tigetstr('kf6').decode("utf-8"),  '\x00\x40\x00\x00'),
-    (curses.tigetstr('kf7').decode("utf-8"),  '\x00\x41\x00\x00'),
-    (curses.tigetstr('kf8').decode("utf-8"),  '\x00\x42\x00\x00'),
-    (curses.tigetstr('kf9').decode("utf-8"),  '\x00\x43\x00\x00'),
-    (curses.tigetstr('kf10').decode("utf-8"),  '\x00\x44\x00\x00'),     #f10
+    ((curses.tigetstr('kf1') or '').decode("utf-8"),  '\x00\x3b\x00\x00'),      #f1
+    ((curses.tigetstr('kf2') or '').decode("utf-8"),  '\x00\x3c\x00\x00'),
+    ((curses.tigetstr('kf3') or '').decode("utf-8"),  '\x00\x3d\x00\x00'),
+    ((curses.tigetstr('kf4') or '').decode("utf-8"),  '\x00\x3e\x00\x00'),
+    ((curses.tigetstr('kf5') or '').decode("utf-8"),  '\x00\x3f\x00\x00'),
+    ((curses.tigetstr('kf6') or '').decode("utf-8"),  '\x00\x40\x00\x00'),
+    ((curses.tigetstr('kf7') or '').decode("utf-8"),  '\x00\x41\x00\x00'),
+    ((curses.tigetstr('kf8') or '').decode("utf-8"),  '\x00\x42\x00\x00'),
+    ((curses.tigetstr('kf9') or '').decode("utf-8"),  '\x00\x43\x00\x00'),
+    ((curses.tigetstr('kf10') or '').decode("utf-8"),  '\x00\x44\x00\x00'),     #f10
     # Arrow keys
-    (curses.tigetstr('kcuu1').decode("utf-8"),  '\x00\x48\x00\x00'),    #up
-    (curses.tigetstr('kcud1').decode("utf-8"),  '\x00\x50\x00\x00'),    #down
-    (curses.tigetstr('kcub1').decode("utf-8"),  '\x00\x4b\x00\x00'),    #left
-    (curses.tigetstr('kcuf1').decode("utf-8"),  '\x00\x4d\x00\x00'),    #right
+    ((curses.tigetstr('kcuu1') or '').decode("utf-8"),  '\x00\x48\x00\x00'),    #up
+    ((curses.tigetstr('kcud1') or '').decode("utf-8"),  '\x00\x50\x00\x00'),    #down
+    ((curses.tigetstr('kcub1') or '').decode("utf-8"),  '\x00\x4b\x00\x00'),    #left
+    ((curses.tigetstr('kcuf1') or '').decode("utf-8"),  '\x00\x4d\x00\x00'),    #right
 
-    (curses.tigetstr('cuu1').decode("utf-8"),  '\x00\x48\x00\x00'),    #up
-    (curses.tigetstr('cud1').decode("utf-8"),  '\x00\x50\x00\x00'),    #down
-    (curses.tigetstr('cub1').decode("utf-8"),  '\x00\x4b\x00\x00'),    #left
-    (curses.tigetstr('cuf1').decode("utf-8"),  '\x00\x4d\x00\x00'),    #right
+    ((curses.tigetstr('cuu1') or '').decode("utf-8"),  '\x00\x48\x00\x00'),    #up
+    ((curses.tigetstr('cud1') or '').decode("utf-8"),  '\x00\x50\x00\x00'),    #down
+    ((curses.tigetstr('cub1') or '').decode("utf-8"),  '\x00\x4b\x00\x00'),    #left
+    ((curses.tigetstr('cuf1') or '').decode("utf-8"),  '\x00\x4d\x00\x00'),    #right
 
     #TODO: remaining keys
 }
@@ -55,26 +55,26 @@ local_to_atari_terminal = {
 atari_to_local_terminal = {
     ('\33p', inverse_seq),   # inverse mode on
     ('\33q', normal_seq),  # normal mode on/inverse off
-    ('\33J', curses.tigetstr('ed').decode("utf-8")),    # clear to end of screen
-    ('\33K', curses.tigetstr('el').decode("utf-8")),    # clear to end of line
-    ('\33l', curses.tigetstr('el1').decode("utf-8") + curses.tigetstr('el').decode("utf-8")),    # clear current line
-    ('\33o', curses.tigetstr('el1').decode("utf-8")),    # clear to start of line
-    ('\33d', curses.tigetstr('clear').decode("utf-8")),    # clear screen up to cursor
-    ('\33e', curses.tigetstr('cnorm').decode("utf-8")), # cursor on
-    ('\33f', curses.tigetstr('civis').decode("utf-8")), # cursor off
-    ('\33w', curses.tigetstr('rmam').decode("utf-8")), # wrap off
-    ('\33v', curses.tigetstr('smam').decode("utf-8")), # wrap on
+    ('\33J', (curses.tigetstr('ed') or '').decode("utf-8")),    # clear to end of screen
+    ('\33K', (curses.tigetstr('el') or '').decode("utf-8")),    # clear to end of line
+    ('\33l', (curses.tigetstr('el1') or '').decode("utf-8") + (curses.tigetstr('el') or '').decode("utf-8")),    # clear current line
+    ('\33o', (curses.tigetstr('el1') or '').decode("utf-8")),    # clear to start of line
+    ('\33d', (curses.tigetstr('clear') or '').decode("utf-8")),    # clear screen up to cursor
+    ('\33e', (curses.tigetstr('cnorm') or '').decode("utf-8")), # cursor on
+    ('\33f', (curses.tigetstr('civis') or '').decode("utf-8")), # cursor off
+    ('\33w', (curses.tigetstr('rmam') or '').decode("utf-8")), # wrap off
+    ('\33v', (curses.tigetstr('smam') or '').decode("utf-8")), # wrap on
 
-    ('\33H', curses.tigetstr('home').decode("utf-8")), # move home
-    ('\33B', curses.tigetstr('cuu1').decode("utf-8")), # move up
-    ('\33D', curses.tigetstr('cub1').decode("utf-8")), # move left
-    ('\33C', curses.tigetstr('cuf1').decode("utf-8")), # move right
-    ('\33A', curses.tigetstr('cud1').decode("utf-8")), # move down
+    ('\33H', (curses.tigetstr('home') or '').decode("utf-8")), # move home
+    ('\33B', (curses.tigetstr('cuu1') or '').decode("utf-8")), # move up
+    ('\33D', (curses.tigetstr('cub1') or '').decode("utf-8")), # move left
+    ('\33C', (curses.tigetstr('cuf1') or '').decode("utf-8")), # move right
+    ('\33A', (curses.tigetstr('cud1') or '').decode("utf-8")), # move down
 
-    ('\33M', curses.tigetstr('dl1').decode("utf-8")), # del line
+    ('\33M', (curses.tigetstr('dl1') or '').decode("utf-8")), # del line
 
-    ('\33k', curses.tigetstr('rc').decode("utf-8")), # restore cursor pos
-    ('\33j', curses.tigetstr('sc').decode("utf-8")), # save cursor pos
+    ('\33k', (curses.tigetstr('rc') or '').decode("utf-8")), # restore cursor pos
+    ('\33j', (curses.tigetstr('sc') or '').decode("utf-8")), # save cursor pos
 
     # TODO: add remaining sequences
     ('\33Y', ""), # set cursor pos
