@@ -13,6 +13,11 @@ pipelines:
           - add-apt-repository -y ppa:vriviere/ppa
           - apt-get update -qq
           - apt-get install -y cross-mint-essential scons upx vim-common
+          - mkdir ../libcmini
+          - cd ../libcmini
+          # Build breaks with libcmini >= 0.52!
+          - wget -q -O - "https://github.com/freemint/libcmini/releases/download/v0.51/libcmini-0.51.tar.gz" | tar xzf -
+          - export LIBCMINI="$PWD/lib/"
           - mkdir ../builddir
           - cd ../builddir
           - scons -C $BITBUCKET_CLONE_DIR
