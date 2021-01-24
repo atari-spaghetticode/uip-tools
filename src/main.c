@@ -42,6 +42,7 @@
 #include "uip_arp.h"
 #include "uip-split.h"
 #include "drivers/rtl8019.h"
+#include "drivers/usbeth_dev.h"
 
 #include "timer.h"
 #include "dhcpc.h"
@@ -68,7 +69,11 @@ void net_send()
 void ip_packet_output()
 {
   uip_arp_out();
+#ifdef USB_DRIVER
+  USBETHdev_send();
+#else
   RTL8019dev_send();
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -337,11 +342,19 @@ main(int argc, char *argv[])
   timer_set(&periodic_timer, CLOCK_SECOND/10);
   timer_set(&arp_timer, CLOCK_SECOND * 10);
 
+#ifdef USB_DRIVER
+  INFO("USB Ethernet init ... ");
+  if (!USBETHdev_init(uip_ethaddr.addr) ) {
+    LOG_WARN("driver initialisation failed!\r\n");
+    return 1;
+  }
+#else
   INFO("RTL8019 init ... ");
   if (!RTL8019dev_init(uip_ethaddr.addr, cpu_type) ) {
     LOG_WARN("driver initialisation failed!\r\n");
     return 1;
   }
+#endif
 
   uip_init();
   read_config();
@@ -365,7 +378,11 @@ main(int argc, char *argv[])
       key_check_counter = KEY_CHECK_VALUE;
     }
 
+#ifdef USB_DRIVER
+    uip_len = USBETHdev_poll();
+#else
     uip_len = RTL8019dev_poll();
+#endif
 
     if(uip_len > 0) {
       if(BUF->type == htons(UIP_ETHTYPE_IP)) {
@@ -377,7 +394,11 @@ main(int argc, char *argv[])
       } else if(BUF->type == htons(UIP_ETHTYPE_ARP)) {
         uip_arp_arpin();
         if(uip_len > 0) {
+#ifdef USB_DRIVER
+          USBETHdev_send();
+#else
           RTL8019dev_send();
+#endif
         }
       }
 
@@ -413,6 +434,10 @@ main(int argc, char *argv[])
       uip_arp_timer();
     }
   }
+
+#ifdef USB_DRIVER
+  USBETHdev_done();
+#endif
 
   return 0;
 }

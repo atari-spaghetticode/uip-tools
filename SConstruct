@@ -79,6 +79,7 @@ detectLibCMini(targetEnv)
 
 targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
 targetEnv.Append(CPPDEFINES={'DEBUG' : 0})
+targetEnv.Append(CPPDEFINES={'USB_DRIVER':1})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
 print "Building in: " + builddir
