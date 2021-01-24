@@ -3,17 +3,10 @@
 #include <common.h>
 #include "debug.h"
 #include "rtlregs.h"
+#include "delay.h"
 
 #include <stdint.h>
 #include <stdbool.h>
-
-
-void Delay_microsec(long delay)
-{
-    uint64_t future = getMicroseconds() + delay;
-    while(future > getMicroseconds());
-}
-
 
 /*****************************************************************************
 *  Module Name:       Realtek 8019AS Driver Interface for uIP-AVR Port
