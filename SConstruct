@@ -2,7 +2,7 @@ import os
 import SCons.Builder
 
 
-def setupToolchain(targetEnv):   
+def setupToolchain(targetEnv):
     CROSS_PREFIX = 'm68k-atari-mint-'
     targetEnv["CC"] = CROSS_PREFIX + 'gcc'
     targetEnv["AS"] = CROSS_PREFIX + 'as'
@@ -63,25 +63,35 @@ detectLibCMini(targetEnv)
 
 targetEnv.Append(CPPDEFINES={'VERSION' : getVersion(hostEnv)})
 targetEnv.Append(CPPDEFINES={'DEBUG' : 0})
-targetEnv.Append(CPPDEFINES={'USB_DRIVER':1})
 targetEnv.Append(CPPDEFINES={'DUIP_CONF_BYTE_ORDER' : "BIG_ENDIAN"})
 
 print("Building in: " + builddir)
 
-target = hostEnv.SConscript(
-    "src/SConscript",
-    duplicate = 0,
-    exports=['hostEnv', 'targetEnv'],
-    variant_dir = builddir,
-    src_dir = "../" )
+def buildDriverVariant(hostEnv, targetEnv, varian_name):
+    target = hostEnv.SConscript(
+        "src/SConscript",
+        duplicate = 0,
+        exports=['hostEnv', 'targetEnv', 'varian_name'],
+        variant_dir = builddir + '/' + varian_name,
+        src_dir = "../" )
+    # Optionally compress the binary with UPX
+    compressProgramMaybe(targetEnv, target)
+    # Load into TT ram if possible
+    setFastRamFlags(targetEnv, target)
+    return target
 
-# Optionally compress the binary with UPX
-compressProgramMaybe(targetEnv, target)
-# Load into TT ram if possible
-setFastRamFlags(targetEnv, target)
+# Netusbee binary
+targetNetusbee = buildDriverVariant(hostEnv, targetEnv, "netusbee")
+
+# USB ASIX binary
+usbTartegEnv = targetEnv.Clone()
+usbTartegEnv.Append(CPPDEFINES={'USB_DRIVER':1})
+targetUSB = buildDriverVariant(hostEnv, usbTartegEnv, "usb")
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))
 SetOption('num_jobs', num_cpu)
 print("running with %d jobs." % GetOption('num_jobs')) 
 
-Default(target)
+targets = [targetNetusbee, targetUSB]
+
+Default(targets)

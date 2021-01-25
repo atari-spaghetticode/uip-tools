@@ -299,5 +299,5 @@ void RTL8019dev_send(void);
 *****************************************************************************/
 unsigned int RTL8019dev_poll(void);
 
-
+void RTL8019dev_done();
 #endif /* __RTL8019_H__ */

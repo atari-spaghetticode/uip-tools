@@ -8,7 +8,7 @@
 *  USBETHdev_init()
 *  Description: Enumeration and initialization of the USB Ethernet adapter
 *****************************************************************************/
-bool USBETHdev_init(uint8_t* macaddr);
+bool USBETHdev_init(uint8_t* macaddr, uint32_t cpu_type);
 
 /*****************************************************************************
 *  USBETHdev_done()

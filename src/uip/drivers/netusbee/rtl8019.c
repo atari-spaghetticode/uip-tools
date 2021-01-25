@@ -80,6 +80,7 @@ unsigned int RTL8019dev_poll(void)
     return packetLength;
 }
 
+void RTL8019dev_done() {}
 
 /*****************************************************************************
 *  Module Name:       Realtek 8019AS Driver

@@ -154,7 +154,7 @@ static long ethernet_ioctl(struct uddif *u, short cmd, long arg)
 	return 0;
 }
 
-bool USBETHdev_init(uint8_t* macaddr)
+bool USBETHdev_init(uint8_t* macaddr, uint32_t cpu_type)
 {
 	long ret;
 

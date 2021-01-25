@@ -27,8 +27,11 @@ pipelines:
           - scons -C $BITBUCKET_CLONE_DIR
           - TARGETDIR=`basename $BITBUCKET_CLONE_DIR`
           - cp ./$TARGETDIR/src/*.tos $BITBUCKET_CLONE_DIR # to treat as artifact
-          - cp ./$TARGETDIR/src/uip.tos ./uip-latest-beta.tos
-          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-latest-beta.tos"
+          - cp ./$TARGETDIR/netusbee/src/uip.tos ./uip-netusbee-master.tos
+          - cp ./$TARGETDIR/usb/src/uip.tos ./uip-usb-master.tos
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-netusbee-master.tos"
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-usb-master.tos"
         artifacts: # Save resulting files
-          - uip.tos
-          
+          - uip-netusbee-master.tos
+          - uip-usb-master.tos
+
