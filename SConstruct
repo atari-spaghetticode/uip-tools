@@ -46,7 +46,7 @@ def getVersion(env):
     if git:
         import subprocess
         p = subprocess.Popen('git rev-list --count master', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        return p.stdout.readline().rstrip()
+        return p.stdout.readline().rstrip().decode("utf-8")
     else:
         print("git not found")
 
