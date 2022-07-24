@@ -29,6 +29,7 @@
 #include "usb_ether.h"
 
 #include "asix.h"
+#include "picowifi.h"
 
 //#define DEBUGOUT(x) printf x
 #define DEBUGOUT(x)
@@ -39,8 +40,9 @@
  * Private variables 
  */
  
-bool found = false;
-unsigned char mac[6];
+static bool asix_found = false;
+static bool picowifi_found = false;
+static unsigned char mac[6];
 
 /* 
  * USB API 
@@ -132,15 +134,21 @@ static long ethernet_probe(struct usb_device *dev, unsigned short ifnum)
 	old_async = usb_disable_asynch(1); /* asynch transfer not allowed */
 
 	asix_eth_before_probe(api);
+	picowifi_eth_before_probe(api);
 	if (asix_eth_probe(dev, ifnum, &ueth_dev))
 	{
 		if (asix_eth_get_info(dev, &ueth_dev, mac)) {
-			found = true;
+			asix_found = true;
+		}
+	} else if (picowifi_eth_probe(dev, ifnum, &ueth_dev))
+	{
+		if (picowifi_eth_get_info(dev, &ueth_dev, mac)) {
+			picowifi_found = true;
 		}
 	}
 	
 	usb_disable_asynch(old_async); /* restore asynch value */
-	return found?0:-1;
+	return (asix_found || picowifi_found) ?0:-1;
 
 }
 
@@ -201,10 +209,10 @@ void USBETHdev_done(void)
 void USBETHdev_send(void)
 {
 	DEBUGOUT(("USBETHdev_send\r\n"));
-	
-	if (!found)
+
+	if (!(asix_found || picowifi_found))
 		return;
-	
+
 	if (uip_len > 2048) {
 		DEBUGOUT(("buffer overflow = %d\r\n", uip_len));
 		return;
@@ -212,12 +220,20 @@ void USBETHdev_send(void)
 
 	// send packet, using data in uip_appdata if over the IP+TCP header size
 	if( uip_len <= TOTAL_HEADER_LENGTH ) {
-		asix_send(&ueth_dev, uip_buf, uip_len);
+		if (asix_found) {
+			asix_send(&ueth_dev, uip_buf, uip_len);
+		} else if (picowifi_found) {
+			picowifi_send(&ueth_dev, uip_buf, uip_len);
+		}
 	} else {
 		unsigned char buffer[2048];
 		memcpy(&buffer[0], uip_buf, TOTAL_HEADER_LENGTH);
 		memcpy(&buffer[TOTAL_HEADER_LENGTH], uip_appdata, uip_len-TOTAL_HEADER_LENGTH);
-		asix_send(&ueth_dev, buffer, uip_len);
+		if (asix_found) {
+			asix_send(&ueth_dev, buffer, uip_len);
+		} else if (picowifi_found) {
+			picowifi_send(&ueth_dev, buffer, uip_len);
+		}
 	}
 
 	return;
@@ -225,9 +241,13 @@ void USBETHdev_send(void)
 
 unsigned int USBETHdev_poll(void)
 {
-	long r;
-	
-	r = asix_recv(&ueth_dev, uip_buf, UIP_BUFSIZE);
-	
+	long r = 0;
+
+	if (asix_found) {
+		r = asix_recv(&ueth_dev, uip_buf, UIP_BUFSIZE);
+	} else if (picowifi_found) {
+		r = picowifi_recv(&ueth_dev, uip_buf, UIP_BUFSIZE);
+	}
+
 	return r>0?r:0;
 }

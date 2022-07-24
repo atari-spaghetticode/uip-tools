@@ -42,7 +42,7 @@ typedef unsigned char  u8;
 #include "usb_ether.h"
 #include "mii.h"
 
-struct usb_module_api   *api = NULL;
+static struct usb_module_api   *api = NULL;
 static struct proc *asix_p;
 static long usbEthID = -1;
 
