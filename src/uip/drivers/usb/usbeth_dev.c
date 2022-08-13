@@ -251,3 +251,18 @@ unsigned int USBETHdev_poll(void)
 
 	return r>0?r:0;
 }
+
+unsigned int USBETHdev_printstatus(void)
+{
+#ifdef USB_PRINTSTATUS
+	if (asix_found) {
+		printf("USB device: ASIX\r\n");
+		printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+	} else if (picowifi_found) {
+		printf("USB device: PicoWifi\r\n");
+		printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+		picowifi_printstatus(&ueth_dev);
+	}
+#endif
+	return 0;
+}

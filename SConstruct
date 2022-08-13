@@ -86,6 +86,7 @@ targetNetusbee = buildDriverVariant(hostEnv, targetEnv, "netusbee")
 # USB ASIX binary
 usbTartegEnv = targetEnv.Clone()
 usbTartegEnv.Append(CPPDEFINES={'USB_DRIVER':1})
+usbTartegEnv.Append(CPPDEFINES={'USB_PRINTSTATUS':1})
 targetUSB = buildDriverVariant(hostEnv, usbTartegEnv, "usb")
 
 num_cpu = int(os.environ.get('NUMBER_OF_PROCESSORS', 2))

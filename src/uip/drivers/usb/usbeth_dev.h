@@ -34,5 +34,10 @@ void USBETHdev_send(void);
 *****************************************************************************/
 unsigned int USBETHdev_poll(void);
 
+/*****************************************************************************
+*  USBETHdev_printstatus(void)
+*  Description: Prints status information about the connected USB device.
+*****************************************************************************/
+unsigned int USBETHdev_printstatus(void);
 
 #endif /* __USBETH_DEV_H__ */

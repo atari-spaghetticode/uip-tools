@@ -29,5 +29,6 @@ long picowifi_eth_probe(struct usb_device *dev, unsigned int ifnum, struct ueth_
 long picowifi_eth_get_info(struct usb_device *dev, struct ueth_data *ss, unsigned char* mac);
 long picowifi_send(struct ueth_data *dev, void *packet, long length);
 long picowifi_recv(struct ueth_data *dev, unsigned char *dest_buf, unsigned long dest_len);
+int picowifi_printstatus(struct ueth_data *dev);
 
 #endif

@@ -44,6 +44,10 @@
 
 #include "drivers/driver.h"
 
+#ifdef USB_PRINTSTATUS
+#include "drivers/usb/usbeth_dev.h"
+#endif
+
 #include "timer.h"
 #include "dhcpc.h"
 
@@ -359,6 +363,11 @@ main(int argc, char *argv[])
         /* Check if F1 was pressed  */
         if(code == 0x3b0000) {
           toggle_ip_config();
+#ifdef USB_PRINTSTATUS
+        /* Check if F2 was pressed  */
+        } else if (code == 0x3c0000) {
+          USBETHdev_printstatus();
+#endif
         } else {
           break;
         }

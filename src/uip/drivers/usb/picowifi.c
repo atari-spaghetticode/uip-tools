@@ -539,3 +539,82 @@ picowifi_eth_get_info(struct usb_device *dev, struct ueth_data *ss, unsigned cha
 
 	return 1;
 }
+
+#ifdef USB_PRINTSTATUS
+
+#define CYW43_LINK_DOWN         (0)     ///< link is down
+#define CYW43_LINK_JOIN         (1)     ///< Connected to wifi
+#define CYW43_LINK_FAIL         (-1)    ///< Connection failed
+#define CYW43_LINK_NONET        (-2)    ///< No matching SSID found (could be out of range, or down)
+#define CYW43_LINK_BADAUTH      (-3)    ///< Authenticatation failure
+
+#define FW_VERSION_STRING (4)
+
+int
+picowifi_printstatus(struct ueth_data *dev)
+{
+	long len;
+	char fw_version[64] = {0};
+
+	struct {
+		long link_up;
+		long cyw43_status;
+		long last_rssi;
+		long last_rate;
+	} status = {0};
+
+	if (dev->pusb_dev == 0) {
+		return -1L;
+	}
+
+	/* Read firmware version */
+	len = usb_string(dev->pusb_dev, FW_VERSION_STRING, fw_version, sizeof(fw_version));
+	if (len>=0)
+	{
+		printf("Version: %s\r\n", fw_version);
+	}
+
+	/* Read status information */
+	len = usb_control_msg(
+	dev->pusb_dev,
+	usb_rcvctrlpipe(dev->pusb_dev, 0),
+	VENDOR_REQUEST_WIFI,
+	USB_DIR_IN | USB_TYPE_VENDOR | USB_RECIP_DEVICE,
+	0,
+	WIFI_STATUS,
+	&status,
+	sizeof(status),
+	USB_CTRL_GET_TIMEOUT);
+
+	printf("Link: %s\r\nWifi status: ", le2cpu32(status.link_up)?"Up":"Down");
+	switch (le2cpu32(status.cyw43_status))
+	{
+	case CYW43_LINK_DOWN:
+		printf("Not connected\r\n");
+		break;
+	case CYW43_LINK_JOIN:
+		printf("Connected\r\n");
+		break;
+	case CYW43_LINK_FAIL:
+		printf("Connection failed\r\n");
+		break;
+	case CYW43_LINK_NONET:
+		printf("SSID not found\r\n");
+		break;
+	case CYW43_LINK_BADAUTH:
+		printf("Authenticatation failed\r\n");
+		break;
+	default:
+		printf("Unknown (%ld)\r\n", le2cpu32(status.cyw43_status));
+		break;
+	}
+
+	/* Not all FW versions return RSSI */
+	if (len > offsetof(typeof(status), last_rssi))
+	{
+		printf("RSSI: %ld dB\r\n", le2cpu32(status.last_rssi));
+	}
+
+	return 0;
+}
+#endif
