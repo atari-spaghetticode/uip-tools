@@ -121,6 +121,15 @@ static struct uddif eth_uif =
 
 static long ethernet_probe(struct usb_device *dev, unsigned short ifnum)
 {
+	/*
+	 * Note the different calling conventions: USB stack is compiled
+	 * with -mshort, whereas uIP needs to be built without -mshort.
+	 * Hence, here the 'ifnum' parameter is not passed correctly,
+	 * when the USB stack calls ethernet_probe().
+	 * Luckily, we know that both Asix and PicoWifi only have interface 0,
+	 * and can therefore hardcode it in the calls to ..._probe().
+	 */
+
 	long old_async;
 	
 	DEBUGOUT(("ethernet_probe: %p\r\n", dev));
@@ -128,25 +137,26 @@ static long ethernet_probe(struct usb_device *dev, unsigned short ifnum)
 	if (dev == NULL)
 		return -1;
 
-	/* Save for later: Note: assumes only *ONE* device. */
-	mydev = dev;
-
 	old_async = usb_disable_asynch(1); /* asynch transfer not allowed */
 
 	asix_eth_before_probe(api);
 	picowifi_eth_before_probe(api);
-	if (asix_eth_probe(dev, ifnum, &ueth_dev))
+	if (asix_eth_probe(dev, 0, &ueth_dev))
 	{
 		if (asix_eth_get_info(dev, &ueth_dev, mac)) {
 			asix_found = true;
+			/* Save for later: Note: assumes only *ONE* device. */
+			mydev = dev;
 		}
-	} else if (picowifi_eth_probe(dev, ifnum, &ueth_dev))
+	} else if (picowifi_eth_probe(dev, 0, &ueth_dev))
 	{
 		if (picowifi_eth_get_info(dev, &ueth_dev, mac)) {
 			picowifi_found = true;
+			/* Save for later: Note: assumes only *ONE* device. */
+			mydev = dev;
 		}
 	}
-	
+
 	usb_disable_asynch(old_async); /* restore asynch value */
 	return (asix_found || picowifi_found) ?0:-1;
 
