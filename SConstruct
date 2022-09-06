@@ -45,7 +45,12 @@ def getVersion(env):
     git = env.WhereIs('git')
     if git:
         import subprocess
-        p = subprocess.Popen('git rev-list --count master', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		# get current branch name
+        p = subprocess.Popen('git rev-parse --abbrev-ref HEAD', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        branchName = p.stdout.readline().rstrip().decode("utf-8")
+        # get revision list
+        gitRevisionListCmd = 'git rev-list --count ' + branchName
+        p = subprocess.Popen(gitRevisionListCmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         return p.stdout.readline().rstrip().decode("utf-8")
     else:
         print("git not found")
