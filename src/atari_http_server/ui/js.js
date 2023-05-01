@@ -1,7 +1,7 @@
 
 // uIPTool web interface scripts
-// (c) Mariusz Buras '2019
-// (c) Pawel Goralski '2019
+// (c) Mariusz Buras '2019-23
+// (c) Pawel Goralski '2019-23
 
         var CURRENT_GEMDOS_PATH;
         var FILE_LIST_REF;
@@ -156,8 +156,8 @@
                 // insert request / data into a que
                 var requestData = {
                   'filePath' : gemdosPath,
-                  'request':request,
-                  'data':event.target.result
+                  'request': request,
+                  'data': event.target.result
                 };
                 ++UPLOAD_TOTAL_FILES;
 
@@ -330,7 +330,7 @@
           var responseArray = JSON.parse(responseText);
           var dirArray = [];
           var fileArray = [];
-          var tempVal=null;
+          var tempVal = null;
 
           //preprocess data
           for(var i=0;i<responseArray.length;++i){
@@ -347,7 +347,7 @@
                   name: tempVal.name.toUpperCase(), 
                   size: tempVal.size,
                   date: tempVal.date,
-                  time: tempVal.time
+                  timestamp: tempVal.time
                 });
              }
           }
@@ -654,9 +654,54 @@
             node.appendChild(a);
         }
 
+        function padDigits(num, size)
+        {
+          var s = "00" + num;
+          return s.substr(s.length-size);
+        }
+        
+        function formatFileDate(dateString)
+        {
+          var dateArray = dateString.split("/");
+          var d = padDigits(dateArray[0],2);
+          var m = padDigits(dateArray[1],2);
+          var y = dateArray[2];
+          return d + '.' + m + '.' + y;
+        }
+
+        function formatFileTime(timeString)
+        {
+          var hourArray = timeString.split(":");
+          var h = padDigits(hourArray[0],2);
+          var m = padDigits(hourArray[1],2);
+          var s = padDigits(hourArray[2],2);
+          return h + ':' + m + '.' + s;
+        }
+
+        function formatFileSize(filesize)
+        {
+          var base = Math.log(filesize) / Math.log(1024);
+          var floorBase = Math.floor(base);
+          var suffix = new Array("B", "kiB", "MiB", "GiB", "TiB");
+          
+          var ffs;
+          if(floorBase==0)
+          {
+            ffs = Math.pow(1024, base - floorBase).toFixed(0)
+            ffs += ' ' + suffix[floorBase];
+          }
+          else
+          {
+            ffs = Math.pow(1024, base - floorBase).toFixed(1)
+            ffs += ' ' + suffix[floorBase] + ' (' + filesize + ' B)';
+          }
+          
+          return ffs;
+        }
+
         function createFileEntries(node, FileArray){
           var fileStr = null;
-          var fileSize=0;
+          var fileSize = 0;
           var fileDate="";
           var fileTime="";
 
@@ -681,9 +726,9 @@
           tableHead4.classList.add('divTableHead');
 
           var headNameText1=document.createTextNode('filename');
-          var headNameText2=document.createTextNode('size (bytes)');
+          var headNameText2=document.createTextNode('size');
           var headNameText3=document.createTextNode('date');
-          var headNameText4=document.createTextNode('time');
+          var headNameText4=document.createTextNode('timestamp');
  
           tableHead1.appendChild(headNameText1);
           tableHead2.appendChild(headNameText2);
@@ -729,7 +774,7 @@
              fileStr = FileArray[i].name.toUpperCase();
              fileSize = FileArray[i].size;
              fileDate = FileArray[i].date;
-             fileTime = FileArray[i].time;
+             fileTime = FileArray[i].timestamp;
 
              var div = document.createElement('div');
              div.id = "fileEntryInfo";
@@ -740,9 +785,9 @@
              div.appendChild(img);
 
              cell1.appendChild(div);
-             cell2.innerHTML = fileSize;
-             cell3.innerHTML = fileDate;
-             cell4.innerHTML = fileTime;
+             cell2.innerHTML = formatFileSize(fileSize);
+             cell3.innerHTML = formatFileDate(fileDate);
+             cell4.innerHTML = formatFileTime(fileTime);
              
              createFileDownloadLink(div,fileStr);
           }
