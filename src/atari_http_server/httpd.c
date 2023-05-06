@@ -720,10 +720,10 @@ static int query_run(struct httpd_state *s)
 
 static int query_newfolder(struct httpd_state *s)
 {
-  s->http_result_code = 400;
+  s->http_result_code = 1200;
   s->handler_func = NULL;
   if (!ensureFolderExists(s->filename, false)) {
-    s->http_result_code = 200;
+    s->http_result_code = 400;
   }
   return 1;
 }
