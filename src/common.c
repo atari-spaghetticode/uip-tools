@@ -96,12 +96,20 @@ void joinpath(char *pth1, const char *pth2)
 
 /*---------------------------------------------------------------------------*/
 
+bool createOrCheckForFolder(const char* path)
+{
+  Fsetdta (&dta);
+  if (0 == Fsfirst(path, FA_DIR|FA_HIDDEN|FA_SYSTEM) && dta.dta_attribute&FA_DIR)
+    return true;
+  return Dcreate(path) == 0;
+}
+
 bool ensureFolderExists(const char* path, bool stripFileName)
 {
   char temp_path[256];
   const size_t len = strlen(path);
   strncpy(temp_path, path, sizeof(temp_path));
-  int ret = 0;
+  bool ret = false;
 
   // remove file name from the path file path base
   if (stripFileName) {
@@ -117,17 +125,15 @@ bool ensureFolderExists(const char* path, bool stripFileName)
   for (size_t i = 4; i < len; ++i) {
     if (temp_path[i] == '\\') {
       temp_path[i] = '\0';
-      ret |= Dcreate(temp_path);
+      ret |= createOrCheckForFolder(temp_path);
       temp_path[i] = '\\';
     }
   }
-  ret = Dcreate(temp_path);
-  // printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", ret, temp_path, path);
+  ret |= createOrCheckForFolder(temp_path);
+  printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", (int)ret, temp_path, path);
   // if we strip file name then we don't want error to be reported
   // because in that case we might be overwriting a file
-  return stripFileName ?
-    true : ret == 0 /* E_OK*/ ?
-      true : false;
+  return ret;
 }
 
 /*---------------------------------------------------------------------------*/
