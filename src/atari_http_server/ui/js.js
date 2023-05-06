@@ -496,8 +496,12 @@
           // create new folder http request
           var currentPath = CURRENT_GEMDOS_PATH;
 
-          dirName = dirName.substring(0,12);
-          dirName=dirName.replaceAt(8,'.').toUpperCase();;
+          if(dirName.length>8)
+          {
+            dirName = dirName.substring(0,12).replaceAt(8,'.');
+          }
+
+          dirName = dirName.toUpperCase();
 
           var newFolderRequest = location.host + '/' + currentPath + '/' + dirName;
           newFolderRequest = sanitizeGemdosPath(newFolderRequest);
