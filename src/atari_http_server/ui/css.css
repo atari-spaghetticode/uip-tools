@@ -119,6 +119,14 @@ a:active {
         overflow:hidden;
     }
 
+    div #fileOperationsList {
+       width:185px;
+       height: auto;
+       overflow-x:hidden;
+       overflow-y:auto;
+       padding-top:36px;
+    }
+
     .column {
         float: left;
         padding: 2px;
@@ -223,7 +231,6 @@ div #fileDragAndDrop {
 div #fileDragAndDrop.highlight {
   border-color: purple;
 }
-
 
 div #fileDragAndDrop .button {
   background-color: #728276;

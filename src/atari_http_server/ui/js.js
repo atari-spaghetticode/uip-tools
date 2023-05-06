@@ -466,6 +466,17 @@
             
         }
 
+        function processFileDownloadReq(httpResponse)
+        {
+          //DBGLOGGER.log("[processFileDownloadReq] handler");
+        }
+
+        function processCreateNewDirectoryReq(httpResponse)
+        {
+          window.alert("Directory created!");
+          refreshCurrentDirView();
+        }
+
         function requestFileDownload(btn){
             
             var pathPrefix = CURRENT_GEMDOS_PATH;
@@ -476,6 +487,22 @@
             sendHttpReq(location.host + '/' + pathPrefix,'', 'GET', processFileDownloadReq);
         } 
 
+        String.prototype.replaceAt = function(index, replacement) {
+          return this.substring(0, index) + replacement + this.substring(index + replacement.length);
+        }
+
+        function requestCreateNewFolder(dirName)
+        {
+          // create new folder http request
+          var currentPath = CURRENT_GEMDOS_PATH;
+
+          dirName = dirName.substring(0,12);
+          dirName=dirName.replaceAt(8,'.').toUpperCase();;
+
+          var newFolderRequest = location.host + '/' + currentPath + '/' + dirName;
+          newFolderRequest = sanitizeGemdosPath(newFolderRequest);
+          sendHttpReq(newFolderRequest, 'newfolder', 'GET', processCreateNewDirectoryReq);
+        }
 
         function handleDriveOnClick(){
           requestChangeDrive(this.name);            
@@ -557,6 +584,25 @@
           return false;
         }
 
+        function handleNewFolderOnClick()
+        {
+          var newFolderName = prompt("Create new folder in:\n" + CURRENT_GEMDOS_PATH + "\nEnter folder name (8+3), longer names will be truncated", "");
+          
+          if (newFolderName === null)
+          {
+              return; // cancel
+          }
+
+          if(newFolderName == "")
+          {
+            window.alert("Error: Folder creation failed. Name cannot be empty!");
+          }
+          else
+          {
+            requestCreateNewFolder(newFolderName);  
+          }
+        }
+
         function createDirectoryEntries(node, DirectoryArray){
           var directoryStr = null;
           var directoryReqStr=null;
@@ -615,8 +661,8 @@
                  
         }
 
-        function updateDirectoryViewUI(DirJsonArray){
-
+        function updateDirectoryViewUI(DirJsonArray)
+        {
           var div = document.createElement("div");
           div.id="directoryList";
           createDirectoryEntries(div,DirJsonArray);
@@ -625,9 +671,39 @@
             DIR_LIST_REF.parentNode.removeChild(DIR_LIST_REF);
             DIR_LIST_REF=null;
           }
-
+          
           DIR_LIST_VIEW_REF.insertBefore(div, DIR_LIST_VIEW_REF.childNodes[0]); 
           DIR_LIST_REF=$id("directoryList");
+
+          // append new folder button
+          var newFolderButton = document.getElementsByName("CREATENEWFOLDER");
+          if(newFolderButton==null || newFolderButton=="" || newFolderButton.length==0)
+          {
+            var button = document.createElement("button");
+            var span = document.createElement("span");
+            var textNode = document.createTextNode('Create new folder');
+
+            var img = document.createElement('img');
+            img.alt = "folder closed icon";
+            img.src = 'data:image/png;base64,' + img_folder_add_src;
+            
+            span.appendChild(textNode);
+            button.appendChild(img);
+            button.appendChild(span);
+
+            button.type='button';
+            button.name = 'CREATENEWFOLDER';
+            button.className ='directoryButton';
+            button.onclick = handleNewFolderOnClick;
+
+            var textNode = document.createTextNode('File operations');
+
+            var div = document.createElement("div");
+            div.id = "fileOperationsList";
+            div.appendChild(textNode);
+            div.appendChild(button);
+            DIR_LIST_VIEW_REF.parentNode.appendChild(div);
+          }
         }
 
         // file view generation
@@ -894,7 +970,7 @@
      function updateTotalProgressInfo(node){
       if(node.lastChild!=null){
        var text = 'Uploaded / total [ ' + UPLOAD_UPLOADED_FILES + ' / ' + UPLOAD_TOTAL_FILES + ' ]';
-       node.lastChild.nodeValue = text;;
+       node.lastChild.nodeValue = text;
       }
      }
 

@@ -15,7 +15,8 @@ images = [
     BuildImage("img/floppy_active.png"),
     BuildImage("img/hd_active.png"),
     BuildImage("img/hd_inactive.png"),
-    BuildImage("img/uiplogo.png")
+    BuildImage("img/uiplogo.png"),
+    BuildImage("img/folder_add.png")
 ]
 
 def binaryExists(name):
