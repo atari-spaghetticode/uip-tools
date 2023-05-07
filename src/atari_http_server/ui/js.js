@@ -760,22 +760,29 @@
 
         function formatFileSize(filesize)
         {
-          var base = Math.log(filesize) / Math.log(1024);
-          var floorBase = Math.floor(base);
-          var suffix = new Array("B", "kiB", "MiB", "GiB", "TiB");
-          
           var ffs;
-          if(floorBase==0)
+          if(filesize!=0)
           {
-            ffs = Math.pow(1024, base - floorBase).toFixed(0)
-            ffs += ' ' + suffix[floorBase];
+            var base = Math.log(filesize) / Math.log(1024);
+            var floorBase = Math.floor(base);
+            var suffix = new Array("B", "kiB", "MiB", "GiB", "TiB");
+          
+            if(floorBase==0)
+            {
+              ffs = Math.pow(1024, base - floorBase).toFixed(0)
+              ffs += ' ' + suffix[floorBase];
+            }
+            else
+            {
+                ffs = Math.pow(1024, base - floorBase).toFixed(1)
+                ffs += ' ' + suffix[floorBase] + ' (' + filesize + ' B)';
+            }
           }
           else
           {
-            ffs = Math.pow(1024, base - floorBase).toFixed(1)
-            ffs += ' ' + suffix[floorBase] + ' (' + filesize + ' B)';
+            ffs = filesize + ' B';
           }
-          
+
           return ffs;
         }
 
