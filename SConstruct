@@ -1,17 +1,35 @@
 import os
 import SCons.Builder
-
+from os.path import expanduser
 
 def setupToolchain(targetEnv):
-    CROSS_PREFIX = 'm68k-atari-mint-'
-    targetEnv["CC"] = CROSS_PREFIX + 'gcc'
-    targetEnv["AS"] = CROSS_PREFIX + 'as'
+
+    PREFIXES =  {
+        '/opt/cross-mint/bin/' : 'm68k-atari-mint',
+        expanduser("~/gnu-tools/m68000/bin/"): 'm68k-atari-mint',
+        expanduser("/opt/m68k-ataritos/aout/bin/"): 'm68k-atari-mint',
+        }
+
+    CROSS_PREFIX = None
+
+    for m68kPrefix in PREFIXES:
+        if os.path.exists (  m68kPrefix + PREFIXES[m68kPrefix] + "-gcc" ) == True:
+            CROSS_PREFIX = m68kPrefix + PREFIXES[m68kPrefix]
+            break
+
+    if CROSS_PREFIX == None:
+        print("Error: Couldn't find atari toolchain.")
+        Exit(1)
+
+    print("Building with: " + CROSS_PREFIX)
+
+    targetEnv["CC"] = CROSS_PREFIX + '-gcc'
+    targetEnv["CXX"] = CROSS_PREFIX + '-g++'
+    targetEnv["AS"] = CROSS_PREFIX + '-as'
+    targetEnv["MINTFLAGS"] = CROSS_PREFIX + '-flags'
     targetEnv['CCFLAGS'] = '-m68000 -O3 -std=gnu99 -fomit-frame-pointer -ffast-math -I${TARGET.dir} '
     targetEnv['ASFLAGS'] = '-m68000'
     targetEnv['LINKFLAGS'] = '-m68000 -O3 -s '
-
-    # Add sensible toolchain detection?
-    targetEnv['ENV']['PATH'] = "/opt/cross-mint/bin:" + targetEnv['ENV']['PATH']
 
     return targetEnv
 
@@ -39,7 +57,7 @@ def compressProgramMaybe(env, target):
         print("UPX compression is disabled")
 
 def setFastRamFlags(env, target):
-    env.AddPostAction(target, Action('m68k-atari-mint-flags --mfastram --mfastload --mfastalloc $TARGET'))
+    env.AddPostAction(target, Action(env["MINTFLAGS"] + ' --mfastram --mfastload --mfastalloc $TARGET'))
 
 def getVersion(env):
     git = env.WhereIs('git')
