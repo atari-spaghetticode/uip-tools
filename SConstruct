@@ -5,6 +5,7 @@ from os.path import expanduser
 def setupToolchain(targetEnv):
 
     PREFIXES =  {
+        '/usr/bin/' : 'm68k-atari-mint',
         '/opt/cross-mint/bin/' : 'm68k-atari-mint',
         expanduser("~/gnu-tools/m68000/bin/"): 'm68k-atari-mint',
         expanduser("/opt/m68k-ataritos/aout/bin/"): 'm68k-atari-mint',
