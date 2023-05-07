@@ -98,41 +98,50 @@ void joinpath(char *pth1, const char *pth2)
 
 bool createOrCheckForFolder(const char* path)
 {
+  if (strlen(path) == 2) {
+    // This is bare drive (ie. "c:")
+    uint32_t drv_map = Drvmap();
+    uint32_t drive_num = toupper(path[0]) - 'A';
+    return (drv_map>>drive_num)&1;
+  }
   Fsetdta (&dta);
-  if (0 == Fsfirst(path, FA_DIR|FA_HIDDEN|FA_SYSTEM) && dta.dta_attribute&FA_DIR)
+  if (0 == Fsfirst(path, FA_DIR|FA_HIDDEN|FA_SYSTEM) && dta.dta_attribute&FA_DIR) {
     return true;
+  }
   return Dcreate(path) == 0;
 }
 
 bool ensureFolderExists(const char* path, bool stripFileName)
 {
   char temp_path[256];
-  const size_t len = strlen(path);
-  strncpy(temp_path, path, sizeof(temp_path));
-  bool ret = false;
+  size_t len = strlen(path);
+  strncpy(temp_path, path, sizeof(temp_path) - 1);
+  bool ret = true;
 
   // remove file name from the path file path base
   if (stripFileName) {
-    for (size_t i = len; i != 0; --i) {
-      if (temp_path[i] == '\\') {
-        temp_path[i] = '\0';
+    for (; len != 0; --len) {
+      if (temp_path[len] == '\\') {
+        temp_path[len] = '\0';
         break;
       }
     }
   }
-
+  // remove trailing backslash
+  if (temp_path[len - 1] == '\\') {
+    temp_path[len - 1] = '\0';
+  }
   // skip the drive letter in the path
-  for (size_t i = 4; i < len; ++i) {
+  for (size_t i = 3; i < len + 1; ++i) {
     if (temp_path[i] == '\\') {
       temp_path[i] = '\0';
-      ret |= createOrCheckForFolder(temp_path);
+      ret &= createOrCheckForFolder(temp_path);
       temp_path[i] = '\\';
+    } else if (temp_path[i] == '\0') {
+      ret &= createOrCheckForFolder(temp_path);
     }
   }
-  ret |= createOrCheckForFolder(temp_path);
-  //printf("\r\nensureFolderExists: ret=%d\r\npath: %s\r\noriginal: %s", (int)ret, temp_path, path);
-  // if we strip file name then we don't want error to be reported
-  // because in that case we might be overwriting a file
+
   return ret;
 }
 
