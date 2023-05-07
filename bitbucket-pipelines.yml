@@ -1,40 +1,35 @@
-# This is a sample build configuration for C++ � Make.
-# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
-# Only use spaces to indent your .yml configuration.
-# -----
-# You can specify a custom docker image from Docker Hub as your build environment.
-image: atlassian/default-image:3
 
-# Clone full depth Git repo since version number is calculated from number of commits
+# uiptool build configuration
+
+image: nokturnaldock/uiptooldevenv:latest
+
 clone:
   depth: full
 
 pipelines:
   default:
     - step:
-        name: 'Prepare toolchain, build and upload'
+        name: 'Get libcmini, build and upload'
         deployment: production
-        script: # Modify the commands below to build your repository.
-          - apt-get install -y software-properties-common
-          - add-apt-repository -y ppa:vriviere/ppa
-          - apt-get update -qq
-          - apt-get install -y cross-mint-essential scons upx vim-common
+        script:
+          - export GIT_COMMIT=$(git log --pretty=format:'%h' -n 1)
           - mkdir ../libcmini
           - cd ../libcmini
-          # Build breaks with libcmini >= 0.52!
+            # Build breaks with libcmini >= 0.52!
           - wget -q -O - "https://github.com/freemint/libcmini/releases/download/v0.51/libcmini-0.51.tar.gz" | tar xzf -
           - export LIBCMINI="$PWD/lib/"
           - mkdir ../builddir
           - cd ../builddir
-          - scons -C $BITBUCKET_CLONE_DIR
-          - TARGETDIR=`basename $BITBUCKET_CLONE_DIR`
-          - cp ./netusbee/$TARGETDIR/src/*.tos $BITBUCKET_CLONE_DIR # to treat as artifact
-          - cp ./netusbee/$TARGETDIR/src/uip.tos ./uip-netusbee-master.tos
-          - cp ./usb/$TARGETDIR/src/*.tos $BITBUCKET_CLONE_DIR # to treat as artifact
-          - cp ./usb/$TARGETDIR/src/uip.tos ./uip-usb-master.tos
-          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-netusbee-master.tos"
-          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-usb-master.tos"
-        artifacts: # Save resulting files
-          - uip-netusbee-master.tos
-          - uip-usb-master.tos
+          - scons -C ${BITBUCKET_CLONE_DIR}
+          - TARGETDIR=`basename ${BITBUCKET_CLONE_DIR}`
+          - cp ./netusbee/${TARGETDIR}/src/*.tos ${BITBUCKET_CLONE_DIR} 
+          - cp ./netusbee/${TARGETDIR}/src/uip.tos ./uip-netusbee-${BITBUCKET_BRANCH}.tos
+          - cp ./usb/${TARGETDIR}/src/*.tos ${BITBUCKET_CLONE_DIR}
+          - cp ./usb/${TARGETDIR}/src/uip.tos ./uip-usb-${BITBUCKET_BRANCH}.tos
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-netusbee-${BITBUCKET_BRANCH}.tos"
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"./uip-usb-${BITBUCKET_BRANCH}.tos"
+        artifacts:
+            # Save resulting files
+          - uip-netusbee-${BITBUCKET_BRANCH}.tos
+          - uip-usb-${BITBUCKET_BRANCH}.tos
 
