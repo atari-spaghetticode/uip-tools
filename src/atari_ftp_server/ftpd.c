@@ -803,7 +803,15 @@ PT_THREAD(ftpd_control_connection(struct ftpd_control_state *s))
   s->data_port = 0;
   s->args = NULL;
 
-  PSOCK_SEND_STR(&s->sin, "220 Welcome to uiptool FTP server\r\n");
+  PSOCK_SEND_STR(&s->sin, "220-Welcome to Uiptool FTP server\r\n"
+                          "   __  ___       __              __" "\r\n"
+                          "  / / / (_)___  / /_____  ____  / /" "\r\n"
+                          " / / / / / __ \\/ __/ __ \\/ __ \\/ / " "\r\n"
+                          "/ /_/ / / /_/ / /_/ /_/ / /_/ / /  " "\r\n"
+                          "\\____/_/ .___/\\__/\\____/\\____/_/   " "\r\n"
+                          "      /_/                          " "\r\n"
+                          "\r\n"
+                          "220 Please use PASSIVE mode for optimal results\r\n");
 
   do {
 
