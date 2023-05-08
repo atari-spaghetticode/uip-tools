@@ -74,9 +74,14 @@ def getVersion(env):
     else:
         print("git not found")
 
+# Check if we're in the source dir and abort
+builddir = os.path.normpath(os.path.abspath(GetLaunchDir()))
+srcdir = os.path.normpath(os.path.abspath("."))
+if builddir == srcdir:
+    print("Error: You can't build in the source directory!")
+    Exit(1)
 
 # Move scons database to builddir to avoid pollution
-builddir = os.path.abspath(GetLaunchDir())
 SConsignFile(os.path.join(builddir, '.sconsign.dblite'))
 
 hostEnv = Environment(ENV = {'PATH' : os.environ['PATH']})
