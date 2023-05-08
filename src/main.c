@@ -248,6 +248,9 @@ configure_ip()
 {
   if (!config_static_ip) {
     INFO("DHCP IP: ");
+    // Clear host old IP so it doesn't interfere with DHCP sequence
+    uip_hostaddr[0] = 0;
+    uip_hostaddr[1] = 0;
     dhcpc_init(uip_ethaddr.addr, 6);
   } else {
     dhcp_stop();

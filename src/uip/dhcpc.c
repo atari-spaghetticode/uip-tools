@@ -256,6 +256,7 @@ PT_THREAD(handle_dhcp(void))
 {
   PT_BEGIN(&s.pt);
   
+
   /* try_again:*/
   s.state = STATE_SENDING;
   s.ticks = CLOCK_SECOND*10;
@@ -328,6 +329,8 @@ dhcpc_init(const void *mac_addr, int mac_len)
   s.conn = uip_udp_new(&addr, HTONS(DHCPC_SERVER_PORT));
   if(s.conn != NULL) {
     uip_udp_bind(s.conn, HTONS(DHCPC_CLIENT_PORT));
+  } else {
+    printf("DHCP: Couldn't bind UDP port!");
   }
   PT_INIT(&s.pt);
 }
